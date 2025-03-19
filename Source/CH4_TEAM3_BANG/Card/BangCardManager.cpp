@@ -4,55 +4,93 @@
 #include "BangCardDataAsset.h"
 #include "JobCard/BangJobCard.h"
 
-UBangCardBase* UBangCardManager::GetItemByName(const FText Name) const
+// 최초 게임 시작시에 실행
+// GetAllCards()
+// ShuffleDeck()
+// ReorderCards()
+// HandCards()
+
+// 게임 시작시 호출
+void UBangCardManager::PlayBeginByRole()
 {
-	if (CardData)
-	{
-		for (UBangCardBase* Card : CardData->Cards)
-		{
-			if (Card && Card->CardName.EqualTo(Name))
-			{
-				return Card;
-			}
-		}
-	}
-	return nullptr;
+	GetAllCards();
+	ShuffleDeck();
+	ReorderCards();
 }
 
-// 최초 게임 시작시에 실행
+// 카드를 정리한다 (사용된카드 -> 미사용카드)
+void UBangCardManager::ReorderCards()
+{
+	if (CharacterCards.CardList.Num() == 0 && PassiveCards.CardList.Num() == 0 &&
+		ActiveCards.CardList.Num() == 0 && JobCards.CardList.Num() == 0) return;
+
+	if (UsedCards.CardList.Num() == 0 && HandedCards.CardList.Num() == 0 && AvailCards.CardList.Num() == 0) // 최초 실행 시
+	{
+		AvailCards.CardList.Append(PassiveCards.CardList);
+		AvailCards.CardList.Append(ActiveCards.CardList);
+	}
+	else
+	{
+		ShuffleCards(UsedCards);
+		AvailCards.CardList.Append(UsedCards.CardList);
+		UsedCards.CardList.Empty();
+	}
+}
+
+// 카드를 나눠준다.
+void UBangCardManager::HandCards(const int CardCount, FCardCollection& OutCards_)
+{
+	if (AvailCards.CardList.Num() <= CardCount || AvailCards.CardList.Num() == 0)
+	{
+		ReorderCards();
+	}
+
+	for (int i = 0; i < CardCount; i++)
+	{
+		HandedCards.CardList.Add(AvailCards.CardList[0]);
+		OutCards_.CardList.Add(AvailCards.CardList[0]);
+		AvailCards.CardList.RemoveAt(0);
+	}
+}
+
+// 모든 카드를 가져온다.
 void UBangCardManager::GetAllCards()
 {
 	if (!CardData) return;
 
-	AllCards.Empty();
+	AllCards.CardList.Empty();
+	CharacterCards.CardList.Empty();
+	PassiveCards.CardList.Empty();
+	ActiveCards.CardList.Empty();
+	JobCards.CardList.Empty();
 	CardDeckByType.Empty();
 
 	for (UBangCardBase* Card : CardData->Cards)
 	{
 		if (!Card) continue;
 
-		AllCards.Add(Card);
-		CardDeckByType.FindOrAdd(Card->CardType).Add(Card);
+		AllCards.CardList.Add(Card);
+		CardDeckByType.FindOrAdd(Card->CardType).CardList.Add(Card);
 		switch (Card->CardType)
 		{
 			case ECardType::JobCard:
 				{
-					JobCards.Add(Card);
+					JobCards.CardList.Add(Card);
 					break;
 				}
 			case ECardType::ActiveCard:
 				{
-					ActiveCards.Add(Card);
+					ActiveCards.CardList.Add(Card);
 					break;
 				}
 			case ECardType::PassiveCard:
 				{
-					PassiveCards.Add(Card);
+					PassiveCards.CardList.Add(Card);
 					break;
 				}
 			case ECardType::CharacterCard:
 				{
-					CharacterCards.Add(Card);
+					CharacterCards.CardList.Add(Card);
 					break;
 				}
 		}
@@ -60,9 +98,9 @@ void UBangCardManager::GetAllCards()
 }
 
 // 인원에 맞는 직업카드 추출 로직
-TArray<UBangCardBase*> UBangCardManager::GetJobByPlayer(int PlayerCount)
+void UBangCardManager::GetJobByPlayer(const int PlayerCount, FCardCollection& SelectedCards_)
 {
-	if (PlayerCount < 4 || PlayerCount > 7) return {};
+	if (PlayerCount < 4 || PlayerCount > 7) return;
 	
 	TArray<UBangCardBase*> SelectedCards;
 
@@ -71,7 +109,7 @@ TArray<UBangCardBase*> UBangCardManager::GetJobByPlayer(int PlayerCount)
 	int OutlawCount     = (PlayerCount == 3) ? 1 : (PlayerCount == 4 || PlayerCount == 5) ? 2 : 3;
 	int BetrayerCount   = 1;
 
-	for (UBangCardBase* Card : JobCards)
+	for (UBangCardBase* Card : JobCards.CardList)
 	{
 		if (!Card) continue;
 
@@ -122,31 +160,29 @@ TArray<UBangCardBase*> UBangCardManager::GetJobByPlayer(int PlayerCount)
 		}
 	}
 
-	ShuffleArray(SelectedCards);
-	
-	return SelectedCards;
+	ShuffleCards(SelectedCards_);
 }
 
 // 덱 섞기
 void UBangCardManager::ShuffleDeck()
 {
-	if (CharacterCards.Num() == 0 && PassiveCards.Num() == 0 &&
-		ActiveCards.Num() == 0 && JobCards.Num() == 0) return;
+	if (CharacterCards.CardList.Num() == 0 && PassiveCards.CardList.Num() == 0 &&
+		ActiveCards.CardList.Num() == 0 && JobCards.CardList.Num() == 0) return;
 
-	ShuffleArray(CharacterCards);
-	ShuffleArray(PassiveCards);
-	ShuffleArray(ActiveCards);
-	ShuffleArray(JobCards);
+	ShuffleCards(CharacterCards);
+	ShuffleCards(PassiveCards);
+	ShuffleCards(ActiveCards);
+	ShuffleCards(JobCards);
 }
 
-void UBangCardManager::ShuffleArray(TArray<UBangCardBase*>& Cards)
+void UBangCardManager::ShuffleCards(FCardCollection& Cards)
 {
-	if (Cards.Num() <= 1) return;
+	if (Cards.CardList.Num() <= 1) return;
 
-	const int32 LastIndex = Cards.Num() - 1;
+	const int32 LastIndex = Cards.CardList.Num() - 1;
 	for (int32 i = LastIndex; i > 0; --i)
 	{
 		int32 RandomIndex = FMath::RandRange(0, i);
-		Cards.Swap(i, RandomIndex);
+		Cards.CardList.Swap(i, RandomIndex);
 	}
 }
