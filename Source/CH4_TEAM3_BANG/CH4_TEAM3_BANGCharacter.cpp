@@ -10,7 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
-#include "BangPlayerController.h"
+#include "PlayerController/BangPlayerController.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
