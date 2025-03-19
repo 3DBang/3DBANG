@@ -47,16 +47,31 @@ protected:
 	virtual void BeginPlay() override;
 
 
-///////////////////////////
+/*///////////////////////////
 ////서버 관련 로직 작성란
 //////////////////////////
+	//서버에 공격 요청 
+	UFUNCTION(Server, Reliable)
+	void Server_AttackPlayer(APlayerState* TargetPlayer);
 
-
-
-
+	//서버에 턴 종료 요청 
+	UFUNCTION(Server, Reliable)
+	void Server_EndTurn();
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
+	//UFUNCTION(Client, Reliable)
+	//void Client_SelectCard(const ECardType SelectedCard);
 
+	//공격할 대상 선택 UI 표시 
+	//UFUNCTION(Client, Reliable)
+	//void Client_ShowAttackUI();
 
+	//피해자가 회피할지 선택하도록 UI 표시
+	//UFUNCTION(Client, Reliable)
+	//void Client_AskDodge();
+
+	// 게임 UI 업데이트 (턴, 체력, 카드 정보 등)
+	//UFUNCTION(Client, Reliable)
+	//void Client_UpdateGameUI(int32 CurrentTurnPlayerIndex, int32 PlayerHealth, int32 CardsInHand);*/
 };
