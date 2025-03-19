@@ -21,6 +21,8 @@ class UBangCardDataAsset;
 
     RPC
     NetSerialize
+	직렬화는 데이터를 네트워크나 저장소로 전송할 때, 구조체 내부의 값을 일련의 바이트 스트림으로 변환하는 과정입니다.
+	즉, 구조체 자체가 그대로 전송되는 게 아니라, 필요한 정보만 최적화된 형태로 패킹되어 전송됩니다.
     GameInstanceSubSystem
 
 	PlayerState, Component 로 뺴서 케릭터 특성 구현 고려
