@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "CH4_TEAM3_BANGGameMode.h"
-#include "CH4_TEAM3_BANGCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
 ACH4_TEAM3_BANGGameMode::ACH4_TEAM3_BANGGameMode()
