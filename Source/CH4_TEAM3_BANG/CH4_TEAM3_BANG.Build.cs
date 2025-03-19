@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 using UnrealBuildTool;
 
 public class CH4_TEAM3_BANG : ModuleRules
@@ -9,5 +7,7 @@ public class CH4_TEAM3_BANG : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		
+		PrivateIncludePaths.Add("CH4_TEAM3_BANG");
 	}
 }
