@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "GameMode/BangGameModeBase.h"
 #include "BangPlayerController.generated.h"
 
 class UInputMappingContext;
 class UInputAction;
+class ABangPlayerState;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
@@ -47,12 +49,12 @@ protected:
 	virtual void BeginPlay() override;
 
 
-/*///////////////////////////
+///////////////////////////
 ////서버 관련 로직 작성란
 //////////////////////////
 	//서버에 공격 요청 
-	UFUNCTION(Server, Reliable)
-	void Server_AttackPlayer(APlayerState* TargetPlayer);
+	//UFUNCTION(Server, Reliable)
+	//void Server_AttackPlayer(ABangPlayerState* TargetPlayer);
 
 	//서버에 턴 종료 요청 
 	UFUNCTION(Server, Reliable)
@@ -73,5 +75,5 @@ protected:
 
 	// 게임 UI 업데이트 (턴, 체력, 카드 정보 등)
 	//UFUNCTION(Client, Reliable)
-	//void Client_UpdateGameUI(int32 CurrentTurnPlayerIndex, int32 PlayerHealth, int32 CardsInHand);*/
+	//void Client_UpdateGameUI(int32 CurrentTurnPlayerIndex, int32 PlayerHealth, int32 CardsInHand);
 };
