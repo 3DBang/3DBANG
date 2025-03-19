@@ -1,31 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Card/Data/CardEnums.h"
 #include "UObject/Object.h"
 #include "Sound/SoundBase.h"
 #include "Components/StaticMeshComponent.h"
 #include "BangCardBase.generated.h"
 
-UENUM(BlueprintType)
-enum class ECardType : uint8
-{
-	JobCard UMETA(DisplayName = "JobCard"),
-	ActiveCard UMETA(DisplayName = "ActiveCard"),
-	PassiveCard UMETA(DisplayName = "PassiveCard"),
-	CharacterCard UMETA(DisplayName = "CharacterCard")
-};
-
-UENUM(BlueprintType)
-enum class ESymbolType : uint8
-{
-	Heart UMETA(DisplayName = "Heart"),
-	Spade UMETA(DisplayName = "Spade"),
-	Clover UMETA(DisplayName = "Clover"),
-	Diamond UMETA(DisplayName = "Diamond"),
-	None UMETA(DisplayName = "None")
-};
-
-UCLASS(Blueprintable)
+// Class 블루프린트에 노출시키기 위한 테그 Abstract는 선언 클레스는 제외
+UCLASS(Blueprintable, DefaultToInstanced, EditInlineNew, Abstract)
 class CH4_TEAM3_BANG_API UBangCardBase : public UObject
 {
 	GENERATED_BODY()
