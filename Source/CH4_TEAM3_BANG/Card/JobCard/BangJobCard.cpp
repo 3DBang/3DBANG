@@ -2,5 +2,5 @@
 
 UBangJobCard::UBangJobCard()
 {
-	
+	JobType = EJobType::Officer;
 }

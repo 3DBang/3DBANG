@@ -12,4 +12,7 @@ class CH4_TEAM3_BANG_API UBangJobCard : public UBangCardBase
 
 public:
 	UBangJobCard();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card | Job")
+	EJobType JobType;
 };

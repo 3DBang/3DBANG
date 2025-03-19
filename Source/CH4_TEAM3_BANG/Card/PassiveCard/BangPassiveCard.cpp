@@ -2,5 +2,5 @@
 
 UBangPassiveCard::UBangPassiveCard()
 {
-	
+	PassiveType = EPassiveType::Barrel;
 }

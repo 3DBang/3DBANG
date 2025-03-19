@@ -12,5 +12,7 @@ class CH4_TEAM3_BANG_API UBangActiveCard : public UBangCardBase
 
 public:
 	UBangActiveCard();
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card | Active")
+	EActiveType ActiveType;
 };
