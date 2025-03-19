@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "PlayerController/BangPlayerController.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -56,7 +57,7 @@ ACH4_TEAM3_BANGCharacter::ACH4_TEAM3_BANGCharacter()
 
 //////////////////////////////////////////////////////////////////////////
 // Input
-
+//
 void ACH4_TEAM3_BANGCharacter::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -76,15 +77,24 @@ void ACH4_TEAM3_BANGCharacter::SetupPlayerInputComponent(UInputComponent* Player
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
-		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-
-		// Moving
+		// Moving Test
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ACH4_TEAM3_BANGCharacter::Move);
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACH4_TEAM3_BANGCharacter::Look);
+
+		// Menu
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACH4_TEAM3_BANGCharacter::Menu);
+		
+		// CardInformation
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACH4_TEAM3_BANGCharacter::Inforamation);
+
+		// Camera Zoom
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACH4_TEAM3_BANGCharacter::Zoom);
+		
+		// UserClick
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACH4_TEAM3_BANGCharacter::Click);
+
 	}
 	else
 	{
@@ -126,4 +136,25 @@ void ACH4_TEAM3_BANGCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void ACH4_TEAM3_BANGCharacter::Menu(const FInputActionValue& Value)
+{
+	//OpenMenuHUD()
+}
+
+void ACH4_TEAM3_BANGCharacter::Inforamation(const FInputActionValue& Value)
+{
+	//OpenCardInforamtion
+}
+
+void ACH4_TEAM3_BANGCharacter::Zoom(const FInputActionValue& Value)
+{
+	//Camera
+}
+
+void ACH4_TEAM3_BANGCharacter::Click(const FInputActionValue& Value)
+{
+	//Click Other User ->GetUsersController -> PlayerState 
+	//How Can I GET Users Controller?
 }

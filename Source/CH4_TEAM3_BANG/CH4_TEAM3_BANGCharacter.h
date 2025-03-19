@@ -49,13 +49,27 @@ public:
 	
 
 protected:
+///////////////////////////
+//// Enhanced Input
+//////////////////////////
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
+	
+	/** Called for Menu input */
+	void Menu(const FInputActionValue& Value);
+	
+	/** Called for CardInformation input */
+	void Inforamation(const FInputActionValue& Value);
+
+	/** Called for Camera Zoom input */
+	void Zoom(const FInputActionValue& Value);
+
+	/** Called for UserClick input */
+	void Click(const FInputActionValue& Value);
 
 protected:
 
