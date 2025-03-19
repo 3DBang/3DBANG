@@ -13,5 +13,6 @@ UCLASS()
 class CH4_TEAM3_BANG_API ABangGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-	
+public:
+	ABangGameModeBase();
 };

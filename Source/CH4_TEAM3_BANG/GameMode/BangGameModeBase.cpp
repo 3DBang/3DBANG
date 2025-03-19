@@ -2,4 +2,12 @@
 
 
 #include "GameMode/BangGameModeBase.h"
+#include "../PlayerController/BangPlayerController.h"
+#include "../BangCharacter/BangCharacter.h"
 
+
+ABangGameModeBase::ABangGameModeBase()
+{
+	DefaultPawnClass = ABangCharacter::StaticClass();
+	PlayerControllerClass = ABangPlayerController::StaticClass();
+}
