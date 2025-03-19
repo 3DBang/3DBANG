@@ -17,3 +17,5 @@ UBangCardBase* UBangCardManager::GetItemByName(const FText Name) const
 	}
 	return nullptr;
 }
+
+

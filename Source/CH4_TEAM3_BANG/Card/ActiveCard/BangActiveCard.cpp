@@ -2,4 +2,5 @@
 
 UBangActiveCard::UBangActiveCard()
 {
+	ActiveType = EActiveType::Bang;
 }

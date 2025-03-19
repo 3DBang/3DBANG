@@ -13,5 +13,6 @@ class CH4_TEAM3_BANG_API UBangPassiveCard : public UBangCardBase
 public:
 	UBangPassiveCard();
 
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card | Passive")
+	EPassiveType PassiveType;
 };

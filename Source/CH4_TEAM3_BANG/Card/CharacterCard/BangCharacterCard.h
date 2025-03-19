@@ -16,4 +16,7 @@ public:
 	// 케릭터카드 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card | Character")
 	int Health;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card | Character")
+	ECharacterType CharacterType;
 };
