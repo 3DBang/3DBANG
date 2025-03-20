@@ -9,7 +9,6 @@
 
 class UInputMappingContext;
 class UInputAction;
-class ABangPlayerState;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
@@ -52,35 +51,25 @@ protected:
 ///////////////////////////
 ////서버 관련 로직 작성란
 //////////////////////////
-	//서버에 공격 요청 
-	//UFUNCTION(Server, Reliable)
-	//void Server_AttackPlayer(ABangPlayerState* TargetPlayer);
+/*
+	// 사용 버튼을 클릭하면, 선택된 카드를 GameMode에게 전달
+	UFUNCTION(Server, Reliable, WithValidation)
+	void UseCard(ECardType SelectedCard);
 
-	//서버에 턴 종료 요청 
-	UFUNCTION(Server, Reliable)
-	void Server_EndTurn();
+	// 공격 대상 선택 후, 대상과 사용한 카드 정보를 GameMode에게 전달
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SelectTargetAndUseCard(APlayerState* TargetPlayer, ECardType UsedCard);
+*/
+
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
+	
+	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
 	//UFUNCTION(Client, Reliable)
-	//void Client_SelectCard(const ECardType SelectedCard);
-
-	//공격할 대상 선택 UI 표시 
-	//UFUNCTION(Client, Reliable)
-	//void Client_ShowAttackUI();
-
-	//피해자가 회피할지 선택하도록 UI 표시
-	//UFUNCTION(Client, Reliable)
-	//void Client_AskDodge();
-
-	// 게임 UI 업데이트 (턴, 체력, 카드 정보 등)
-	//UFUNCTION(Client, Reliable)
-	//void Client_UpdateGameUI(int32 CurrentTurnPlayerIndex, int32 PlayerHealth, int32 CardsInHand);
+	//void ShowOwnedCards();
+	
 public:
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
-
-	void Client_SetControllerRotation_Implementation(FRotator NewRotation);
-
-	//void OnPossess(APawn* InPawn) override;
 };
