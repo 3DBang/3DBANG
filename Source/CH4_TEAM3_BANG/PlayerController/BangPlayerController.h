@@ -26,7 +26,7 @@ public:
 	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	TObjectPtr<UInputAction> LookAction= nullptr;
+	TObjectPtr<UInputAction> LookAction = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> MenuAction = nullptr;
@@ -43,6 +43,9 @@ public:
 	/**Test Sample*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction = nullptr;
+	
+	UFUNCTION(Server, Reliable)
+	void Server_UseCardReturn(bool IsAble);
 
 protected:
 	virtual void BeginPlay() override;

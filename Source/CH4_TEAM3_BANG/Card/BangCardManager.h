@@ -37,6 +37,15 @@ struct FCardCollection
 	TArray<TObjectPtr<UBangCardBase>> CardList;
 };
 
+USTRUCT(BlueprintType)
+struct FSingleCard
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<UBangCardBase> Card;
+};
+
 UCLASS(BlueprintType)
 class CH4_TEAM3_BANG_API UBangCardManager : public UObject
 {
@@ -75,11 +84,19 @@ public:
 
 	// 건내준 카드를 다시 사용된 카드 덱에 넣는다
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
-	void ReorderUsedCards(UBangCardBase* HandedCard);
+	void ReorderUsedCards(FSingleCard HandedCard);
+	
+	// 건내준 카드를 다시 사용할 카드 덱에 넣는다
+	UFUNCTION(BlueprintCallable, Category = "Card Manager")
+	void ReorderAvailCards(FSingleCard HandedCard);
 	
 	// 인원에 맞는 직업카드 추출 로직
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void GetJobByPlayer(const int PlayerCount, FCardCollection& SelectedCards_);
+
+	// 카드 심볼과 번호로 카드 찾기 IsFromHanded = true -> 건내준 카드목록, false -> 사용된 카드목록
+	UFUNCTION(BlueprintCallable, Category = "Card Manager")
+	void GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsFromHanded, FSingleCard& FoundCard_);
 
 	// 단일 케릭터 카드 추출
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
