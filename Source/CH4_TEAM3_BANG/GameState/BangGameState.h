@@ -4,6 +4,8 @@
 #include "GameFramework/GameState.h"
 #include "BangGameState.generated.h"
 
+class UBangCardManager;
+
 UCLASS()
 class CH4_TEAM3_BANG_API ABangGameState : public AGameState
 {
@@ -11,4 +13,8 @@ class CH4_TEAM3_BANG_API ABangGameState : public AGameState
 
 public:
 	virtual void BeginPlay() override;
+	
+	
+	UPROPERTY()
+	UBangCardManager* CardManager;
 };

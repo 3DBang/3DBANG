@@ -85,3 +85,4 @@ enum class ECharacterType : uint8
 
 	VultureSam UMETA(DisplayName = "Vulture Sam")        // 벌쳐 샘
 };
+

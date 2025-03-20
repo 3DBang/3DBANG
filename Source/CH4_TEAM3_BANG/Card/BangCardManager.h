@@ -72,6 +72,10 @@ public:
 	// 카드 나눠주기
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void HandCards(const int CardCount, FCardCollection& OutCards_);
+
+	// 건내준 카드를 다시 사용된 카드 덱에 넣는다
+	UFUNCTION(BlueprintCallable, Category = "Card Manager")
+	void ReorderUsedCards(UBangCardBase* HandedCard);
 	
 	// 인원에 맞는 직업카드 추출 로직
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
@@ -117,5 +121,6 @@ private:
 	UPROPERTY()
 	TMap<ECardType, FCardCollection> CardDeckByType;
 
+	UFUNCTION()
 	void ShuffleCards(FCardCollection& Cards);
 };

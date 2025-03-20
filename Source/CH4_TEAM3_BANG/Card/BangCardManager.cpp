@@ -53,6 +53,22 @@ void UBangCardManager::HandCards(const int CardCount, FCardCollection& OutCards_
 	}
 }
 
+// 건내준 카드를 다시 사용된 카드 덱에 넣는다
+void UBangCardManager::ReorderUsedCards(UBangCardBase* HandedCard)
+{
+	if (HandedCards.CardList.Num() == 0) return;
+	
+	for (TObjectPtr<UBangCardBase> BangCardBase : HandedCards.CardList)
+	{
+		if (BangCardBase == HandedCard)
+		{
+			HandedCards.CardList.Remove(HandedCard);
+			UsedCards.CardList.Add(HandedCard);
+			break;
+		}
+	}
+}
+
 // 모든 카드를 가져온다.
 void UBangCardManager::GetAllCards()
 {

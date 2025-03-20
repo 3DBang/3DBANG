@@ -3,6 +3,5 @@
 void ABangGameState::BeginPlay()
 {
 	Super::BeginPlay();
-
 	
 }
