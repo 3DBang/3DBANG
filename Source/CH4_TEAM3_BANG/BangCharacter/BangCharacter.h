@@ -9,6 +9,8 @@
 struct FInputActionValue;
 class USpringArmComponent;
 class UCameraComponent;
+class ABangUIActor;
+class UTextRenderComponent;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangCharacter : public ACharacter
@@ -54,5 +56,14 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
+public:
+	//BluePrint로 수정하고 캐릭터에 달 예정
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<ABangUIActor> TextActorUIClass;
+	
+	UPROPERTY()
+	TObjectPtr<ABangUIActor> TextActor;
+
+	
 };

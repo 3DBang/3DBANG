@@ -83,4 +83,7 @@ public:
 	void Client_SetControllerRotation_Implementation(FRotator NewRotation);
 
 	//void OnPossess(APawn* InPawn) override;
+
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void UpdatePlayerUI(FName& NewText);
 };

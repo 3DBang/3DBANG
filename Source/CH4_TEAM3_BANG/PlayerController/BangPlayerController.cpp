@@ -1,5 +1,7 @@
 #include "BangPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "CharacterUIActor/BangUIActor.h"
+#include "BangCharacter/BangCharacter.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -46,4 +48,16 @@ void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator
 		SetControlRotation(NewRotation);
 	}
 	
+}
+
+void ABangPlayerController::UpdatePlayerUI(FName& NewText)
+{
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacter = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacter && BangCharacter->TextActor)
+		{
+			BangCharacter->TextActor->SetDisplayText(NewText);
+		}
+	}
 }

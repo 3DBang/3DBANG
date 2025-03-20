@@ -3,13 +3,16 @@
 
 #include "BangCharacter/BangCharacter.h"
 #include "PlayerController/BangPlayerController.h"
+#include "CharacterUIActor/BangUIActor.h"
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "InputActionValue.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
+
 // Sets default values
 ABangCharacter::ABangCharacter()
 {
@@ -40,17 +43,44 @@ ABangCharacter::ABangCharacter()
 void ABangCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-}
 
-// Called every frame
+	if (TextActorUIClass)
+	{
+		//캡슐컴포넌트의 길이 절반 받아서+100. f 
+		float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		//FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, CapsuleHalfHeight + 50.f);
+		//FRotator SpawnRotation = FRotator::ZeroRotator;
+		FVector RelativeLocation(0.f, 0.f, CapsuleHalfHeight + 50.f);
+		FRotator RelativeRotation = FRotator::ZeroRotator;
+		FTransform RelativeTransform(RelativeRotation, RelativeLocation);
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+
+		//TextActor = GetWorld()->SpawnActor<ABangUIActor>(TextActorUIClass, SpawnLocation, SpawnRotation, SpawnParams);
+		ABangUIActor* DeferredTextActor = GetWorld()->SpawnActorDeferred<ABangUIActor>(TextActorUIClass, RelativeTransform, this);
+		if (DeferredTextActor)
+		{
+			// CapsuleComponent에 부착하면서 KeepRelativeTransform 규칙을 사용합니다.
+			DeferredTextActor->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+			// FinishSpawningActor를 호출하면, 설정한 RelativeTransform을 기준으로 스폰
+			UGameplayStatics::FinishSpawningActor(DeferredTextActor, RelativeTransform);
+			TextActor = DeferredTextActor;
+		}
+
+
+		/*if (TextActor)
+		{
+			TextActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+		}*/
+	}
+}
 void ABangCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
-
-// Called to bind functionality to input
 void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);

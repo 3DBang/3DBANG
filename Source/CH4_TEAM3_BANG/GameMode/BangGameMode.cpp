@@ -67,6 +67,19 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
 	}
 }
 
+void ABangGameMode::ChangePlayerName(FName Newname)
+{
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 1);
+	if (PC)
+	{
+		ABangPlayerController* MyPC = Cast<ABangPlayerController>(PC);
+		if (MyPC)
+		{
+			MyPC->UpdatePlayerUI(Newname);
+		}
+	}
+}
+
 void ABangGameMode::StartGame()
 {
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager || Players.Players.Num() < 4 || Players.Players.Num() > 7) return;
