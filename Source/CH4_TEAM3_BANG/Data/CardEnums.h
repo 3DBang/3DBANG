@@ -83,6 +83,7 @@ enum class ECharacterType : uint8
 	RoseDoolan UMETA(DisplayName = "Rose Doolan"),       // 로즈 둘란
 	WillyTheKid UMETA(DisplayName = "Willy the Kid"),    // 윌리 더 키드
 
-	VultureSam UMETA(DisplayName = "Vulture Sam")        // 벌쳐 샘
+	VultureSam UMETA(DisplayName = "Vulture Sam"),        // 벌쳐 샘
+	KitCarlson UMETA(DisplayName = "Kit Carlson")		 // 키트 칼슨
 };
 
