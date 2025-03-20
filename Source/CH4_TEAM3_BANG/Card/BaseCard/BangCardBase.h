@@ -1,10 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Card/Data/CardEnums.h"
 #include "UObject/Object.h"
 #include "Sound/SoundBase.h"
 #include "Components/StaticMeshComponent.h"
+#include "Data/CardEnums.h"
 #include "BangCardBase.generated.h"
 
 // Class 블루프린트에 노출시키기 위한 테그 Abstract는 선언 클레스는 제외
@@ -50,5 +50,5 @@ public:
 
 	// 카드 번호
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card | Symbol")
-	int SymbolNumber;
+	int32 SymbolNumber;
 };

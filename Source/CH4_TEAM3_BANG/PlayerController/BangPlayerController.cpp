@@ -22,6 +22,11 @@ void ABangPlayerController::BeginPlay()
 	}
 }
 
+void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
+{
+	
+}
+
 void ABangPlayerController::Server_EndTurn_Implementation()
 {
 	ABangGameModeBase* GM = GetWorld()->GetAuthGameMode<ABangGameModeBase>();

@@ -53,17 +53,60 @@ void UBangCardManager::HandCards(const int CardCount, FCardCollection& OutCards_
 	}
 }
 
+// 카드 심볼과 번호로 카드 찾기
+void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsFromHanded, FSingleCard& FoundCard_)
+{
+	if (HandedCards.CardList.Num() == 0 && UsedCards.CardList.Num() == 0) return;
+	
+	if (IsFromHanded)
+	{
+		for (const TObjectPtr<UBangCardBase> HandedCard : HandedCards.CardList)
+		{
+			if (HandedCard->SymbolType == SymbolType && HandedCard->SymbolNumber == SymbolNumber)
+			{
+				FoundCard_.Card = HandedCard;
+			}
+		}
+	}
+	else
+	{
+		for (const TObjectPtr<UBangCardBase> UsedCard : UsedCards.CardList)
+		{
+			if (UsedCard->SymbolType == SymbolType && UsedCard->SymbolNumber == SymbolNumber)
+			{
+				FoundCard_.Card = UsedCard;
+			}
+		}
+	}
+}
+
 // 건내준 카드를 다시 사용된 카드 덱에 넣는다
-void UBangCardManager::ReorderUsedCards(UBangCardBase* HandedCard)
+void UBangCardManager::ReorderUsedCards(FSingleCard HandedCard)
 {
 	if (HandedCards.CardList.Num() == 0) return;
 	
 	for (TObjectPtr<UBangCardBase> BangCardBase : HandedCards.CardList)
 	{
-		if (BangCardBase == HandedCard)
+		if (BangCardBase == HandedCard.Card)
 		{
-			HandedCards.CardList.Remove(HandedCard);
-			UsedCards.CardList.Add(HandedCard);
+			HandedCards.CardList.Remove(HandedCard.Card);
+			UsedCards.CardList.Add(HandedCard.Card);
+			break;
+		}
+	}
+}
+
+// 건내준 카드를 다시 사용된 카드 덱에 넣는다
+void UBangCardManager::ReorderAvailCards(FSingleCard HandedCard)
+{
+	if (HandedCards.CardList.Num() == 0) return;
+	
+	for (TObjectPtr<UBangCardBase> BangCardBase : HandedCards.CardList)
+	{
+		if (BangCardBase == HandedCard.Card)
+		{
+			HandedCards.CardList.Remove(HandedCard.Card);
+			AvailCards.CardList.Add(HandedCard.Card);
 			break;
 		}
 	}
