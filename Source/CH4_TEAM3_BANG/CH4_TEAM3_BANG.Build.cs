@@ -13,8 +13,11 @@ public class CH4_TEAM3_BANG : ModuleRules
 			"InputCore", 
 			"EnhancedInput", 
 			"OnlineSubsystemSteam", 
-			"OnlineSubsystem"
+			"OnlineSubsystem",
+			"AdvancedSessions",
+			"AdvancedSteamSessions"
 		});
+		
         PrivateIncludePaths.Add("CH4_TEAM3_BANG");
     }
 }

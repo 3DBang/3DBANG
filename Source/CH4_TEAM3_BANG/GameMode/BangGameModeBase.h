@@ -14,6 +14,7 @@ class CH4_TEAM3_BANG_API ABangGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
+	//ABangGameModeBase();
 	//게임 시작
 	UFUNCTION(Server, Reliable)
 	void StartGame();
@@ -40,6 +41,10 @@ public:
 	// 다음 플레이어로 턴 넘기기
 	void NextTurn();
 
+	void PrintPlayerStats();
+
+	FTimerHandle TimerHandle;
+
 	// 현재 턴 알림
 	//UFUNCTION(NetMulticast, Reliable)
 	//void Multicast_NotifyTurn(int32 PlayerIndex);
@@ -61,4 +66,5 @@ protected:
 	int32 NumDeputies;
 	int32 NumOutlaws;
 	int32 NumRenegades;
+
 };
