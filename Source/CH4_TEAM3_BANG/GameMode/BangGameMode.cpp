@@ -2,6 +2,13 @@
 
 #include "GameState/BangGameState.h"
 #include "PlayerState/BangPlayerState.h"
+#include "PlayerController/BangPlayerController.h"
+#include "../BangCharacter/BangCharacter.h"
+ABangGameMode::ABangGameMode()
+{
+	DefaultPawnClass = ABangCharacter::StaticClass();
+	PlayerControllerClass = ABangPlayerController::StaticClass();
+}
 
 void ABangGameMode::BeginPlay()
 {
@@ -35,4 +42,8 @@ void ABangGameMode::PrintPlayerStats()
 			}
 		}
 	}
+}
+
+void ABangGameMode::PostLogin(APlayerController* NewPlayer)
+{
 }

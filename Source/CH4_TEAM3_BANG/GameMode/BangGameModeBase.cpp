@@ -203,8 +203,8 @@ void ABangGameModeBase::HandlePlayerDeath(BangPlayerState* DeadPlayer)
 }*/
 
 
-ABangGameModeBase::ABangGameModeBase()
-{
-	DefaultPawnClass = ABangCharacter::StaticClass();
-	PlayerControllerClass = ABangPlayerController::StaticClass();
-}
+//ABangGameModeBase::ABangGameModeBase()
+//{
+//	DefaultPawnClass = ABangCharacter::StaticClass();
+//	PlayerControllerClass = ABangPlayerController::StaticClass();
+//}
