@@ -1,4 +1,5 @@
 #include "BangCharacterCard.h"
+#include "Data/CardEnums.h"
 
 UBangCharacterCard::UBangCharacterCard()
 {
