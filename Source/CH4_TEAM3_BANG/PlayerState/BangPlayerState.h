@@ -4,6 +4,10 @@
 #include "GameFramework/PlayerState.h"
 #include "BangPlayerState.generated.h"
 
+class UBangJobCard;
+class UBangCharacterCard;
+class UBangCardBase;
+
 USTRUCT()
 struct FPlayerStat
 {
@@ -38,6 +42,44 @@ struct TStructOpsTypeTraits<FPlayerStat> : public TStructOpsTypeTraitsBase2<FPla
 	};
 };
 
+USTRUCT(BlueprintType)
+struct FPlayerInfo
+{
+	GENERATED_BODY()
+
+	// 플레이어가 가지는 최대 체력
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	int32 MaxHealth;
+
+	// 플레이어 현재 체력
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	int32 CurrentHealth;
+
+	// 나를 볼 때 사거리 (다른 플레이어 기준)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	int32 RangeToMe;
+
+	// 내가 볼 때 사거리 (내 기준)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	int32 RangeFromMe;
+
+	//역할 카드
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	UBangJobCard* JobCard;
+
+	//캐릭터 카드
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	UBangCharacterCard* CharacterCard;
+	
+	//보유한 카드(사용가능한 카드)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	TArray<UBangCardBase*> MyCards;
+	
+	//장착된 카드
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	TArray<UBangCardBase*> EquippedCards;
+};
+
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerState : public APlayerState
 {
@@ -67,4 +109,14 @@ public:
 
 	// 복제 변수 등록
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+
+	//CardManager->HandCards()를 했을때
+	//카드를 받았을때 컨트롤러로 연결
+	
+	//공격을 하겠다 했을때 공격이 가능한지 확인
+	
+	
 };
+
+
