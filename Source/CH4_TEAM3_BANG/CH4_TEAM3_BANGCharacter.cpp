@@ -22,9 +22,12 @@ ACH4_TEAM3_BANGCharacter::ACH4_TEAM3_BANGCharacter()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
+	bReplicates = true;
+	SetReplicateMovement(true);
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
-	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationPitch = true;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
@@ -58,22 +61,23 @@ ACH4_TEAM3_BANGCharacter::ACH4_TEAM3_BANGCharacter()
 //////////////////////////////////////////////////////////////////////////
 // Input
 //
-void ACH4_TEAM3_BANGCharacter::NotifyControllerChanged()
-{
-	Super::NotifyControllerChanged();
-
-	// Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
-}
+//void ACH4_TEAM3_BANGCharacter::NotifyControllerChanged()
+//{
+//	Super::NotifyControllerChanged();
+//
+//	// Add Input Mapping Context
+//	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+//	{
+//		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+//		{
+//			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+//		}
+//	}
+//}
 
 void ACH4_TEAM3_BANGCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
@@ -123,6 +127,7 @@ void ACH4_TEAM3_BANGCharacter::Move(const FInputActionValue& Value)
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
+	UE_LOG(LogTemp, Display, TEXT("dtdtdtdtd"));
 }
 
 void ACH4_TEAM3_BANGCharacter::Look(const FInputActionValue& Value)

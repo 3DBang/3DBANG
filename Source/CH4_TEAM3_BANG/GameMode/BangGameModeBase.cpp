@@ -236,3 +236,9 @@ void ABangGameModeBase::HandlePlayerDeath(BangPlayerState* DeadPlayer)
     Defender->ReceiveAttack(Attacker);
 }*/
 
+
+//ABangGameModeBase::ABangGameModeBase()
+//{
+//	DefaultPawnClass = ABangCharacter::StaticClass();
+//	PlayerControllerClass = ABangPlayerController::StaticClass();
+//}

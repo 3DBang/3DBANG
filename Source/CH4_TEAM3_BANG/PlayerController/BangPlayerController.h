@@ -76,4 +76,11 @@ protected:
 	// 게임 UI 업데이트 (턴, 체력, 카드 정보 등)
 	//UFUNCTION(Client, Reliable)
 	//void Client_UpdateGameUI(int32 CurrentTurnPlayerIndex, int32 PlayerHealth, int32 CardsInHand);
+public:
+	UFUNCTION(Client,Reliable)
+	void Client_SetControllerRotation(FRotator NewRotation);
+
+	void Client_SetControllerRotation_Implementation(FRotator NewRotation);
+
+	//void OnPossess(APawn* InPawn) override;
 };

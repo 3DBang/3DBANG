@@ -14,6 +14,7 @@ class CH4_TEAM3_BANG_API ABangGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
+	//ABangGameModeBase();
 	//게임 시작
 	UFUNCTION(Server, Reliable)
 	void StartGame();
@@ -65,4 +66,5 @@ protected:
 	int32 NumDeputies;
 	int32 NumOutlaws;
 	int32 NumRenegades;
+
 };
