@@ -13,7 +13,6 @@
 #include "../BangCharacter/BangCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
-#include "Algo/Shuffle.h"
 #include "GameFramework/PlayerStart.h"
 
 ABangGameMode::ABangGameMode()
