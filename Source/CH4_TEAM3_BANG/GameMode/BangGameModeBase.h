@@ -41,6 +41,10 @@ public:
 	// 다음 플레이어로 턴 넘기기
 	void NextTurn();
 
+	void PrintPlayerStats();
+
+	FTimerHandle TimerHandle;
+
 	// 현재 턴 알림
 	//UFUNCTION(NetMulticast, Reliable)
 	//void Multicast_NotifyTurn(int32 PlayerIndex);
