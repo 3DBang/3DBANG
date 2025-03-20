@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 using UnrealBuildTool;
 
 public class CH4_TEAM3_BANG : ModuleRules
@@ -17,5 +15,6 @@ public class CH4_TEAM3_BANG : ModuleRules
 			"OnlineSubsystemSteam", 
 			"OnlineSubsystem"
 		});
-	}
+        PrivateIncludePaths.Add("CH4_TEAM3_BANG");
+    }
 }
