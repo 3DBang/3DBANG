@@ -4,6 +4,7 @@
 #include "GameFramework/PlayerState.h"
 #include "BangPlayerState.generated.h"
 
+struct FCardCollection;
 class UBangJobCard;
 class UBangCharacterCard;
 class UBangCardBase;
@@ -46,7 +47,7 @@ USTRUCT(BlueprintType)
 struct FPlayerInfo
 {
 	GENERATED_BODY()
-
+	
 	// 플레이어가 가지는 최대 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	int32 MaxHealth;
@@ -65,19 +66,19 @@ struct FPlayerInfo
 
 	//역할 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	UBangJobCard* JobCard;
-
+	TObjectPtr<UBangJobCard> JobCard;
+	
 	//캐릭터 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	UBangCharacterCard* CharacterCard;
+	TObjectPtr<UBangCharacterCard> CharacterCard;
 	
 	//보유한 카드(사용가능한 카드)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	TArray<UBangCardBase*> MyCards;
+	TArray<TObjectPtr<UBangCardBase>> MyCards;
 	
 	//장착된 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	TArray<UBangCardBase*> EquippedCards;
+	TArray<TObjectPtr<UBangCardBase>> EquippedCards;
 };
 
 UCLASS()
@@ -89,6 +90,12 @@ public:
 	ABangPlayerState();
 
 	virtual void BeginPlay() override;
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Player State")
+	void InitPlayerInfo();
+	
+	UPROPERTY(Replicated)
+	FPlayerInfo PlayerInfo;
 
 	// FPlayerStat를 복제할 때 OnRep_MyStruct 함수 호출 (동기화)
 	UPROPERTY(ReplicatedUsing = OnRep_MyStruct)
@@ -110,13 +117,17 @@ public:
 	// 복제 변수 등록
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	//카드를 넣어주는 함수
+	void AddDrawnCards(FCardCollection& DrawCards);
 
-	//CardManager->HandCards()를 했을때
-	//카드를 받았을때 컨트롤러로 연결
-	
-	//공격을 하겠다 했을때 공격이 가능한지 확인
-	
-	
+	// 카드의 사용 조건이 맞을때 효과를 적용하는 함수
+	// 효과를 발생시킨 플레이어 , 사용한 카드
+	void TryApplyEffect(TObjectPtr<UBangCardBase> _UseCard);
+
+	//플레이어가 드로우 할턴에 뭔가를 해야하는 자기 캐릭터가 있으면 그 캐릭터 일때 플레이어 컨트롤러로 보내줌
+	// 걔 UI 띄워라 
+    void OnCharacterDrawPhase();
+
 };
 
 
