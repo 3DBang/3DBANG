@@ -6,6 +6,7 @@
 #include "../BangCharacter/BangCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
+#include "Algo/Shuffle.h"
 #include "GameFramework/PlayerStart.h"
 
 ABangGameMode::ABangGameMode()
@@ -83,6 +84,8 @@ void ABangGameMode::SpawnPlayers()
         return;
     }
 
+ 
+
     for (int32 i = 0; i < PlayersNum; i++)
     {
         float Radian = (2 * PI / PlayersNum) * i;
@@ -106,14 +109,8 @@ void ABangGameMode::SpawnPlayers()
             {
                 PlayerController->Client_SetControllerRotation(SpawnRotation);
             }
-            //하ㅓ.. 지연걸어야하나 개빡치네  
-           /* FTimerHandle TempTimerHandle;
-            APlayerController* temp = PlayerControllers[i];
-            GetWorld()->GetTimerManager().SetTimer(TempTimerHandle, [SpawnRotation, temp]()
-            {
-                    temp->SetControlRotation(SpawnRotation);
-            }, 0.1f, false);*/
-           
+           //TODO : Suffle
+
             UE_LOG(LogTemp, Error, TEXT("Player Controller is %s"), *PlayerControllers[i]->GetName());
 
             UE_LOG(LogTemp, Error, TEXT("Spawn Location is : %s"), *SpawnLocation.ToString());
