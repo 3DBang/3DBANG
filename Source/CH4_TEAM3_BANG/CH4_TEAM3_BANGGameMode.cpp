@@ -1,5 +1,6 @@
 #include "CH4_TEAM3_BANGGameMode.h"
-#include "PlayerController/BangPlayerController.h"
+#include "UObject/ConstructorHelpers.h"
+
 
 ACH4_TEAM3_BANGGameMode::ACH4_TEAM3_BANGGameMode()
 {
