@@ -6,6 +6,7 @@
 #include "Card/CharacterCard/BangCharacterCard.h"
 #include "Card/JobCard/BangJobCard.h"
 #include "Card/PassiveCard/BangPassiveCard.h"
+#include "GameMode/BangGameMode.h"
 #include "Net/UnrealNetwork.h"
 
 ABangPlayerState::ABangPlayerState(): PlayerStat()
@@ -72,14 +73,96 @@ void ABangPlayerState::AddDrawnCards(FCardCollection& DrawCards)
 }
 
 //어떤 카드 때문에 응답을 받았는지 전해주기 찬효님과 이야기 해야함
-
+//상대 유니크 아이디
+//패시브인지 액티브인지 도 보내줌
 //거리 체크
-void ABangPlayerState::Calculate_Distance(FPlayerCardSymbol _UseCard, FPlayerCollection& _Collection) // 상대 구분
+void ABangPlayerState::Calculate_Distance(const FPlayerCardSymbol _UseCard_,const uint32 _ToUniqueID_, const EActiveType ActiveType, const EPassiveType PassiveType) // 상대 구분
 {
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+	
+	ABangGameMode* GameMode = Cast<ABangGameMode>(World->GetAuthGameMode());
+	if (GameMode == nullptr)
+	{
+		return;
+	}
+	
+	//게임에 참여중인 플레이어 목록을 가지고옴
+    FPlayerCollection PlayerCollection;
+    GameMode->GetPlayerCollection(PlayerCollection);
+
+	//내 인덱스
+	uint32 PlayerIndex; 
+	// 내 정보
+	FPlayerInformation* PlayerInformation = PlayerCollection.GetPlayerInformation(PlayerInfo.PlayerUniqueID, PlayerIndex);
+
+	// 상대방의 인덱스
+	uint32 ToPlayerIndex; 
+	// 상대 정보
+	FPlayerInformation* ToPlayerInformation = PlayerCollection.GetPlayerInformation(_ToUniqueID_, ToPlayerIndex);
+
+	//정보들이 없으면 리턴
+	if (PlayerInformation == nullptr || ToPlayerInformation == nullptr || PlayerIndex == -1 || ToPlayerIndex == -1)
+	{
+		return;
+	}
+	
+	int32 Distance = PlayerCollection.CalculateDistance(PlayerIndex,ToPlayerIndex);
+
+	// 카드를 사용한 사람의 아이템 확인
+	// 무기의 사거리에 따라 거리를 줄여줌
+	// 조준경을 쓰고 있으면 거리를 줄여줌
+
+	//이거 하고 있었움
+	PlayerInformation->EquippedCards.PlayerCards;
+	
+	for (int32 i = 0; i < PlayerInformation->EquippedCards.PlayerCards.Num(); i++)
+	{
+		/*int32 SymbolNumber = PlayerInformation->EquippedCards.PlayerCards[i].SymbolNumber;
+		ESymbolType SymbolNumber = PlayerInformation->EquippedCards.PlayerCards[i].SymbolType;*/
+		//GetCardBySymbolAndNumber()
+	}
+
+
+	
+	// 사용된 대상의 아이템 확인
+	// 말을 타고 있으면 사거리 + 1
+
+	// 카드를 사용한 사람의 캐릭터 확인
+	// 캐릭터가 RoseDoolan이면 거리 -1
+	if (PlayerInformation->CharacterCardType == ECharacterType::RoseDoolan)
+	{
+		Distance -= 1;
+	}
+	// 사용된 대상의 캐릭터 확인
+	// 캐릭터가 PaulRegret이면 거리 +1
+	if (ToPlayerInformation->CharacterCardType == ECharacterType::PaulRegret)
+	{
+		Distance += 1;
+	}
+	
+
+	
+	/*UseCard 를 사용하기 위해 필요한 정보
+	const uint32 UniqueID, // 사용한 사람의 아이디
+	const FPlayerCardSymbol& Card, // 카드 정보
+	const EActiveType ActiveType, // 액티브 타입
+	const EPassiveType PassiveType, // 패시브 타입
+	const ECharacterType CharacterType, // 캐릭터 타입
+	const uint32 ToUniqueID, // 대상
+	const ECharacterType ToCharacterType // 대상 캐릭터 타입*/
+
+	
 	// 플레이어 컬렉션에서 상대 플레이어와 나의 정보를 가져와서 거리 체크
 	//거리체크 후 공격을 못하는 상황이면 플레이어에게 못한다는 알림
 	//_Collection 에서 상대 플레이어를 가져와서 
 	//공격이 가능하면 TryApplyEffect(_UseCard, 상대플레이어 정보);
+
+	
+
 }
 
 // 적용 후 컨트롤러에 호출 전달 & 컨틀
