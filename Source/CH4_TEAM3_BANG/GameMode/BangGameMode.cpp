@@ -428,13 +428,6 @@ void ABangGameMode::SetUserHP()
 	}
 }
 
-void ABangGameMode::GetPlayerControllerID()
-{
-	for (auto PlayerControl : PlayerControllers)
-	{
-		PlayerControl->GetUniqueID();
-	}
-}
 
 void ABangGameMode::AdvancePlayerTurn()
 {
@@ -525,3 +518,36 @@ void ABangGameMode::SpawnPlayerBlue()
 {
     SpawnPlayers();
 }
+
+void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			if (PC->GetUniqueID() == BangPlayerControllerID)
+			{
+				PC->Client_SetInputEnabled(true);
+				PC->Client_OpenCamera();
+			}
+			else
+			{
+				PC->Client_SetInputEnabled(false);
+				PC->Client_OpenCamera();
+			}
+
+		}
+	}
+}
+
+//void ABangGameMode::CloseCamera()
+//{
+//	// 모든 PlayerController에 대해 Main 카메라로 복귀하도록 RPC 호출
+//	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+//	{
+//		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+//		{
+//			PC->Client_SwitchToCameraByTag(PC->GetPawn(), MainCameraTag, CameraBlendTime);
+//		}
+//	}
+//}

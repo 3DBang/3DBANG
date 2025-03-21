@@ -163,7 +163,7 @@ private:
 	UFUNCTION(BlueprintCallable)
 	void SetUserHP();
 
-	UFUNCTION(BlueprintCallable)
-	void GetPlayerControllerID();
-
+public:
+	UFUNCTION()
+	void OpenCamera(uint32 BangPlayerStateID);
 };

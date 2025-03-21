@@ -5,6 +5,7 @@
 #include "PlayerState/BangPlayerState.h"
 #include "BangCharacter/BangCharacter.h"
 #include "CharacterUIActor/BangUIActor.h"
+#include "Camera/CameraComponent.h" 
 #include "Engine/Engine.h"
 
 ABangPlayerController::ABangPlayerController()
@@ -167,8 +168,8 @@ void ABangPlayerController::MouseClicked()
 				if (OtherPlayer->GetPlayerState())
 				{
 					PlayerStateID = OtherPlayer->GetPlayerState()->GetPlayerId();
-					ABangPlayerState* PlayerState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
-					if (PlayerState)
+					ABangPlayerState* PlayerBangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
+					if (PlayerBangState)
 					{
 						//Get Information for UI
 						//And Open UI
@@ -186,6 +187,34 @@ void ABangPlayerController::MouseClicked()
 		//CloseHuD 
 	}
 	CurrentMouseCursor = EMouseCursor::Default;
+}
+
+void ABangPlayerController::Client_OpenCamera_Implementation()
+{
+
+}
+void ABangPlayerController::Client_SetInputEnabled_Implementation(bool IsAttacker)
+{
+	if (!HasAuthority()) 
+	{
+		bEnableClickEvents = IsAttacker;
+		bEnableMouseOverEvents = IsAttacker;
+		SetIgnoreMoveInput(IsAttacker);
+	}
+}
+
+void ABangPlayerController::Server_OpenCamera_Implementation()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	uint32 BangUID= GetUniqueID();
+	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (GM)
+	{
+		GM->OpenCamera(BangUID);
+	}
 }
 
 //void ABangPlayerController::HandleInputClick()
@@ -220,4 +249,17 @@ void ABangPlayerController::OnPossess(APawn* InPawn)
 	{
 		BangPlayers->OnMouseClicked.AddDynamic(this, &ABangPlayerController::HandleInputClick);
 	}*/
+}
+UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const FName& Tag)
+{
+	TArray<UCameraComponent*> BangCameras;
+	Player12->GetComponents<UCameraComponent>(BangCameras);
+	for (UCameraComponent* Cam : BangCameras)
+	{
+		if (Cam && Cam->ComponentHasTag(Tag))
+		{
+			return Cam;
+		}
+	}
+	return nullptr;
 }
