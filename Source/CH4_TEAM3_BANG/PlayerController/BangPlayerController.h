@@ -62,7 +62,7 @@ public:
 	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
 
 	UFUNCTION(Server, Reliable)
-	void Server_UseCard(EActiveType SelectedCard, uint32 TargetPlayerID);
+	void Server_UseCard(EActiveType SelectedActiveCard, EPassiveType SelectedPassiveCard, uint32 TargetPlayerID);
 
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
@@ -73,7 +73,7 @@ public:
 	void Client_SelectCard();
 	
 	UFUNCTION(Client, Reliable)
-	void Client_HandleCardSelection(EActiveType SelectedCard);
+	void Client_HandleCardSelection(EActiveType SelectedActiveCard, EPassiveType SelectedPassiveCard);
 
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);

@@ -59,34 +59,48 @@ void ABangPlayerController::Client_SelectCard_Implementation()
     EPassiveType SelectedPassiveCard = EPassiveType::None;
 
     // 카드 선택 후 처리 (별도 함수 호출)
-    Client_HandleCardSelection(SelectedActiveCard);
+    Client_HandleCardSelection(SelectedActiveCard, SelectedPassiveCard);
 }
 
 
 
-void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveType SelectedCard)
+void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveType SelectedActiveCard, EPassiveType SelectedPassiveCard)
 {
     uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
 
-    bool NeedsTarget = (SelectedCard == EActiveType::Bang ||
-        SelectedCard == EActiveType::Robbery ||
-        SelectedCard == EActiveType::CatBalou ||
-        SelectedCard == EActiveType::Duel ||
-        SelectedCard == EActiveType::Jail);
+    //패시브 카드라면 상대를 지목할 필요 없음
+    if (SelectedPassiveCard != EPassiveType::None)
+    {
+        // 패시브 카드는 그냥 사용
+        //Server_UseCard(SelectedActiveCard, TargetPlayerID);
+        return;
+    }
+
+    //특정 Active 카드들만 대상 플레이어가 필요함.
+    bool NeedsTarget = (SelectedActiveCard == EActiveType::Bang ||
+        SelectedActiveCard == EActiveType::Robbery ||
+        SelectedActiveCard == EActiveType::CatBalou ||
+        SelectedActiveCard == EActiveType::Duel ||
+        SelectedActiveCard == EActiveType::Jail);
 
     if (NeedsTarget)
     {
+        // 대상 선택 UI 표시 (또는 레이 트레이싱 등)
         Client_SelectTarget();
-        // 공격할 대상 선택 (레이 트레이싱 등)
-        TargetPlayerID = 57;//SelectTarget();
+        UE_LOG(LogTemp, Log, TEXT("TargetSelect"));
+        //테스트용 임시 타겟 (실제는 GetSelectedTargetID() 등으로 구현)
+        TargetPlayerID = 57;
+
         if (TargetPlayerID == 0)
         {
             UE_LOG(LogTemp, Warning, TEXT("대상이 필요한 카드인데 선택되지 않음!"));
             return;
         }
     }
-    Server_UseCard(SelectedCard, TargetPlayerID);
+    //서버에 카드 사용 요청 보내기
+    Server_UseCard(SelectedActiveCard, SelectedPassiveCard, TargetPlayerID);
 }
+
 
 void ABangPlayerController::Client_SelectTarget_Implementation()
 {
@@ -98,7 +112,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation()
     }
 }
 
-void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelectedCard, uint32 TargetPlayerID)
+void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelecteSelectedActiveCard, EPassiveType SelectedPassiveCard, uint32 TargetPlayerID)
 {
     ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
     if (BangPlayerState)
