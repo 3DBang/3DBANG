@@ -14,10 +14,10 @@ class CH4_TEAM3_BANG_API UBangInGameChattingWidget : public UUserWidget
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	UScrollBox* ChatScrollBox;
+	TObjectPtr<UScrollBox> ChatScrollBox;
 
 	UPROPERTY(meta = (BindWidget))
-	UEditableText* ChatTextField;
+	TObjectPtr<UEditableText> ChatTextField;
 
 	UFUNCTION(BlueprintCallable)
 	void AddMessage(const FText& Message, const FSlateColor& Color);

@@ -18,6 +18,11 @@ void ABangPlayerHUD::BeginPlay()
 		{
 			ChattingWidgetInstance->AddToViewport();
 		}
+		UE_LOG(LogTemp, Error, TEXT("ChattingWidgetClass"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ChattingWidgetClass NULL"));
 	}
 
 	// 플레이어 목록 노출
@@ -28,11 +33,10 @@ void ABangPlayerHUD::BeginPlay()
 		{
 			PlayerListWidgetInstance->AddToViewport();
 		}
+		UE_LOG(LogTemp, Error, TEXT("PlayerListWidgetClass"));
 	}
-}
-
-TObjectPtr<UBangInGameChattingWidget> ABangPlayerHUD::GetChattingWidget() const
-{
-	if (!ChattingWidgetInstance) return nullptr;
-	return ChattingWidgetInstance;
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerListWidgetClass NULL"));
+	}
 }
