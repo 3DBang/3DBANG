@@ -9,6 +9,8 @@
 
 class UInputMappingContext;
 class UInputAction;
+class ABangPlayerState;
+class ABangCharacter;
 enum class EJobType : uint8;
 enum class ECharacterType : uint8;
 class ABangGameMode;
@@ -78,6 +80,29 @@ public:
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
 
+
+	void Client_SetControllerRotation_Implementation(FRotator NewRotation);
+
+	//void OnPossess(APawn* InPawn) override;
+
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void UpdatePlayerUI(FName& NewText);
+
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void UpdatePlayerHP(int32 NewHP);
+
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void SetInitializeHP(int32 NewHP);
+
+///////////////////////////
+//// 원명 추가 
+//////////////////////////
+public:
+	virtual void Tick(float DeltaTime) override;
+private:
+	TObjectPtr<ABangCharacter> OtherPlayers;
+
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
 };
+
