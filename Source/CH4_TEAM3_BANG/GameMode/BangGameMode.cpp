@@ -145,18 +145,24 @@ void ABangGameMode::StartGame()
 	AdvanceGameTurn();
 }
 
-void ABangGameMode::LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsToUsed) const
+void ABangGameMode::LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType) const
 {
 	FSingleCard SingleCard;
 	//CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, true, SingleCard);
 
-	if (IsToUsed)
+	switch (DeckType)
 	{
-		CardManager->ReorderUsedCards(SingleCard);
-	}
-	else
-	{
-		CardManager->ReorderAvailCards(SingleCard);
+	case EDeckType::HandedCard: break;
+	case EDeckType::UsedCards:
+		{
+			CardManager->ReorderUsedCards(SingleCard); // 건내준 카드를 다시 사용된 카드 덱에 넣는다
+			break;
+		}
+	case EDeckType::AvailCards:
+		{
+			CardManager->ReorderAvailCards(SingleCard); // 건내준 카드를 다시 사용가능한 카드 덱에 넣는다
+			break;
+		}
 	}
 }
 
@@ -208,9 +214,13 @@ void ABangGameMode::AdvanceGameTurn()
 				FCardCollection CardList;
 				CardManager->HandCards(2, CardList);
 				// PlayerState 플레이어 스테이트한테 카드 전달
+				FBangPlayerStateCollection CurrentPlayerState;
+				GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
+				//CurrentPlayerState->AddCards(CardList);
 				break;
 			}
-		}	
+		}
+		
 		// 플레이어 한테 응답 받고 아래 로직 실행
 		CurrentPlayerTurnState = EPlayerTurnState::UseCard;
 		AdvanceGameTurn();
@@ -277,16 +287,6 @@ void ABangGameMode::EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacte
 {
 	CurrentPlayerTurnState = EPlayerTurnState::LooseCard;
 	AdvanceGameTurn();
-}
-
-void ABangGameMode::LooseCard(const FCardCollection CardList)
-{
-	if (CardList.CardList.Num() == 0) return;
-
-	for (const FSingleCard Card : CardList.CardList)
-	{
-		CardManager->ReorderUsedCards(Card);
-	}
 }
 
 void ABangGameMode::LooseSidKetchumCard(const FCardCollection CardList)
@@ -385,34 +385,42 @@ void ABangGameMode::UseCard(
 	bool bIsAbleToUse = false;
 	// 플레이어가 사용하는 카드가 타당한지 검사 후 가능여부 리턴
 
-	if (CurrentPlayerTurnState == EPlayerTurnState::UseCard)
+	switch (CharacterType)
 	{
-		switch (Players.Players[PlayerIndex].CharacterCardType)
-		{
-		case ECharacterType::Jourdonnais:
-			{
-				// 뱅의 표적이 될때마다 카드펼치기를 할 수 있으며 하트가 나오면 총알이 빗나감
-				break;
-			}
-		case ECharacterType::JesseJones:
-			{
-				// 카드 가저오기 단계에서 첫번쨰 카드를 다른사람에게서 가져올 수 있다.
-				break;
-			}
-		case ECharacterType::SlabTheKiller:
-			{
-				// 본인이 쏜 뱅은 다른사람이 빗나감 두장으로 막아야함 PS
-				break;
-			}
-		case ECharacterType::RoseDoolan:
-			{
-				// 다른사람을 볼때 거리 1이 가까워 진다. PS
-				break;
-			}
-		default:
-			break;
-		}	
-		// 플레이어 한테 응답 받고 아래 로직 실행
+	case ECharacterType::None:
+		break;
+	case ECharacterType::PaulRegret:
+		break;
+	case ECharacterType::BartCassidy:
+		break;
+	case ECharacterType::CalamityJanet:
+		break;
+	case ECharacterType::Jourdonnais:
+		break;
+	case ECharacterType::PedroRamirez:
+		break;
+	case ECharacterType::BlackJack:
+		break;
+	case ECharacterType::JesseJones:
+		break;
+	case ECharacterType::SuzyLafayette:
+		break;
+	case ECharacterType::SidKetchum:
+		break;
+	case ECharacterType::LuckyDuke:
+		break;
+	case ECharacterType::SlabTheKiller:
+		break;
+	case ECharacterType::ElGringo:
+		break;
+	case ECharacterType::RoseDoolan:
+		break;
+	case ECharacterType::WillyTheKid:
+		break;
+	case ECharacterType::VultureSam:
+		break;
+	case ECharacterType::KitCarlson:
+		break;
 	}
 
 	switch (ActiveType)
@@ -420,6 +428,7 @@ void ABangGameMode::UseCard(
 	case EActiveType::None:
 		break;
 	case EActiveType::Bang:
+		
 		break;
 	case EActiveType::Missed:
 		break;
