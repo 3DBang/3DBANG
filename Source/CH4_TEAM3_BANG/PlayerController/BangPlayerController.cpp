@@ -5,6 +5,7 @@
 #include "PlayerState/BangPlayerState.h"
 #include "BangCharacter/BangCharacter.h"
 #include "CharacterUIActor/BangUIActor.h"
+#include "Engine/Engine.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -26,14 +27,14 @@ void ABangPlayerController::BeginPlay()
 		}
 	}
 	//여기에서 HasAuthoriy를 사용하면 서버이자 클라이언트는 Tick이 활성화가 되지 않는다
-	if (IsLocalController())
+	/*if (IsLocalController())
 	{
 		SetActorTickEnabled(true);
 	}
 	else
 	{
 		SetActorTickEnabled(false);
-	}
+	}*/
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	InputMode.SetWidgetToFocus(nullptr);
@@ -144,6 +145,11 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveTyp
 void ABangPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+}
+
+void ABangPlayerController::MouseClicked()
+{
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
 	{
@@ -153,15 +159,39 @@ void ABangPlayerController::Tick(float DeltaTime)
 		{
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
-				OtherPlayers = OtherPlayer;
+				//OtherPlayers = OtherPlayer;
 				CurrentMouseCursor = EMouseCursor::Hand;
-				return;
+				/**Test*/
+				uint32 PlayerStateID = 0;
+				uint32 TestTemp = 0;
+				if (OtherPlayer->GetPlayerState())
+				{
+					PlayerStateID = OtherPlayer->GetPlayerState()->GetPlayerId();
+					ABangPlayerState* PlayerState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
+					if (PlayerState)
+					{
+						//Get Information for UI
+						//And Open UI
+					}
+				}
 			}
 		}
 	}
-	OtherPlayers = nullptr;
+
+	//플레이어 스테이트에 보내야한다.
+	//OtherPlayers = nullptr;
+
+	else
+	{
+		//CloseHuD 
+	}
 	CurrentMouseCursor = EMouseCursor::Default;
 }
+
+//void ABangPlayerController::HandleInputClick()
+//{
+//	MouseClicked();
+//}
 
 void ABangPlayerController::Client_SelectTarget_Implementation()
 {
@@ -182,3 +212,12 @@ void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelectedCa
     }
 }
 
+void ABangPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	/*if (ABangCharacter* BangPlayers = Cast<ABangCharacter>(InPawn))
+	{
+		BangPlayers->OnMouseClicked.AddDynamic(this, &ABangPlayerController::HandleInputClick);
+	}*/
+}

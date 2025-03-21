@@ -12,6 +12,7 @@ class UCameraComponent;
 class ABangUIActor;
 class UTextRenderComponent;
 class ABangHPActor;
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMouseClicked);
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangCharacter : public ACharacter
@@ -49,6 +50,9 @@ public:
 
 	UFUNCTION()
 	void Click(const FInputActionValue& Value);
+
+	/*UPROPERTY(BlueprintAssignable)
+	FOnMouseClicked OnMouseClicked;*/
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))

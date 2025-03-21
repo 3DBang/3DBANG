@@ -83,7 +83,7 @@ public:
 
 	void Client_SetControllerRotation_Implementation(FRotator NewRotation);
 
-	//void OnPossess(APawn* InPawn) override;
+	void OnPossess(APawn* InPawn) override;
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void UpdatePlayerUI(FName& NewText);
@@ -104,5 +104,15 @@ private:
 
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
+	//id의 값을 PlayerState ->
+
+public:
+	void MouseClicked();
+
+	/*UFUNCTION()
+	void HandleInputClick();*/
+public:
+	FName TestPlayerController;
+
 };
 

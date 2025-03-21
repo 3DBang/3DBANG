@@ -190,8 +190,11 @@ void ABangCharacter::Zoom(const FInputActionValue& Value)
 
 void ABangCharacter::Click(const FInputActionValue& Value)
 {
-	//How Can I GET Users Controller?
-	//Server Player?
+	//OnMouseClicked.Broadcast();
+	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
+	{
+		PC->MouseClicked();
+	}
 }
 /**히든 처리*/
 void ABangCharacter::UpdateHPActors(int32 NewHP)

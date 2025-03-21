@@ -162,4 +162,8 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	void SetUserHP();
+
+	UFUNCTION(BlueprintCallable)
+	void GetPlayerControllerID();
+
 };

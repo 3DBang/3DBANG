@@ -428,6 +428,14 @@ void ABangGameMode::SetUserHP()
 	}
 }
 
+void ABangGameMode::GetPlayerControllerID()
+{
+	for (auto PlayerControl : PlayerControllers)
+	{
+		PlayerControl->GetUniqueID();
+	}
+}
+
 void ABangGameMode::AdvancePlayerTurn()
 {
 	PlayerIndex++;
