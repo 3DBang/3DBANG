@@ -94,10 +94,10 @@ public:
 	void UseCard(const FPlayerCardSymbol _UseCard_,const uint32 _ToUniqueID_, const EActiveType ActiveType, const EPassiveType PassiveType);
 
 	//턴이 끝날때 부를 함수
-	void EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+	void EndTurn(const uint32 PlayerUniqueID, ECharacterType PlayerCharacter);
 	
 	UFUNCTION(Client, Reliable, Category = "Player State")
-	void EndTurnReturn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+	void EndTurnReturn(const uint32 PlayerUniqueID, ECharacterType PlayerCharacter);
 
 	// 턴이 끝나고 카드를 버릴때 호출할 함수
 	void EndTurnRemoveCards(FPlayerCardCollection& DrawCards);

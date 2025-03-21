@@ -183,7 +183,7 @@ void ABangPlayerState::UseCard(const FPlayerCardSymbol UseCard,const uint32 _ToU
 	
 }
 
-void ABangPlayerState::EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter)
+void ABangPlayerState::EndTurn(const uint32 PlayerUniqueID, ECharacterType PlayerCharacter)
 {
 	//내 체력보다 카드가 많으면 카드를 버리기
 	if(PlayerInfo.MyCards.PlayerCards.Num() > PlayerInfo.CurrentHealth)
@@ -192,19 +192,33 @@ void ABangPlayerState::EndTurn(const uint32 UniqueID, ECharacterType PlayerChara
 	}
 	else
 	{
-		
+		//아니면 턴 엔드
+		ABangGameMode* BangGameMode = Cast<ABangGameMode>(GetWorld()->GetAuthGameMode());
+		BangGameMode->EndTurn(PlayerUniqueID, PlayerCharacter);
 	}
 }
 
-void ABangPlayerState::EndTurnReturn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter)
+void ABangPlayerState::EndTurnReturn_Implementation(const uint32 PlayerUniqueID, ECharacterType PlayerCharacter)
 {
 }
 
 void ABangPlayerState::EndTurnRemoveCards(FPlayerCardCollection& DrawCards)
 {
 	//카드를 제거
-	//PlayerInfo.MyCards.PlayerCards.;
 	ABangGameMode* BangGameMode = Cast<ABangGameMode>(GetWorld()->GetAuthGameMode());
+
+	// 먼저 플레이어가 가지고 있는 카드와 제거할 카드를 확인
+	if(PlayerInfo.MyCards.PlayerCards.Num() <= 0 || DrawCards.PlayerCards.Num() <= 0)
+	{
+		return; // 카드가 없으면 제거할 필요 없음
+	}
+
+	// DrawCards의 각 카드에 대해 플레이어 카드에서 제거
+	for (const FPlayerCardSymbol& CardToRemove : DrawCards.PlayerCards)
+	{
+		PlayerInfo.MyCards.PlayerCards.RemoveSingle(CardToRemove);
+	}
+	
 	if (!BangGameMode)
 	{
 		return;
@@ -212,7 +226,7 @@ void ABangPlayerState::EndTurnRemoveCards(FPlayerCardCollection& DrawCards)
 	
 	for(FPlayerCardSymbol PlayerCard : DrawCards.PlayerCards)
 	{
-		//BangGameMode->LooseCardFromHanded(PlayerCard.SymbolType, PlayerCard.SymbolNumber, true);
+		BangGameMode->LooseCardFromHanded(PlayerCard.SymbolType, PlayerCard.SymbolNumber, EDeckType ::UsedCards);
 	}
 }
 
