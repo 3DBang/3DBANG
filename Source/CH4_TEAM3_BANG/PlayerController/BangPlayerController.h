@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -84,15 +82,6 @@ public:
 	void Client_SetControllerRotation_Implementation(FRotator NewRotation);
 
 	//void OnPossess(APawn* InPawn) override;
-
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	void UpdatePlayerUI(FName& NewText);
-
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	void UpdatePlayerHP(int32 NewHP);
-
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	void SetInitializeHP(int32 NewHP);
 
 ///////////////////////////
 //// 원명 추가 

@@ -424,7 +424,7 @@ void ABangGameMode::SetUserHP()
 {
 	if (ABangPlayerController* PlayerController = Cast<ABangPlayerController>(PlayerControllers[1]))
 	{
-		PlayerController->SetInitializeHP(5);
+		//PlayerController->SetInitializeHP(5);
 	}
 }
 

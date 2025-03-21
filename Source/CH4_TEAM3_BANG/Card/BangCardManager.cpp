@@ -82,6 +82,23 @@ void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, co
 	}
 }
 
+// 카드 심볼과 번호로 카드 찾기
+void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& FoundCard_)
+{
+	if (!CardData) return;
+
+	for (const TObjectPtr<UBangCardBase> Card : CardData->Cards)
+	{
+		if (!Card) return;
+
+		if (Card->SymbolType == SymbolType && Card->SymbolNumber == SymbolNumber)
+		{
+			FoundCard_.Card = Card;
+			break;
+		}
+	}
+}
+
 // 건내준 카드를 다시 사용된 카드 덱에 넣는다
 void UBangCardManager::ReorderUsedCards(const FSingleCard HandedCard)
 {
