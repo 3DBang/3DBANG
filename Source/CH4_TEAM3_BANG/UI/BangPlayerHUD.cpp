@@ -16,13 +16,8 @@ void ABangPlayerHUD::BeginPlay()
 		ChattingWidgetInstance = CreateWidget<UBangInGameChattingWidget>(GetWorld(), ChattingWidgetClass);
 		if (ChattingWidgetInstance)
 		{
-			ChattingWidgetInstance->AddToViewport();
+			//ChattingWidgetInstance->AddToViewport();
 		}
-		UE_LOG(LogTemp, Error, TEXT("ChattingWidgetClass"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("ChattingWidgetClass NULL"));
 	}
 
 	// 플레이어 목록 노출
@@ -31,12 +26,7 @@ void ABangPlayerHUD::BeginPlay()
 		PlayerListWidgetInstance = CreateWidget<UBangInGamePlayerListWidget>(GetWorld(), PlayerListWidgetClass);
 		if (PlayerListWidgetInstance)
 		{
-			PlayerListWidgetInstance->AddToViewport();
+			//PlayerListWidgetInstance->AddToViewport();
 		}
-		UE_LOG(LogTemp, Error, TEXT("PlayerListWidgetClass"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("PlayerListWidgetClass NULL"));
 	}
 }

@@ -53,10 +53,7 @@ public:
 	
 	virtual void BeginPlay() override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
-
-	// 로비 플레이어 등록
-	UFUNCTION()
-	void AddPlayer(const uint32& UniqueID);
+	
 	// 로비 플레이어 삭제
 	UFUNCTION()
 	void RemovePlayer(const uint32& UniqueID);
@@ -134,6 +131,9 @@ private:
 	UPROPERTY()
 	EPlayerTurnState CurrentPlayerTurnState;
 
+	// 로비 플레이어 등록
+	UFUNCTION()
+	void AddPlayer(const uint32& UniqueID);
 	// 플레이어 자리 배치
 	UFUNCTION()
 	void ArrangeSeats();
