@@ -18,13 +18,15 @@ ABangGameMode::ABangGameMode()
 	DefaultPawnClass = ABangCharacter::StaticClass();
 	PlayerControllerClass = ABangPlayerController::StaticClass();
     bDelayedStart = true;
+
+	CurrentGameState = EGameState::GameOver;
+	CurrentPlayerTurnState = EPlayerTurnState::DrawCard;
 }
 
 void ABangGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	CurrentPlayerTurnState = EPlayerTurnState::DrawCard;
 }
 
 void ABangGameMode::GetPlayerStatesByUniqueID(const int32& UniqueID, FBangPlayerStateCollection& PlayerState_)
@@ -62,6 +64,27 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 	PlayerControllers.Add(NewPlayer);
+
+	const FString MapName = GetWorld()->GetMapName();
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.f,
+			FColor::Yellow,
+			FString::Printf(TEXT("ABangGameMode::PostLogin [%p][%s]"), NewPlayer, *MapName)
+		);
+	}
+	
+	if (MapName.Contains("StageMap"))
+	{
+		for (const TObjectPtr<APlayerController> PlayerController : PlayerControllers)
+		{
+			AddPlayer(PlayerController->GetUniqueID());
+		}
+	}
+	
 	//게임 시작버튼을 누르면 그때 Player위치 조정함수 사용
 	//현재는 테스트용 입니다 
 	//SpawnPlayers();
@@ -74,6 +97,8 @@ void ABangGameMode::AddPlayer(const uint32& UniqueID)
 	FPlayerInformation PlayerInfo;
 	PlayerInfo.PlayerUniqueID = UniqueID;
 	LobbyPlayers.Players.Add(PlayerInfo);
+
+	UE_LOG(LogTemp, Warning, TEXT("Player ID: %u"), UniqueID);
 }
 
 void ABangGameMode::RemovePlayer(const uint32& UniqueID)

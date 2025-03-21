@@ -6,25 +6,30 @@
 #include "BangCharacter/BangCharacter.h"
 
 #include "CharacterUIActor/BangUIActor.h"
-
-//Team_State
 #include "Data/BangPlayerStatData.h"
 #include "UI/BangInGameChattingWidget.h"
 #include "UI/BangInGamePlayerListWidget.h"
 #include "UI/BangPlayerHUD.h"
 
 ABangPlayerController::ABangPlayerController()
-{
-	UE_LOG(LogTemp, Error, TEXT("플레이어 컨트롤러가 생성되었습니다 순서는 누가 더 빠른가요?"));
-}
+{}
 
 void ABangPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Error, TEXT("ABangPlayerController BeginPlay"));
+	bShowMouseCursor = true;
+
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
+
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
 
 	// 순서 변경 필요
+	/*
 	if (IsLocalController())
 	{
 		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
@@ -41,6 +46,7 @@ void ABangPlayerController::BeginPlay()
 			BangHUD->PlayerListWidgetInstance->UpdatePlayerList(PlayerStats);
 		}
 	}
+	*/
 	// 순서 변경 필요
 	
 	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
