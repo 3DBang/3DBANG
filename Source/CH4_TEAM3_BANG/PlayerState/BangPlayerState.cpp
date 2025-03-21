@@ -3,6 +3,7 @@
 #include "Card/BangCardManager.h"
 #include "Card/ActiveCard/BangActiveCard.h"
 #include "Card/BaseCard/BangCardBase.h"
+#include "Card/PassiveCard/BangPassiveCard.h"
 #include "Net/UnrealNetwork.h"
 
 ABangPlayerState::ABangPlayerState(): PlayerStat()
@@ -68,98 +69,165 @@ void ABangPlayerState::AddDrawnCards(FCardCollection& DrawCards)
 	}
 }
 
-void ABangPlayerState::TryApplyEffect(TObjectPtr<UBangCardBase> _UseCard)
+//어떤 카드 때문에 응답을 받았는지 전해주기 찬효님과 이야기 해야함
+
+//거리 체크
+void ABangPlayerState::Calculate_Distance(TObjectPtr<UBangCardBase> _UseCard, FPlayerCollection& _Collection)
+{
+	// 플레이어 컬렉션에서 상대 플레이어와 나의 정보를 가져와서 거리 체크
+	//거리체크 후 공격을 못하는 상황이면 플레이어에게 못한다는 알림
+	//_Collection 에서 상대 플레이어를 가져와서 
+	//공격이 가능하면 TryApplyEffect(_UseCard, 상대플레이어 정보);
+}
+
+// 적용 후 컨트롤러에 호출 전달 & 컨틀
+void ABangPlayerState::TryApplyEffect(TObjectPtr<UBangCardBase> _UseCard, FPlayerCollection& _Collection)
 {
 	
 	switch (_UseCard->CardType)
 	{
-	case ECardType::ActiveCard: //사용카드 예) 뱅, 결투, 맥주, 역마차, 
-		if(UBangActiveCard* Card= Cast<UBangActiveCard>(_UseCard))
-		{
-			// EActiveType::Bang -> 뱅 (공격 카드)
-			// EActiveType::Missed -> 빗나감 (방어 카드)
-			// EActiveType::Stagecoach -> 역마차 (카드 2장 뽑기)
-			// EActiveType::WellsFargoBank -> 웰스파고은행 (카드 3장 뽑기)
-			// EActiveType::Beer -> 맥주 (체력 회복)
-			// EActiveType::GatlingGun -> 기관총 (모든 플레이어 공격)
-			// EActiveType::Robbery -> 강탈 (카드 1장 훔치기)
-			// EActiveType::CatBalou -> 캣벌로우 (카드 1장 버리기)
-			// EActiveType::Saloon -> 주점 (모든 플레이어 체력 회복)
-			// EActiveType::Duel -> 결투 (뱅을 연속으로 내야 함)
-			// EActiveType::GeneralStore -> 잡화점 (모든 플레이어가 카드 선택)
-			// EActiveType::Indians -> 인디언 (모든 플레이어가 뱅 내야 함)
-			// EActiveType::Jail -> 감옥 (턴 제한)
-			// EActiveType::Dynamite -> 다이너마이트 (폭발 시 피해)
-			switch (Card->ActiveType)
+		case ECardType::ActiveCard: //사용카드 예) 뱅, 결투, 맥주, 역마차, 
+			if(UBangActiveCard* ActiveCard= Cast<UBangActiveCard>(_UseCard))
 			{
-			case EActiveType::Bang:
-				// 플레이어 능력 체크 (주르도네, 뱅빗)
-					//능력이 있으면 컨트롤러에 알림
-				// 내 카드더미에서 빗나감이 있는지 확인
-					//있으면 컨트롤러에 알림
-				// 체력 감소
-					//컨트롤러에 알림?
-				break;
+				switch (ActiveCard->ActiveType)
+				{
+				case EActiveType::Bang:	//뱅
+					// 상대 플레이어 능력 체크 (주르도네, 뱅빗)
+					// 능력이 있으면 컨트롤러에 알림
+					// 상대 플레이어 카드더미에서 빗나감이 있는지 확인
+					// 있으면 상대방 컨트롤러에 카드를 사용할지 알림
+					// 상대 플레이어 체력 감소
+					// 체력 감소 후 상대방 플레이어에서 UpdateHp 호출 하면 체력 업데이트
+					break;
+				case EActiveType::Missed: // 빗나감
+					break;
+				case EActiveType::Stagecoach:	//역마차
+					// 카드 두개 뽑기
+					// 바로 카드 매니저에서 가져오나?
+					break;
 
-			case EActiveType::Stagecoach:
-				//카드 두개 뽑기
-					//카드 두개 뽑기?
-				break;
+				case EActiveType::WellsFargoBank: //웰스파고은행
+					// 카드 세개 뽑기
+					// 카드 세개 뽑기?
+					break;
 
-			case EActiveType::WellsFargoBank:
-				//카드 두개 뽑기
-					//카드 세개 뽑기?
-				break;
+				case EActiveType::Beer: //맥주
+					// 사횽한 플레이어 정보에서 최대 체력을 확인
+					// 최대 체력이면 사용할 수 없다고 플레이어에게 알림
+					// 아니면 사횽한 플레이어 정보에서 체력 1회복
+					// 체력 회복 후 UpdateHp를 써서 플레이어에게 알림
+					break;
 
-			case EActiveType::Beer:
-				// 체력 1 회복
-				break;
+				case EActiveType::GatlingGun://개틀링건 ******** 이거 어케처리하지 빗나감 두개 어케하지
+					// 전체 플레이어에게 [빗나감]카드를 내라고 알림
+					// ******************뭔가 필요함 ***************************/
+											
+					// 없으면 체력을 1감소 시키고 UpdateHp
+					// 
+					break;
 
-			case EActiveType::GatlingGun:
-				// Implement logic for Gatling Gun card effect
-				break;
+				case EActiveType::Robbery://강도
+					// 타겟 플레이어의 카드가 없으면 사용할 수 없다고 플레이어에게 알림
+					// 사용을 했을때 가져올 카드를 선택하도록 UI를 띄워줘야 하나?
+					break;
 
-			case EActiveType::Robbery:
-				// Implement logic for Robbery card effect
-				break;
+				case EActiveType::CatBalou://캣블로우
+					// 타겟 플레이어의 카드가 없으면 사용할 수 없다고 플레이어에게 알림
+					// 사용을 했을때 제거할 카드를 선택하도록 UI를 띄워줘야 하나?
+					break;
 
-			case EActiveType::CatBalou:
-				// Implement logic for Cat Balou card effect
-				break;
+				case EActiveType::Saloon: //주점
+					// 모든 플레이어를 불러서 체력회복 이 가능한지 확인후 가능하면 체력회복 후 UpdateHp
+					break;
 
-			case EActiveType::Saloon:
-				// Implement logic for Saloon card effect
-				break;
+				case EActiveType::Duel: //결투
+					// 상대 플레이어에게 뱅이 있는지 확인
+					// 뱅이 있으면 뱅을 낼건지 플레이어에게 알림
+					break;
 
-			case EActiveType::Duel:
-				// Implement logic for Duel card effect
-				break;
+				case EActiveType::GeneralStore: //잡화점
+					// 카드 매니저에서 _Collection 크기만큼 카드를 뽑아서
+					// 카드를 낸 사람부터(현재 인덱스의 사람부터) 오른쪽으로 돌림
+					// 카드를 낸 사람에게 카드 선택을 알림
+					break;
 
-			case EActiveType::GeneralStore:
-				// Implement logic for General Store card effect
-				break;
+				case EActiveType::Indians: //인디언
+					// _Collection를 통해서 모든 플레이어를 가져와서 
+					// 모든 플레이어에게 카드가 있는지 확인
+					// 카드가 있으면 뱅을 내라고 알림
+					break;
 
-			case EActiveType::Indians:
-				// Implement logic for Indians card effect
-				break;
+				case EActiveType::Jail:		//감옥	//생각해보니 아래 있는것들 액티브 취급이넹  장착카드를 뭔가 바꿔야 할거 같은데 음..
+					// 상대 플레이어의 장착 카드에 감옥을 추가
+					// 이 감옥은 드로우 턴 전에 탈출 할수 있는지 확인
+					break;
 
-			case EActiveType::Jail:
-				// Implement logic for Jail card effect
-				break;
+				case EActiveType::Dynamite: // 다이너마이트
+					// 자신의 장착 카드에 다이너 마이트 추가
+					// 트로우 턴 전에 폭발을 확인하고 다음 플레이어에게 전달
+					break;
 
-			case EActiveType::Dynamite:
-				// Implement logic for Dynamite card effect
-				break;
-
-			default:
-				break;
+				default:
+					break;
+				}
 			}
-		}
-		break;
+			break;
 
-	case ECardType::PassiveCard: //장비카드
-		//현재 장착된 장비인지 확인
-		break;
+		case ECardType::PassiveCard: //장비카드
+			if(UBangPassiveCard* PassiveCard= Cast<UBangPassiveCard>(_UseCard))
+			{
+				switch (PassiveCard->PassiveType)
+				{
+					case EPassiveType::Barrel: // 술통
+						// 장비칸에 술통이 있는지 확인
+						//있으면 플레이어에게 있다고 알림
+						//없으면 장착을 하고 장착했다는걸 플레이어에게 알림
+						break;
+					case EPassiveType::Scope: // 조준경
+						// 장비칸에 조준경이 있는지 확인
+						//있으면 플레이어에게 있다고 알림
+						//없으면 장착을 하고 장착했다는걸 플레이어에게 알림
+						break;
+					case EPassiveType::Mustang: // 야생마
+						// 장비칸에 조준경이 있는지 확인
+						//있으면 플레이어에게 있다고 알림
+						//없으면 장착을 하고 장착했다는걸 플레이어에게 알림
+						break;
+					case EPassiveType::Schofield: // 스코필드
+						// 장비칸에 조준경이 있는지 확인
+						// 있으면 플레이어에게 있다고 알림
+						// 없으면 장착을 하고 장착했다는걸 플레이어에게 알림
+						break;
+					case EPassiveType::Volcanic: // 볼캐닉
+						// 장비칸에 볼캐닉이 있는지 확인
+						// 있으면 플레이어에게 있다고 알림
+						// 없으면 장착을 한 무기카드를 제거 후 볼캐닉을 장착 후 플레이어에게 알림
+						break;
+					case EPassiveType::Remington: // 레밍턴
+						// 사정거리가 3으로 설정
+						// 장비칸에 레밍턴이 있는지 확인
+						// 있으면 플레이어에게 있다고 알림
+						// 없으면 장착을 한 무기카드를 제거 후 레밍턴을 장착 후 플레이어에게 알림
+						break;
+					case EPassiveType::Carbine: // 카빈
+						// 사정거리가 4로 설정
+						// 장비칸에 레밍턴이 있는지 확인
+						// 있으면 플레이어에게 있다고 알림
+						// 없으면 장착을 한 무기카드를 제거 후 카빈을 장착 후 플레이어에게 알림
+						break;
+					case EPassiveType::Winchester: // 윈체스터
+						// 사정거리가 5로 설정
+						// 장비칸에 윈체스터가 있는지 확인
+						// 있으면 플레이어에게 있다고 알림
+						// 없으면 장착을 한 무기카드를 제거 후 윈체스터을 장착 후 플레이어에게 알림
+						break;
+					default:
+						// 기본 처리
+						break;
+				}	
+			}
+			break;
+		default: ;
 	}
 	
 }
