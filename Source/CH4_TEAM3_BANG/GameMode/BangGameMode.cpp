@@ -87,7 +87,6 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
 		ToShufflePlayers.Players.Swap(i, RandomIndex);
 	}
 }
-
 void ABangGameMode::StartGame()
 {
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager || Players.Players.Num() < 4 || Players.Players.Num() > 7) return;

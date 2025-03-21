@@ -144,6 +144,7 @@ private:
 	// UniqueID로 PlayerController 받아오기
 	UFUNCTION()
 	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangPlayerControllerCollection& PlayerController_);
+
 	// 강탈카드사용 (Play Role)
 	UFUNCTION()
 	void UsePanicCard(const EActiveType ActiveType, const EPassiveType PassiveType);

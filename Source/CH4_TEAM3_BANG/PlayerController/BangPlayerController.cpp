@@ -1,5 +1,7 @@
 #include "BangPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "CharacterUIActor/BangUIActor.h"
+#include "BangCharacter/BangCharacter.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -51,4 +53,39 @@ void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator
 		SetControlRotation(NewRotation);
 	}
 	
+}
+
+void ABangPlayerController::UpdatePlayerUI(FName& NewText)
+{
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacter = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacter && BangCharacter->TextActor.IsValid())
+		{
+			BangCharacter->TextActor->SetDisplayText(NewText);
+		}
+	}
+}
+void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
+{
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacterHP = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacterHP)
+		{
+			BangCharacterHP->UpdateHPActors(NewHP);
+		}
+	}
+}
+
+void ABangPlayerController::SetInitializeHP(int32 NewHP)
+{
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacterHP = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacterHP)
+		{
+			BangCharacterHP->SetHP(NewHP);
+		}
+	}
 }
