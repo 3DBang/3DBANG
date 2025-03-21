@@ -1,8 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Card/CharacterCard/BangCharacterCard.h"
-#include "Card/JobCard/BangJobCard.h"
+#include "Card/BangCardManager.h"
 #include "PlayerInformation.generated.h"
 
 USTRUCT(BlueprintType)
@@ -33,8 +32,14 @@ struct FPlayerInformation
 	// 내가 볼 때 사거리 (내 기준)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	int32 RangeFromMe;
-	
 
+	//직업 타입
+	UPROPERTY()
+	EJobType JobCardType;
+
+	//캐릭터 타입
+	UPROPERTY()
+	ECharacterType CharacterCardType;
 	
 	//보유한 카드(사용가능한 카드)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
@@ -43,16 +48,6 @@ struct FPlayerInformation
 	//장착된 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FCardCollection EquippedCards;
-
-
-	UPROPERTY()
-	EJobType JobCardType;
-
-	UPROPERTY()
-	ECharacterType CharacterCardType;
-
-
-	
 };
 
 USTRUCT(BlueprintType)
