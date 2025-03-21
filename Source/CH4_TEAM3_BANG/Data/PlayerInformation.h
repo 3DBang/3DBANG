@@ -5,6 +5,37 @@
 #include "PlayerInformation.generated.h"
 
 USTRUCT(BlueprintType)
+struct FPlayerCardSymbol
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	ESymbolType SymbolType;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 SymbolNumber;
+
+	bool operator==(const FPlayerCardSymbol& Other) const
+	{
+		return SymbolType == Other.SymbolType && SymbolNumber == Other.SymbolNumber;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerCardCollection
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TArray<FPlayerCardSymbol> PlayerCards;
+
+	bool operator==(const FPlayerCardCollection& Other) const
+	{
+		return PlayerCards == Other.PlayerCards;
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FPlayerInformation
 {
 	GENERATED_BODY()
@@ -43,23 +74,25 @@ struct FPlayerInformation
 	
 	//보유한 카드(사용가능한 카드)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	FCardCollection MyCards;
+	FPlayerCardCollection MyCards;
 	
 	//장착된 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	FCardCollection EquippedCards;
-};
+	FPlayerCardCollection EquippedCards;
 
-USTRUCT(BlueprintType)
-struct FPlayerCardCollection
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	ESymbolType SymbolType;
-
-	UPROPERTY()
-	int32 SymbolNumber;
+	bool operator==(const FPlayerInformation& Other) const
+	{
+		return PlayerUniqueID    == Other.PlayerUniqueID &&
+			   PlayerName        == Other.PlayerName &&
+			   MaxHealth         == Other.MaxHealth &&
+			   CurrentHealth     == Other.CurrentHealth &&
+			   RangeToMe         == Other.RangeToMe &&
+			   RangeFromMe       == Other.RangeFromMe &&
+			   JobCardType       == Other.JobCardType &&
+			   CharacterCardType == Other.CharacterCardType &&
+			   MyCards           == Other.MyCards &&
+			   EquippedCards     == Other.EquippedCards;
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -69,4 +102,9 @@ struct FPlayerCollection
 	
 	UPROPERTY()
 	TArray<FPlayerInformation> Players;
+
+	bool operator==(const FPlayerCollection& Other) const
+	{
+		return Players == Other.Players;
+	}
 };
