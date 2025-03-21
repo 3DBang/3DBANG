@@ -54,6 +54,30 @@ void ABangPlayerController::BeginPlay()
 	}
 }
 
+void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
+{
+    if (HasAuthority())
+    {
+        ABangCharacter* BangCharacters = Cast<ABangCharacter>(GetPawn());
+        if (BangCharacters)
+        {
+            BangCharacters->UpdateHPActors(NewHP);
+        }
+    }
+
+}
+void ABangPlayerController::SetInitializeHP(int32 NewHP)
+{
+    if (HasAuthority())
+    {
+        ABangCharacter* BangCharacterHP = Cast<ABangCharacter>(GetPawn());
+        if (BangCharacterHP)
+        {
+            BangCharacterHP->SetHP(NewHP);
+        }
+    }
+}
+
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 {
 	
