@@ -3,6 +3,11 @@
 #include "Data/CardEnums.h"
 #include "GameMode/BangGameMode.h"
 #include "PlayerState/BangPlayerState.h"
+#include "BangCharacter/BangCharacter.h"
+#include "Data/BangPlayerStatData.h"
+#include "UI/BangInGameChattingWidget.h"
+#include "UI/BangInGamePlayerListWidget.h"
+#include "UI/BangPlayerHUD.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -12,6 +17,28 @@ ABangPlayerController::ABangPlayerController()
 void ABangPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UE_LOG(LogTemp, Error, TEXT("ABangPlayerController BeginPlay"));
+	
+	if (TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		if (const TObjectPtr<UBangInGameChattingWidget> ChatWidget = BangHUD->GetChattingWidget())
+		{
+			ChatWidget->AddMessage(FText::FromString("Hello from Controller!"), FSlateColor(FLinearColor::Green));
+		}
+		
+		if (const TObjectPtr<UBangInGamePlayerListWidget> ListWidget = BangHUD->GetPlayerListWidget())
+		{
+			TArray<UBangPlayerStatData*> PlayerStats;
+
+			const auto Stat = NewObject<UBangPlayerStatData>();
+			Stat->PlayerId = "PlayerOne";
+			Stat->bIsAlive = true;
+			PlayerStats.Add(Stat);
+			
+			ListWidget->UpdatePlayerList(PlayerStats);
+		}
+	}
 
 	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
 	{
@@ -108,23 +135,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveTyp
 void ABangPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	FHitResult HitResult;
-	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
-	{
-		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
-		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
-		if (HitChar && HitChar != GetPawn())
-		{
-			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
-			{
-				OtherPlayers = OtherPlayer;
-				CurrentMouseCursor = EMouseCursor::Hand;
-				return;
-			}
-		}
-	}
-	OtherPlayers = nullptr;
-	CurrentMouseCursor = EMouseCursor::Default;
+	
 }
 
 void ABangPlayerController::Client_SelectTarget_Implementation()
