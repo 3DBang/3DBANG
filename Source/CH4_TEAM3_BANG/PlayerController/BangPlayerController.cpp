@@ -191,7 +191,21 @@ void ABangPlayerController::MouseClicked()
 
 void ABangPlayerController::Client_OpenCamera_Implementation()
 {
+	if (!HasAuthority())
+	{
+		if (ABangCharacter* PC = Cast<ABangCharacter>(GetPawn()))
+		{
+			if (UCameraComponent* CamComp = FindCameraByTag(PC, FName("AtBang")))
+			{
+				const FTransform CamTransformBefore = CamComp->GetComponentTransform();
+				PC->FollowCamera->Deactivate();
+				PC->BangCamera->Activate();
 
+				constexpr float BlendTime = 5.0f;
+				SetViewTargetWithBlend(PC, BlendTime, EViewTargetBlendFunction::VTBlend_EaseInOut);
+			}
+		}
+	}
 }
 void ABangPlayerController::Client_SetInputEnabled_Implementation(bool IsAttacker)
 {

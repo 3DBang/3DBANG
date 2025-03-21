@@ -12,6 +12,7 @@ class UCameraComponent;
 class ABangUIActor;
 class UTextRenderComponent;
 class ABangHPActor;
+class APlayerStart;
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMouseClicked);
 
 UCLASS()
@@ -54,13 +55,15 @@ public:
 	/*UPROPERTY(BlueprintAssignable)
 	FOnMouseClicked OnMouseClicked;*/
 
-private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	USpringArmComponent* CameraBoom;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	UCameraComponent* FollowCamera;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	UCameraComponent* BangCamera;
 public:
 	
 	//BluePrint에서 BP_xxx를 사용하기 위한 Subclass
@@ -82,10 +85,11 @@ public:
 public:
 	void UpdateHPActors(int32 NewHP);
 	void SetHP(int32 NewHP);
+	FVector GetFlagLocation() const;
 private:
 	int32 HP = 5;
-
+	FVector FlagLocation = FVector::Zero();
 protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
+	APlayerStart* GetFlaggedActor();
 };

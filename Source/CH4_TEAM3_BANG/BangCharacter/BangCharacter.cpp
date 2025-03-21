@@ -13,6 +13,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerStart.h"
 
 // Sets default values
 ABangCharacter::ABangCharacter()
@@ -32,6 +33,12 @@ ABangCharacter::ABangCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); 
 	FollowCamera->bUsePawnControlRotation = false;
+	FollowCamera->ComponentTags.Add(FName("Main"));
+
+
+	BangCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("BangCamera"));
+	BangCamera->ComponentTags.Add(FName("AtBang"));
+
 	CameraBoom->bUsePawnControlRotation = true;
 	bUseControllerRotationPitch = false;
 	//값수정한것 
@@ -40,6 +47,8 @@ ABangCharacter::ABangCharacter()
 
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+
+
 }
 
 // Called when the game starts or when spawned
@@ -70,6 +79,18 @@ void ABangCharacter::BeginPlay()
 			UGameplayStatics::FinishSpawningActor(DeferredTextActor, RelativeTransform);
 			TextActor = DeferredTextActor;
 		}
+	}
+	if (APlayerStart* TempPlayerStart = GetFlaggedActor())
+	{
+		FVector TargetLocation = TempPlayerStart->GetActorLocation();
+		FlagLocation = TargetLocation;
+		TargetLocation.Z += 500.f;
+		BangCamera->SetWorldLocation(TargetLocation);
+
+		FVector DownVector = -TempPlayerStart->GetActorUpVector();
+		FRotator CameraRotation = DownVector.Rotation();
+		BangCamera->SetWorldRotation(CameraRotation);
+
 	}
 
 
@@ -241,6 +262,11 @@ void ABangCharacter::SetHP(int32 NewHP)
 	}
 }
 
+FVector ABangCharacter::GetFlagLocation() const
+{
+	return FlagLocation;
+}
+
 void ABangCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
@@ -263,4 +289,27 @@ void ABangCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		}
 		HPActors.Empty(); 
 	}
+}
+APlayerStart* ABangCharacter::GetFlaggedActor()
+{
+	UWorld* World = GetWorld();
+
+	if (!World)
+	{
+		return nullptr;
+	}
+	TArray<AActor*> AllPlayerStarts;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), AllPlayerStarts);
+
+	APlayerStart* FlaggedStarts;
+	for (AActor* Actor : AllPlayerStarts)
+	{
+		APlayerStart* Start = Cast<APlayerStart>(Actor);
+		if (Start && Start->ActorHasTag(FName("Flagged")))
+		{
+			FlaggedStarts = Start;
+			return FlaggedStarts;
+		}
+	}
+	return nullptr;
 }

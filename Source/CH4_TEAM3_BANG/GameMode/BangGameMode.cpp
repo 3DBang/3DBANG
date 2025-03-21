@@ -471,8 +471,7 @@ void ABangGameMode::SpawnPlayers()
 
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = PlayerControllers[i];
-        SpawnParams.Instigator = PlayerControllers[i]->GetPawn();
-
+		SpawnParams.Instigator = PlayerControllers[i]->GetPawn();
         ABangCharacter* Player = GetWorld()->SpawnActor<ABangCharacter>(DefaultPawnClass, SpawnLocation, SpawnRotation, SpawnParams);
         if (Player)
         {

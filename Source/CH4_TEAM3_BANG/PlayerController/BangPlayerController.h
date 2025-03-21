@@ -138,7 +138,7 @@ public:
 
 	void Client_SetInputEnabled_Implementation(bool IsAttacker);
 
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(BlueprintCallable,Server, Reliable)
 	void Server_OpenCamera();
 	void Server_OpenCamera_Implementation();
 
