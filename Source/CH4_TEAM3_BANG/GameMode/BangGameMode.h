@@ -80,9 +80,6 @@ public:
 	// 카드 뽑기 (Play Role)
 	UFUNCTION()
 	void DrawCard(const FPlayerCardSymbol& Card);
-	// 버릴 카드 선택 (Play Role)
-	UFUNCTION()
-	void LooseCard(const FCardCollection CardList);
 	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
 	UFUNCTION()
 	void LooseSidKetchumCard(const FCardCollection CardList);
@@ -94,7 +91,7 @@ public:
 		const FCardCollection CardList);
 	// 카드 버리기
 	UFUNCTION()
-	void LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsToUsed) const;
+	void LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType) const;
 	// 턴 종료
 	UFUNCTION()
 	void EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
