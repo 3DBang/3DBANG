@@ -54,6 +54,17 @@ void ABangPlayerController::BeginPlay()
 	}
 }
 
+void ABangPlayerController::UpdatePlayerUI(FName& NewText)
+{
+    if (HasAuthority())
+    {
+        ABangCharacter* BangCharacter = Cast<ABangCharacter>(GetPawn());
+        if (BangCharacter && BangCharacter->TextActor.IsValid())
+        {
+            BangCharacter->TextActor->SetDisplayText(NewText);
+        }
+    }
+}
 void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
 {
     if (HasAuthority())
