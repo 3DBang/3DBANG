@@ -63,6 +63,9 @@ public:
 	// 게임 시작
 	UFUNCTION()
 	void StartGame();
+	// 게임 중인 플레이어의 정보를 가져온다.
+	UFUNCTION()
+	void GetPlayerCollection(FPlayerCollection& PlayerCollection_) const;
 	// 단일 카드 사용 (Play Role)
 	UFUNCTION() // 실제 객체 주소가 넘어가는지 확인 필요
 	void UseCard(

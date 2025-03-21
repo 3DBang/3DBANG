@@ -51,6 +51,13 @@ void ABangGameMode::GetPlayerControllerByUniqueID(const int32& UniqueID, FBangPl
 	}
 }
 
+void ABangGameMode::GetPlayerCollection(FPlayerCollection& PlayerCollection_) const
+{
+	if (Players.Players.Num() == 0) return;
+
+	PlayerCollection_ = Players;
+}
+
 void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
