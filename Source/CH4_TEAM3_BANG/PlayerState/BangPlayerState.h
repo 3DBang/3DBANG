@@ -83,12 +83,25 @@ public:
 	// 복제 변수 등록
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	//카드를 넣어주는 함수
-	void AddDrawnCards(FCardCollection& DrawCards);
-
+	// 턴이 시작했을 때 카드를 넣어주는 함수
+	UFUNCTION(Client,Reliable , Category = "Player State")
+	void AddCards(const FPlayerCardCollection& DrawCards);
+	
 	//카드를 버리는 함수
+	void RemoveCards(FPlayerCardCollection& DrawCards);
 
+	//카드 사용
+	void UseCard(const FPlayerCardSymbol _UseCard_,const uint32 _ToUniqueID_, const EActiveType ActiveType, const EPassiveType PassiveType);
 
+	//턴이 끝날때 부를 함수
+	void EndTurn(const uint32 PlayerUniqueID, ECharacterType PlayerCharacter);
+	
+	UFUNCTION(Client, Reliable, Category = "Player State")
+	void EndTurnReturn(const uint32 PlayerUniqueID, ECharacterType PlayerCharacter);
+
+	// 턴이 끝나고 카드를 버릴때 호출할 함수
+	void EndTurnRemoveCards(FPlayerCardCollection& DrawCards);
+	
 	// 플레이어 컨트롤러에서 호출하는 함수
 	// 카드를 사용했을때 적과 나의 거리를 체크하는 함수
 	// @ 상대방의 정보 ex, 스테이트 or 플레이어 인포
