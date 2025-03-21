@@ -19,7 +19,6 @@ ABangPlayerState::ABangPlayerState(): PlayerStat()
 void ABangPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-
 	
 	if (!HasAuthority())
 	{

@@ -58,6 +58,15 @@ struct FCardCollection
 	}
 };
 
+// 덱 종류
+UENUM(BlueprintType)
+enum class EDeckType : uint8
+{
+	HandedCard UMETA(DisplayName = "HandedCard"),
+	UsedCards UMETA(DisplayName = "UsedCards"),
+	AvailCards UMETA(DisplayName = "AvailCards")
+};
+
 UCLASS(BlueprintType)
 class CH4_TEAM3_BANG_API UBangCardManager : public UObject
 {
@@ -108,11 +117,11 @@ public:
 
 	// 카드 심볼과 번호로 카드 찾기 IsFromHanded = true -> 건내준 카드목록, false -> 사용된 카드목록
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
-	void GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsFromHanded, FSingleCard& FoundCard_);
+	void GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType, FSingleCard& FoundCard_);
 
 	// DataAsset에서 카드 심볼과 번호로 카드 찾기 (서버에서 호출하면 안됨)
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
-	void GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& FoundCard_);
+	void GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& FoundCard_) const;
 	
 	// 최상위 단일 케릭터 카드 추출
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")

@@ -88,6 +88,10 @@ public:
 //////////////////////////
 public:
 	virtual void Tick(float DeltaTime) override;
+
+	void UpdatePlayerUI(FName& NewText);
+	void UpdatePlayerHP(int32 NewHP);
+	void SetInitializeHP(int32 NewHP);
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
 

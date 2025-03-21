@@ -21,12 +21,13 @@ struct FPlayerStat
 	UPROPERTY()
 	float Health;
 
-	UPROPERTY()
+	UPROPERTY() // UPROPERTY 가 붙어있으면 기본적으로해줌 
 	int32 Score;
 
 	// NetSerialize 함수: 읽기/쓰기를 동일 순서로 처리해야 합니다.
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
+		// Ar.IsLoading 클라에서 읽을때 else 쓸때
 		Ar << Value;
 		Ar << Health;
 		Ar << Score;
