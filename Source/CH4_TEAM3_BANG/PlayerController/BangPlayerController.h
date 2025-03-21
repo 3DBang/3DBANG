@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -10,6 +8,10 @@
 class UInputMappingContext;
 class UInputAction;
 class ABangPlayerState;
+class ABangCharacter;
+enum class EJobType : uint8;
+enum class ECharacterType : uint8;
+class ABangGameMode;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
@@ -50,51 +52,46 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-
 ///////////////////////////
 ////서버 관련 로직 작성란
 //////////////////////////
-	//서버에 공격 요청 
-	//UFUNCTION(Server, Reliable)
-	//void Server_AttackPlayer(ABangPlayerState* TargetPlayer);
 
-	//서버에 턴 종료 요청 
+public:
+//서버에 턴 종료 요청 
 	UFUNCTION(Server, Reliable)
-	void Server_EndTurn();
+	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseCard(EActiveType SelectedCard, uint32 TargetPlayerID);
+
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
-	//UFUNCTION(Client, Reliable)
-	//void Client_SelectCard(const ECardType SelectedCard);
-
-	//공격할 대상 선택 UI 표시 
-	//UFUNCTION(Client, Reliable)
-	//void Client_ShowAttackUI();
-
-	//피해자가 회피할지 선택하도록 UI 표시
-	//UFUNCTION(Client, Reliable)
-	//void Client_AskDodge();
-
-	// 게임 UI 업데이트 (턴, 체력, 카드 정보 등)
-	//UFUNCTION(Client, Reliable)
-	//void Client_UpdateGameUI(int32 CurrentTurnPlayerIndex, int32 PlayerHealth, int32 CardsInHand);
 public:
+	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
+	UFUNCTION(Client, Reliable)
+	void Client_SelectCard();
+	
+	UFUNCTION(Client, Reliable)
+	void Client_HandleCardSelection(EActiveType SelectedCard);
+
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
+
 
 	void Client_SetControllerRotation_Implementation(FRotator NewRotation);
 
 	//void OnPossess(APawn* InPawn) override;
 
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	void UpdatePlayerUI(FName& NewText);
+///////////////////////////
+//// 원명 추가 
+//////////////////////////
+public:
+	virtual void Tick(float DeltaTime) override;
+private:
+	TObjectPtr<ABangCharacter> OtherPlayers;
 
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	void UpdatePlayerHP(int32 NewHP);
-
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	void SetInitializeHP(int32 NewHP);
-
-	
+	UFUNCTION(Client, Reliable)
+	void Client_SelectTarget();
 };
+

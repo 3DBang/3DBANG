@@ -38,6 +38,8 @@ ABangCharacter::ABangCharacter()
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 }
 
 // Called when the game starts or when spawned
@@ -49,7 +51,6 @@ void ABangCharacter::BeginPlay()
 	//HasAuthority 설정 필수 !서버에만 스폰이 되게
 	if (HasAuthority() && TextActorUIClass)
 	{
-		//
 		float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 		
 		FVector RelativeLocation(0.f, 0.f, CapsuleHalfHeight + 70.f);
@@ -70,11 +71,12 @@ void ABangCharacter::BeginPlay()
 			TextActor = DeferredTextActor;
 		}
 	}
+
+
 }
 void ABangCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
