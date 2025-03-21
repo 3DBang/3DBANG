@@ -1,8 +1,7 @@
 #include "BangPlayerController.h"
 #include "EnhancedInputSubsystems.h"
-#include "Data/CardEnums.h"
-#include "GameMode/BangGameMode.h"
-#include "PlayerState/BangPlayerState.h"
+#include "CharacterUIActor/BangUIActor.h"
+#include "BangCharacter/BangCharacter.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -30,79 +29,63 @@ void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 	
 }
 
-void ABangPlayerController::Server_EndTurn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter)
+void ABangPlayerController::Server_EndTurn_Implementation()
 {
-	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	ABangGameModeBase* GM = GetWorld()->GetAuthGameMode<ABangGameModeBase>();
 	if (GM)
 	{
-		GM->EndTurn(UniqueID, PlayerCharacter);
+		GM->EndTurn();
 	}
 }
 
-
+/*void ABangPlayerController::Server_AttackPlayer_Implementation(APlayerState* TargetPlayer)
+{
+	ABangGameModeBase* GM = GetWorld()->GetAuthGameMode<ABangGameModeBase>();
+	if (GM)
+	{
+		GM->HandleAttack(GetPlayerState<ABangPlayerState>(), Cast<ABangPlayerState>(TargetPlayer));
+	}
+}*/
 void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator NewRotation)
 {
 	if (IsLocalController())
 	{
 		SetControlRotation(NewRotation);
-	}	
+	}
+	
 }
 
-void ABangPlayerController::Client_SelectCard_Implementation()
+void ABangPlayerController::UpdatePlayerUI(FName& NewText)
 {
-    // UI 창 띄우기 (보유 중인 카드 표시)
-    // 예시: UWidget* CardUI = CreateWidget<UWidget>(this, CardUIClass);
-    // CardUI->AddToViewport();
-
-    // 사용자가 카드 선택 (입력 대기)
-    EActiveType SelectedActiveCard = EActiveType::None;
-    EPassiveType SelectedPassiveCard = EPassiveType::None;
-
-    // 카드 선택 후 처리 (별도 함수 호출)
-    Client_HandleCardSelection(SelectedActiveCard);
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacter = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacter && BangCharacter->TextActor.IsValid())
+		{
+			BangCharacter->TextActor->SetDisplayText(NewText);
+		}
+	}
+}
+void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
+{
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacterHP = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacterHP)
+		{
+			BangCharacterHP->UpdateHPActors(NewHP);
+		}
+	}
 }
 
-
-
-void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveType SelectedCard)
+void ABangPlayerController::SetInitializeHP(int32 NewHP)
 {
-    uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
-
-    bool NeedsTarget = (SelectedCard == EActiveType::Bang ||
-        SelectedCard == EActiveType::Robbery ||
-        SelectedCard == EActiveType::CatBalou ||
-        SelectedCard == EActiveType::Duel ||
-        SelectedCard == EActiveType::Jail);
-
-    if (NeedsTarget)
-    {
-        Client_SelectTarget();
-        // 공격할 대상 선택 (레이 트레이싱 등)
-        TargetPlayerID = 57;//SelectTarget();
-        if (TargetPlayerID == 0)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("대상이 필요한 카드인데 선택되지 않음!"));
-            return;
-        }
-    }
-    Server_UseCard(SelectedCard, TargetPlayerID);
-}
-
-void ABangPlayerController::Client_SelectTarget_Implementation()
-{
-    uint32 TargetPlayerID = 15;//GetSelectedTargetID(); // 상대 플레이어 ID를 가져옴 (레이 트레이싱 담당자에게 받아올 부분)
-
-    if (TargetPlayerID > 0)
-    {
-
-    }
-}
-
-void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelectedCard, uint32 TargetPlayerID)
-{
-    ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
-    if (BangPlayerState)
-    {
-        //BangPlayerState->ProcessCardUsage(SelectedCard, TargetPlayerID);
-    }
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacterHP = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacterHP)
+		{
+			BangCharacterHP->SetHP(NewHP);
+		}
+	}
 }
