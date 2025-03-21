@@ -65,6 +65,7 @@ void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, co
 			if (HandedCard.Card->SymbolType == SymbolType && HandedCard.Card->SymbolNumber == SymbolNumber)
 			{
 				FoundCard_ = HandedCard;
+				break;
 			}
 		}
 	}
@@ -75,6 +76,7 @@ void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, co
 			if (UsedCard.Card->SymbolType == SymbolType && UsedCard.Card->SymbolNumber == SymbolNumber)
 			{
 				FoundCard_ = UsedCard;
+				break;
 			}
 		}
 	}
@@ -160,11 +162,9 @@ void UBangCardManager::GetAllCards()
 }
 
 // 인원에 맞는 직업카드 추출 로직
-void UBangCardManager::GetJobByPlayer(const int PlayerCount, FCardCollection& SelectedCards_)
+void UBangCardManager::GetJobByPlayer(const int PlayerCount, TArray<EJobType>& SelectedCards_)
 {
 	if (PlayerCount < 4 || PlayerCount > 7) return;
-	
-	TArray<UBangCardBase*> SelectedCards;
 
 	int OfficerCount    = (PlayerCount >= 4) ? 1 : 0;
 	int SubOfficerCount = (PlayerCount >= 5) ? (PlayerCount >= 7 ? 2 : 1) : 0;
@@ -185,7 +185,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, FCardCollection& Se
 					{
 						if (OfficerCount != 0)
 						{
-							SelectedCards.Add(Card.Card);
+							SelectedCards_.Add(JobCard->JobType);
 							OfficerCount--;
 						}
 						break;
@@ -194,7 +194,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, FCardCollection& Se
 					{
 						if (SubOfficerCount != 0)
 						{
-							SelectedCards.Add(Card.Card);
+							SelectedCards_.Add(JobCard->JobType);
 							SubOfficerCount--;
 						}
 						break;
@@ -203,7 +203,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, FCardCollection& Se
 					{
 						if (OutlawCount != 0)
 						{
-							SelectedCards.Add(Card.Card);
+							SelectedCards_.Add(JobCard->JobType);
 							OutlawCount--;
 						}
 						break;
@@ -212,7 +212,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, FCardCollection& Se
 					{
 						if (BetrayerCount != 0)
 						{
-							SelectedCards.Add(Card.Card);
+							SelectedCards_.Add(JobCard->JobType);
 							BetrayerCount--;
 						}
 						break;
@@ -222,7 +222,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, FCardCollection& Se
 		}
 	}
 
-	ShuffleCards(SelectedCards_);
+	ShuffleArray(SelectedCards_);
 }
 
 // 덱 섞기
