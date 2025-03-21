@@ -1,7 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Card/BangCardManager.h"
+#include "Card/CharacterCard/BangCharacterCard.h"
+#include "Card/JobCard/BangJobCard.h"
 #include "PlayerInformation.generated.h"
 
 USTRUCT(BlueprintType)
@@ -33,13 +34,7 @@ struct FPlayerInformation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	int32 RangeFromMe;
 	
-	//역할 카드
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	FSingleCard JobCard;
-	
-	//캐릭터 카드
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	FSingleCard CharacterCard;
+
 	
 	//보유한 카드(사용가능한 카드)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
@@ -50,8 +45,26 @@ struct FPlayerInformation
 	FCardCollection EquippedCards;
 
 
+	UPROPERTY()
+	EJobType JobCardType;
+
+	UPROPERTY()
+	ECharacterType CharacterCardType;
+
 
 	
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerCardCollection
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	ESymbolType SymbolType;
+
+	UPROPERTY()
+	int32 SymbolNumber;
 };
 
 USTRUCT(BlueprintType)

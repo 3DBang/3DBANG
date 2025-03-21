@@ -97,7 +97,7 @@ void ABangGameMode::StartGame()
 	CardManager->PlayBeginByRole();
 	
 	// 직업 선택
-	FCardCollection JobCards;
+	TArray<EJobType> JobCards;
 	CardManager->GetJobByPlayer(Players.Players.Num(), JobCards);
 	FPlayerInformation PlayerInfo;
 	
@@ -105,16 +105,13 @@ void ABangGameMode::StartGame()
 	FCardCollection CharacterCards;
 	for (int16 i = 0; i < Players.Players.Num(); i++)
 	{
-		Players.Players[i].JobCard = JobCards.CardList[i];
-		Players.Players[i].CharacterCard = CardManager->GetCharacterCard();
+		Players.Players[i].JobCardType = JobCards[i];
+		Players.Players[i].CharacterCardType = CardManager->GetCharacterCard();
 		
-		if (const TObjectPtr<UBangJobCard> JobCard = Cast<UBangJobCard>(JobCards.CardList[i].Card))
+		if (JobCards[i] == EJobType::Officer)
 		{
-			if (JobCard->JobType == EJobType::Officer)
-			{
-				CurrentPlayerTurn = Players.Players[i].PlayerName;
-				PlayerIndex = i;
-			}
+			CurrentPlayerTurn = Players.Players[i].PlayerName;
+			PlayerIndex = i;
 		}
 	}
 
@@ -142,108 +139,106 @@ void ABangGameMode::AdvanceGameTurn()
 
 	if (CurrentPlayerTurnState == EPlayerTurnState::DrawCard) // 현재 턴인 플레이어가 카드뽑기 단계 일때
 	{
-		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard.Card))
+		switch (Players.Players[PlayerIndex].CharacterCardType)
 		{
-			switch (CharacterCard->CharacterType)
+		case ECharacterType::PedroRamirez:
 			{
-			case ECharacterType::PedroRamirez:
-				{
-					FCardCollection DrawCards;
-					CardManager->HandCards(2, DrawCards);
-					// PlayerState 한테 넘겨줌
-					FBangPlayerStateCollection CurrentPlayerState;
-					GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
-					//CurrentPlayerState->
+				FCardCollection DrawCards;
+				CardManager->HandCards(2, DrawCards);
+				// PlayerState 한테 넘겨줌
+				FBangPlayerStateCollection CurrentPlayerState;
+				GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
+				//CurrentPlayerState->
 
-					// 플레이어 컨트롤러한테 턴 시작 알림
-					FBangPlayerControllerCollection CurrentPlayerController;
-					GetPlayerControllerByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerController);
-					//CurrentPlayerController.Controller->Server_PlayerTurn();
-					break;
-				}
-			case ECharacterType::BlackJack:
-				{
-					// 두번째로 뽑은 카드를 모든 플레이어에게 공개, 카드의 심벌이 하트나 다이아면 한장을 더 드로우
-					FCardCollection CardList;
-					CardManager->HandCards(2, CardList);
-					if (CardList.CardList[1].Card->SymbolType == ESymbolType::Heart || CardList.CardList[1].Card->SymbolType == ESymbolType::Diamond)
-					{
-						CardManager->HandCards(1, CardList);
-					}
-					// PlayerState한테 CardList 보내기
-					break;
-				}
-			case ECharacterType::KitCarlson:
-				{
-					// 카드 더미위에 3장을 보고 그중에서 두개를 가져가고 한장은 다시 뽑는 카드더미 위에 올려둔다.
-					FCardCollection CardList;
-					CardManager->HandCards(3, CardList);
-					// PlayerState한테 3보낸다. 
-					break;
-				}
-			default:
-				{
-					FCardCollection CardList;
-					CardManager->HandCards(2, CardList);
-					// PlayerState 플레이어 스테이트한테 카드 전달
-					break;
-				}
+				// 플레이어 컨트롤러한테 턴 시작 알림
+				FBangPlayerControllerCollection CurrentPlayerController;
+				GetPlayerControllerByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerController);
+				//CurrentPlayerController.Controller->Server_PlayerTurn();
+				break;
 			}
-		}
+		case ECharacterType::BlackJack:
+			{
+				// 두번째로 뽑은 카드를 모든 플레이어에게 공개, 카드의 심벌이 하트나 다이아면 한장을 더 드로우
+				FCardCollection CardList;
+				CardManager->HandCards(2, CardList);
+				if (CardList.CardList[1].Card->SymbolType == ESymbolType::Heart || CardList.CardList[1].Card->SymbolType == ESymbolType::Diamond)
+				{
+					CardManager->HandCards(1, CardList);
+				}
+				// PlayerState한테 CardList 보내기
+				break;
+			}
+		case ECharacterType::KitCarlson:
+			{
+				// 카드 더미위에 3장을 보고 그중에서 두개를 가져가고 한장은 다시 뽑는 카드더미 위에 올려둔다.
+				FCardCollection CardList;
+				CardManager->HandCards(3, CardList);
+				// PlayerState한테 3보낸다. 
+				break;
+			}
+		default:
+			{
+				FCardCollection CardList;
+				CardManager->HandCards(2, CardList);
+				// PlayerState 플레이어 스테이트한테 카드 전달
+				break;
+			}
+		}	
 		// 플레이어 한테 응답 받고 아래 로직 실행
 		CurrentPlayerTurnState = EPlayerTurnState::UseCard;
 		AdvanceGameTurn();
 	}
 	else if (CurrentPlayerTurnState == EPlayerTurnState::UseCard)
 	{
-		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard.Card))
+		switch (Players.Players[PlayerIndex].CharacterCardType)
 		{
-			switch (CharacterCard->CharacterType)
+		case ECharacterType::PaulRegret:
+			break;
+		case ECharacterType::BartCassidy:
+			break;
+		case ECharacterType::CalamityJanet:
+			break;
+		case ECharacterType::Jourdonnais:
 			{
-			case ECharacterType::PaulRegret:
-				break;
-			case ECharacterType::BartCassidy:
-				break;
-			case ECharacterType::CalamityJanet:
-				break;
-			case ECharacterType::Jourdonnais:
-				{
-					// TODO::뱅의 표적이 될때마다 카드펼치기를 할 수 있으며 하트가 나오면 총알이 빗나감
-					break;
-				}
-			case ECharacterType::PedroRamirez:
-				break;
-			case ECharacterType::BlackJack:
-				break;
-			case ECharacterType::JesseJones:
-				{
-					// TODO::카드 가저오기 단계에서 첫번쨰 카드를 다른사람에게서 가져올 수 있다.
-					break;
-				}
-			case ECharacterType::SuzyLafayette:
-				break;
-			case ECharacterType::SidKetchum:
-				break;
-			case ECharacterType::LuckyDuke:
-				break;
-			case ECharacterType::SlabTheKiller:
-				{
-					// TODO::본인이 쏜 뱅은 다른사람이 빗나감 두장으로 막아야함 PS
-					break;
-				}
-			case ECharacterType::ElGringo:
-				break;
-			case ECharacterType::RoseDoolan:
-				{
-					// TODO::다른사람을 볼때 거리 1이 가까워 진다. PS
-					break;
-				}
-			case ECharacterType::WillyTheKid:
-				break;
-			case ECharacterType::KitCarlson:
+				// TODO::뱅의 표적이 될때마다 카드펼치기를 할 수 있으며 하트가 나오면 총알이 빗나감
 				break;
 			}
-		}
+		case ECharacterType::PedroRamirez:
+			break;
+		case ECharacterType::BlackJack:
+			break;
+		case ECharacterType::JesseJones:
+			{
+				// TODO::카드 가저오기 단계에서 첫번쨰 카드를 다른사람에게서 가져올 수 있다.
+				break;
+			}
+		case ECharacterType::SuzyLafayette:
+			break;
+		case ECharacterType::SidKetchum:
+			break;
+		case ECharacterType::LuckyDuke:
+			break;
+		case ECharacterType::SlabTheKiller:
+			{
+				// TODO::본인이 쏜 뱅은 다른사람이 빗나감 두장으로 막아야함 PS
+				break;
+			}
+		case ECharacterType::ElGringo:
+			break;
+		case ECharacterType::RoseDoolan:
+			{
+				// TODO::다른사람을 볼때 거리 1이 가까워 진다. PS
+				break;
+			}
+		case ECharacterType::WillyTheKid:
+			break;
+		case ECharacterType::KitCarlson:
+			break;
+		case ECharacterType::VultureSam:
+			break;
+		case ECharacterType::None:
+			break;
+		}	
 	}
 	else if (CurrentPlayerTurnState == EPlayerTurnState::LooseCard)
 	{
@@ -261,7 +256,10 @@ void ABangGameMode::LooseCard(const FCardCollection CardList)
 {
 	if (CardList.CardList.Num() == 0) return;
 
-	
+	for (const FSingleCard Card : CardList.CardList)
+	{
+		CardManager->ReorderUsedCards(Card);
+	}
 }
 
 void ABangGameMode::LooseSidKetchumCard(const FCardCollection CardList)
@@ -274,10 +272,61 @@ void ABangGameMode::LooseSidKetchumCard(const FCardCollection CardList)
 	}
 }
 
-void ABangGameMode::PlayerDead(const uint32 UniqueID, ECharacterType PlayerCharacter, EJobType JobType)
+void ABangGameMode::PlayerDead(const uint32 UniqueID,
+		const ECharacterType PlayerCharacter,
+		const EJobType JobType,
+		const FCardCollection CardList)
 {
-	// TODO::카드 처리 필요
+	// 플레이어중에 벌처셈 카드가 있으면 그상대에게 카드를 다 줘야한다.
+	for (FPlayerInformation Player : Players.Players)
+	{
+		if (Player.CharacterCardType == ECharacterType::VultureSam)
+		{
+			// 상대에게 카드 주기
+		}
+		else
+		{
+			// 카드 사용덱으로 이동
+		}	
+	}
 
+	// 플레이어 죽었을 경우 게임 종료조건 체크
+	switch (JobType)
+	{
+	case EJobType::Officer:
+		// 게임오버 -> 무법자가 살아있으면 무법자 승리
+		//		   -> 부관이랑, 무법자가 죽어있으면 배신자 승리
+		{
+			for (const FPlayerInformation Player : Players.Players)
+			{
+				if (Player.JobCardType == EJobType::Betrayer)
+				{
+					
+				}
+			}
+			break;
+		}
+	case EJobType::SubOfficer:
+		{
+			if (Players.Players[PlayerIndex].JobCardType == EJobType::Officer) // 보안관이 죽였을 경우
+			{
+				// PS 에 정보 념겨줌 (GM -> PS -> PC -> GM)
+			}
+			break;
+		}
+	case EJobType::Outlaw:
+		// 무법자를 죽인사람한테 카드 3장 사용하지 않은 덱에서 전달
+		{
+			// 카드 3장을 뽑아서 PS한테 전달
+			FCardCollection NewCardList;
+			CardManager->HandCards(3, NewCardList);
+			break;
+		}
+	case EJobType::Betrayer:
+		break;
+	}
+
+	// 플레이어 제거
 	for (uint16 i = 0; i < Players.Players.Num(); i++)
 	{
 		if (Players.Players[i].PlayerUniqueID == UniqueID)
@@ -286,8 +335,6 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID, ECharacterType PlayerChara
 			break;
 		}
 	}
-
-	// TODO::사망소식 PlayerState한테 알림
 }
 
 void ABangGameMode::UseCard(
@@ -305,37 +352,33 @@ void ABangGameMode::UseCard(
 
 	if (CurrentPlayerTurnState == EPlayerTurnState::UseCard)
 	{
-		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard.Card))
+		switch (Players.Players[PlayerIndex].CharacterCardType)
 		{
-			switch (CharacterCard->CharacterType)
+		case ECharacterType::Jourdonnais:
 			{
-			case ECharacterType::Jourdonnais:
-				{
-					// 뱅의 표적이 될때마다 카드펼치기를 할 수 있으며 하트가 나오면 총알이 빗나감
-					break;
-				}
-			case ECharacterType::JesseJones:
-				{
-					// 카드 가저오기 단계에서 첫번쨰 카드를 다른사람에게서 가져올 수 있다.
-					break;
-				}
-			case ECharacterType::SlabTheKiller:
-				{
-					// 본인이 쏜 뱅은 다른사람이 빗나감 두장으로 막아야함 PS
-					break;
-				}
-			case ECharacterType::RoseDoolan:
-				{
-					// 다른사람을 볼때 거리 1이 가까워 진다. PS
-					break;
-				}
-			default:
+				// 뱅의 표적이 될때마다 카드펼치기를 할 수 있으며 하트가 나오면 총알이 빗나감
 				break;
 			}
-		}
+		case ECharacterType::JesseJones:
+			{
+				// 카드 가저오기 단계에서 첫번쨰 카드를 다른사람에게서 가져올 수 있다.
+				break;
+			}
+		case ECharacterType::SlabTheKiller:
+			{
+				// 본인이 쏜 뱅은 다른사람이 빗나감 두장으로 막아야함 PS
+				break;
+			}
+		case ECharacterType::RoseDoolan:
+			{
+				// 다른사람을 볼때 거리 1이 가까워 진다. PS
+				break;
+			}
+		default:
+			break;
+		}	
 		// 플레이어 한테 응답 받고 아래 로직 실행
 	}
-
 	
 	if (Card.Card->CardType == ECardType::ActiveCard) // 액티브 타입 일때
 	{

@@ -77,16 +77,15 @@ public:
 	// 버릴 카드 선택 (Play Role)
 	UFUNCTION()
 	void LooseCard(const FCardCollection CardList);
-
-	// 버릴 카드 선택 (시드 케첨 용)
+	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
 	UFUNCTION()
 	void LooseSidKetchumCard(const FCardCollection CardList);
-
-	// 카드 버려서 생명력 회복
-
 	// 플레이어 사망
 	UFUNCTION()
-	void PlayerDead(const uint32 UniqueID, ECharacterType PlayerCharacter, EJobType JobType);
+	void PlayerDead(const uint32 UniqueID,
+		const ECharacterType PlayerCharacter,
+		const EJobType JobType,
+		const FCardCollection CardList);
 	// 카드 버리기
 	UFUNCTION()
 	void LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsToUsed) const;
