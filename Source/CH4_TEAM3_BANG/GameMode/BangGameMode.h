@@ -54,39 +54,41 @@ public:
 	virtual void BeginPlay() override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
-	// 플레이어 등록
+	// 로비 플레이어 등록
 	UFUNCTION()
 	void AddPlayer(const uint32& UniqueID);
-	// 플레이어 자리 배치
+	// 로비 플레이어 삭제
 	UFUNCTION()
-	void ArrangeSeats();
+	void RemovePlayer(const uint32& UniqueID);
 	// 게임 시작
 	UFUNCTION()
 	void StartGame();
+	// 게임 중인 플레이어의 정보를 가져온다.
+	UFUNCTION()
+	void GetPlayerCollection(FPlayerCollection& PlayerCollection_) const;
 	// 단일 카드 사용 (Play Role)
 	UFUNCTION() // 실제 객체 주소가 넘어가는지 확인 필요
 	void UseCard(
-		const uint32 UniqueID,
-		const FSingleCard& Card, 
-		const EActiveType ActiveType,
-		const EPassiveType PassiveType,
-		const ECharacterType CharacterType,
-		const uint32 ToUniqueID,
-		const ECharacterType ToCharacterType
+		const uint32 UniqueID, // 사용한 사람의 아이디
+		const FPlayerCardSymbol& Card, // 카드 정보
+		const EActiveType ActiveType, // 액티브 타입
+		const EPassiveType PassiveType, // 패시브 타입
+		const ECharacterType CharacterType, // 캐릭터 타입
+		const uint32 ToUniqueID, // 대상
+		const ECharacterType ToCharacterType // 대상 캐릭터 타입
 		) const;
 	// 버릴 카드 선택 (Play Role)
 	UFUNCTION()
 	void LooseCard(const FCardCollection CardList);
-
-	// 버릴 카드 선택 (시드 케첨 용)
+	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
 	UFUNCTION()
 	void LooseSidKetchumCard(const FCardCollection CardList);
-
-	// 카드 버려서 생명력 회복
-
 	// 플레이어 사망
 	UFUNCTION()
-	void PlayerDead(const uint32 UniqueID, ECharacterType PlayerCharacter, EJobType JobType);
+	void PlayerDead(const uint32 UniqueID,
+		const ECharacterType PlayerCharacter,
+		const EJobType JobType,
+		const FCardCollection CardList);
 	// 카드 버리기
 	UFUNCTION()
 	void LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsToUsed) const;
@@ -114,9 +116,12 @@ private:
 	// 카드 매니저
 	UPROPERTY()
 	TObjectPtr<UBangCardManager> CardManager;
-	// 현재 플레이어 목록
+	// 개임중인 플레이어 목록
 	UPROPERTY()
 	FPlayerCollection Players;
+	// 현재 플레이어 목록
+	UPROPERTY()
+	FPlayerCollection LobbyPlayers;
 	// 현재 플레이어 인덱스
 	int16 PlayerIndex;
 	// 현재 게임 상태
@@ -128,7 +133,10 @@ private:
 	// 현재 플레이어의 턴 상태
 	UPROPERTY()
 	EPlayerTurnState CurrentPlayerTurnState;
-	
+
+	// 플레이어 자리 배치
+	UFUNCTION()
+	void ArrangeSeats();
 	// 게임 턴 이동 (플레이어 변경)
 	UFUNCTION()
 	void AdvanceGameTurn();
