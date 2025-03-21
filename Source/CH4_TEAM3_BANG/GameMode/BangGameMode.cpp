@@ -73,7 +73,7 @@ void ABangGameMode::RemovePlayer(const uint32& UniqueID)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
 
-	for (FPlayerInformation Player : LobbyPlayers.Players)
+	for (const FPlayerInformation Player : LobbyPlayers.Players)
 	{
 		if (Player.PlayerUniqueID == UniqueID)
 		{
@@ -86,7 +86,7 @@ void ABangGameMode::RemovePlayer(const uint32& UniqueID)
 void ABangGameMode::ArrangeSeats()
 {
 	// 로비 플레이어 등록 후 자리 배치
-	for (FPlayerInformation Player : LobbyPlayers.Players)
+	for (const FPlayerInformation Player : LobbyPlayers.Players)
 	{
 		Players.Players.Add(Player);
 	}
@@ -359,7 +359,7 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID,
 
 void ABangGameMode::UseCard(
 	const uint32 UniqueID,
-	const FPlayerCardCollection& Card, 
+	const FPlayerCardSymbol& Card, 
 	const EActiveType ActiveType,
 	const EPassiveType PassiveType,
 	const ECharacterType CharacterType,
@@ -398,95 +398,6 @@ void ABangGameMode::UseCard(
 			break;
 		}	
 		// 플레이어 한테 응답 받고 아래 로직 실행
-	}
-	
-	if (Card.Card->CardType == ECardType::ActiveCard) // 액티브 타입 일때
-	{
-		switch (ActiveType)
-		{
-		case EActiveType::None:
-			break;
-		case EActiveType::Bang:
-			break;
-		case EActiveType::Missed:
-			break;
-		case EActiveType::Stagecoach:
-			break;
-		case EActiveType::WellsFargoBank:
-			break;
-		case EActiveType::Beer:
-			break;
-		case EActiveType::GatlingGun:
-			break;
-		case EActiveType::Robbery:
-			break;
-		case EActiveType::CatBalou:
-			break;
-		case EActiveType::Saloon:
-			break;
-		case EActiveType::Duel:
-			break;
-		case EActiveType::GeneralStore:
-			break;
-		case EActiveType::Indians:
-			break;
-		case EActiveType::Jail:
-			break;
-		case EActiveType::Dynamite:
-			break;
-		}
-	}
-	else if (Card.Card->CardType == ECardType::PassiveCard) // 패시브 타입 일때
-	{
-		switch (PassiveType)
-		{
-		case EPassiveType::None:
-			{
-				
-				break;
-			}
-		case EPassiveType::Barrel:
-			{
-				
-				break;
-			}
-		case EPassiveType::Scope:
-			{
-				
-				break;
-			}
-		case EPassiveType::Mustang:
-			{
-				
-				break;
-			}
-		case EPassiveType::Schofield:
-			{
-				
-				break;
-			}
-		case EPassiveType::Volcanic:
-			{
-				
-				break;
-			}
-		case EPassiveType::Remington:
-			{
-				
-				break;
-			}
-		case EPassiveType::Carbine:
-			{
-				
-				break;
-			}
-		case EPassiveType::Winchester:
-			{
-				
-				break;
-			}
-		default: ;
-		}
 	}
 
 	//CastingController->Server_UseCardReturn(bIsAbleToUse);

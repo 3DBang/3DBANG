@@ -66,13 +66,13 @@ public:
 	// 단일 카드 사용 (Play Role)
 	UFUNCTION() // 실제 객체 주소가 넘어가는지 확인 필요
 	void UseCard(
-		const uint32 UniqueID,
-		const FPlayerCardCollection& Card, 
-		const EActiveType ActiveType,
-		const EPassiveType PassiveType,
-		const ECharacterType CharacterType,
-		const uint32 ToUniqueID,
-		const ECharacterType ToCharacterType
+		const uint32 UniqueID, // 사용한 사람의 아이디
+		const FPlayerCardSymbol& Card, // 카드 정보
+		const EActiveType ActiveType, // 액티브 타입
+		const EPassiveType PassiveType, // 패시브 타입
+		const ECharacterType CharacterType, // 캐릭터 타입
+		const uint32 ToUniqueID, // 대상
+		const ECharacterType ToCharacterType // 대상 캐릭터 타입
 		) const;
 	// 버릴 카드 선택 (Play Role)
 	UFUNCTION()

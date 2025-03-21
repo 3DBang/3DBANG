@@ -15,4 +15,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card | Passive")
 	EPassiveType PassiveType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card | Passive")
+	bool bIsWeapon;
 };
