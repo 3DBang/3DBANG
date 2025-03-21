@@ -3,6 +3,8 @@
 #include "Card/BangCardManager.h"
 #include "Card/ActiveCard/BangActiveCard.h"
 #include "Card/BaseCard/BangCardBase.h"
+#include "Card/CharacterCard/BangCharacterCard.h"
+#include "Card/JobCard/BangJobCard.h"
 #include "Card/PassiveCard/BangPassiveCard.h"
 #include "Net/UnrealNetwork.h"
 
@@ -57,8 +59,8 @@ void ABangPlayerState::AddDrawnCards(FCardCollection& DrawCards)
 {
 	if (HasAuthority())
 	{
-		PlayerInfo.MyCards.Append(DrawCards.CardList);
-
+		//카드 매니저에 있는
+		//GetCardBySymbolAndNumber 호출해서 심볼을 준다
 		//카드를 넣고 플레이어에게
 		
 		APlayerController* PlayerController = Cast<APlayerController>(GetOwner());
@@ -72,7 +74,7 @@ void ABangPlayerState::AddDrawnCards(FCardCollection& DrawCards)
 //어떤 카드 때문에 응답을 받았는지 전해주기 찬효님과 이야기 해야함
 
 //거리 체크
-void ABangPlayerState::Calculate_Distance(TObjectPtr<UBangCardBase> _UseCard, FPlayerCollection& _Collection)
+void ABangPlayerState::Calculate_Distance(TObjectPtr<UBangCardBase> _UseCard, FPlayerCollection& _Collection) // 상대 구분
 {
 	// 플레이어 컬렉션에서 상대 플레이어와 나의 정보를 가져와서 거리 체크
 	//거리체크 후 공격을 못하는 상황이면 플레이어에게 못한다는 알림
@@ -94,21 +96,10 @@ void ABangPlayerState::TryApplyEffect(TObjectPtr<UBangCardBase> _UseCard, FPlaye
 				case EActiveType::Bang:	//뱅
 					// 상대 플레이어 능력 체크 (주르도네, 뱅빗)
 					// 능력이 있으면 컨트롤러에 알림
-					// 상대 플레이어 카드더미에서 빗나감이 있는지 확인
+					// 상대가 카드가 있는지 확인
 					// 있으면 상대방 컨트롤러에 카드를 사용할지 알림
-					// 상대 플레이어 체력 감소
+					// 회피 카드를 사용했는지 확인
 					// 체력 감소 후 상대방 플레이어에서 UpdateHp 호출 하면 체력 업데이트
-					break;
-				case EActiveType::Missed: // 빗나감
-					break;
-				case EActiveType::Stagecoach:	//역마차
-					// 카드 두개 뽑기
-					// 바로 카드 매니저에서 가져오나?
-					break;
-
-				case EActiveType::WellsFargoBank: //웰스파고은행
-					// 카드 세개 뽑기
-					// 카드 세개 뽑기?
 					break;
 
 				case EActiveType::Beer: //맥주
@@ -179,7 +170,7 @@ void ABangPlayerState::TryApplyEffect(TObjectPtr<UBangCardBase> _UseCard, FPlaye
 				switch (PassiveCard->PassiveType)
 				{
 					case EPassiveType::Barrel: // 술통
-						// 장비칸에 술통이 있는지 확인
+						//장비칸에 술통이 있는지 확인
 						//있으면 플레이어에게 있다고 알림
 						//없으면 장착을 하고 장착했다는걸 플레이어에게 알림
 						break;
@@ -189,12 +180,12 @@ void ABangPlayerState::TryApplyEffect(TObjectPtr<UBangCardBase> _UseCard, FPlaye
 						//없으면 장착을 하고 장착했다는걸 플레이어에게 알림
 						break;
 					case EPassiveType::Mustang: // 야생마
-						// 장비칸에 조준경이 있는지 확인
+						// 장비칸에 야생마가 있는지 확인
 						//있으면 플레이어에게 있다고 알림
 						//없으면 장착을 하고 장착했다는걸 플레이어에게 알림
 						break;
 					case EPassiveType::Schofield: // 스코필드
-						// 장비칸에 조준경이 있는지 확인
+						// 장비칸에 스코필드이 있는지 확인
 						// 있으면 플레이어에게 있다고 알림
 						// 없으면 장착을 하고 장착했다는걸 플레이어에게 알림
 						break;
@@ -234,5 +225,17 @@ void ABangPlayerState::TryApplyEffect(TObjectPtr<UBangCardBase> _UseCard, FPlaye
 
 void ABangPlayerState::OnCharacterDrawPhase()
 {
+}
+
+EJobType ABangPlayerState::GetJobType()
+{
+	UBangJobCard* JobCard = Cast<UBangJobCard>(PlayerInfo.JobCard.Card);
+	return JobCard->JobType;
+}
+
+ECharacterType ABangPlayerState::GetCharacterType()
+{
+	UBangCharacterCard* CharacterCard = Cast<UBangCharacterCard>(PlayerInfo.JobCard.Card);
+	return CharacterCard->CharacterType;
 }
 

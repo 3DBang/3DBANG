@@ -84,6 +84,9 @@ public:
 	//카드를 넣어주는 함수
 	void AddDrawnCards(FCardCollection& DrawCards);
 
+	//카드를 버리는 함수
+
+	
 	//카드를 사용했을때 적과 나의 거리를 체크하는 함수
 	// @상대방의 정보 ex, 스테이트 or 플레이어 인포
 	// @사용한 카드
@@ -99,6 +102,12 @@ public:
     void OnCharacterDrawPhase();
 
 
+	//getJobType
+	EJobType GetJobType();
+	
+	//getCharacterType
+	ECharacterType GetCharacterType();
+	//GetCharacterType
 
 	////// 필요 유틸
 
