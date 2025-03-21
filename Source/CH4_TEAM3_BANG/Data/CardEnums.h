@@ -68,7 +68,6 @@ enum class EPassiveType : uint8
 UENUM(BlueprintType)
 enum class ECharacterType : uint8
 {
-	None UMETA(DisplayName = "None"),
 	PaulRegret UMETA(DisplayName = "Paul Regret"),         // 폴 리그레트
 	BartCassidy UMETA(DisplayName = "Bart Cassidy"),       // 바트 캐시디
 	CalamityJanet UMETA(DisplayName = "Calamity Janet"),   // 캘러미티 자넷

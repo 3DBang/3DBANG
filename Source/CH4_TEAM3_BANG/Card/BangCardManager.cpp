@@ -60,55 +60,53 @@ void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, co
 	
 	if (IsFromHanded)
 	{
-		for (const FSingleCard HandedCard : HandedCards.CardList)
+		for (const TObjectPtr<UBangCardBase> HandedCard : HandedCards.CardList)
 		{
-			if (HandedCard.Card->SymbolType == SymbolType && HandedCard.Card->SymbolNumber == SymbolNumber)
+			if (HandedCard->SymbolType == SymbolType && HandedCard->SymbolNumber == SymbolNumber)
 			{
-				FoundCard_ = HandedCard;
-				break;
+				FoundCard_.Card = HandedCard;
 			}
 		}
 	}
 	else
 	{
-		for (const FSingleCard UsedCard : UsedCards.CardList)
+		for (const TObjectPtr<UBangCardBase> UsedCard : UsedCards.CardList)
 		{
-			if (UsedCard.Card->SymbolType == SymbolType && UsedCard.Card->SymbolNumber == SymbolNumber)
+			if (UsedCard->SymbolType == SymbolType && UsedCard->SymbolNumber == SymbolNumber)
 			{
-				FoundCard_ = UsedCard;
-				break;
+				FoundCard_.Card = UsedCard;
 			}
 		}
 	}
 }
 
 // 건내준 카드를 다시 사용된 카드 덱에 넣는다
-void UBangCardManager::ReorderUsedCards(const FSingleCard HandedCard)
+void UBangCardManager::ReorderUsedCards(FSingleCard HandedCard)
 {
 	if (HandedCards.CardList.Num() == 0) return;
 	
-	for (auto [Card] : HandedCards.CardList)
+	for (TObjectPtr<UBangCardBase> BangCardBase : HandedCards.CardList)
 	{
-		if (Card == HandedCard.Card)
+		if (BangCardBase == HandedCard.Card)
 		{
-			HandedCards.CardList.Remove(HandedCard);
-			UsedCards.CardList.Add(HandedCard);
+			HandedCards.CardList.Remove(HandedCard.Card);
+			UsedCards.CardList.Add(HandedCard.Card);
 			break;
 		}
 	}
 }
 
 // 건내준 카드를 다시 사용된 카드 덱에 넣는다
-void UBangCardManager::ReorderAvailCards(const FSingleCard HandedCard)
+void UBangCardManager::ReorderAvailCards(FSingleCard HandedCard)
 {
 	if (HandedCards.CardList.Num() == 0) return;
 	
-	for (auto [Card] : HandedCards.CardList)
+	for (TObjectPtr<UBangCardBase> BangCardBase : HandedCards.CardList)
 	{
-		if (Card == HandedCard.Card)
+		if (BangCardBase == HandedCard.Card)
 		{
-			HandedCards.CardList.Remove(HandedCard);
-			AvailCards.CardList.Add(HandedCard);
+			HandedCards.CardList.Remove(HandedCard.Card);
+			AvailCards.CardList.Add(HandedCard.Card);
 			break;
 		}
 	}
@@ -129,32 +127,29 @@ void UBangCardManager::GetAllCards()
 	for (UBangCardBase* Card : CardData->Cards)
 	{
 		if (!Card) continue;
-		
-		FSingleCard SingleCard;
-		SingleCard.Card = Card;
-		
-		AllCards.CardList.Add(SingleCard);
-		CardDeckByType.FindOrAdd(Card->CardType).CardList.Add(SingleCard);
+
+		AllCards.CardList.Add(Card);
+		CardDeckByType.FindOrAdd(Card->CardType).CardList.Add(Card);
 		switch (Card->CardType)
 		{
 			case ECardType::JobCard:
 				{
-					JobCards.CardList.Add(SingleCard);
+					JobCards.CardList.Add(Card);
 					break;
 				}
 			case ECardType::ActiveCard:
 				{
-					ActiveCards.CardList.Add(SingleCard);
+					ActiveCards.CardList.Add(Card);
 					break;
 				}
 			case ECardType::PassiveCard:
 				{
-					PassiveCards.CardList.Add(SingleCard);
+					PassiveCards.CardList.Add(Card);
 					break;
 				}
 			case ECardType::CharacterCard:
 				{
-					CharacterCards.CardList.Add(SingleCard);
+					CharacterCards.CardList.Add(Card);
 					break;
 				}
 		}
@@ -162,22 +157,24 @@ void UBangCardManager::GetAllCards()
 }
 
 // 인원에 맞는 직업카드 추출 로직
-void UBangCardManager::GetJobByPlayer(const int PlayerCount, TArray<EJobType>& SelectedCards_)
+void UBangCardManager::GetJobByPlayer(const int PlayerCount, FCardCollection& SelectedCards_)
 {
 	if (PlayerCount < 4 || PlayerCount > 7) return;
+	
+	TArray<UBangCardBase*> SelectedCards;
 
 	int OfficerCount    = (PlayerCount >= 4) ? 1 : 0;
 	int SubOfficerCount = (PlayerCount >= 5) ? (PlayerCount >= 7 ? 2 : 1) : 0;
 	int OutlawCount     = (PlayerCount == 3) ? 1 : (PlayerCount == 4 || PlayerCount == 5) ? 2 : 3;
 	int BetrayerCount   = 1;
 
-	for (FSingleCard Card : JobCards.CardList)
+	for (UBangCardBase* Card : JobCards.CardList)
 	{
-		if (!Card.Card) continue;
+		if (!Card) continue;
 
-		if (Card.Card->CardType == ECardType::JobCard)
+		if (Card->CardType == ECardType::JobCard)
 		{
-			if (const UBangJobCard* JobCard = Cast<UBangJobCard>(Card.Card))
+			if (const UBangJobCard* JobCard = Cast<UBangJobCard>(Card))
 			{
 				switch (JobCard->JobType)
 				{
@@ -185,7 +182,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, TArray<EJobType>& S
 					{
 						if (OfficerCount != 0)
 						{
-							SelectedCards_.Add(JobCard->JobType);
+							SelectedCards.Add(Card);
 							OfficerCount--;
 						}
 						break;
@@ -194,7 +191,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, TArray<EJobType>& S
 					{
 						if (SubOfficerCount != 0)
 						{
-							SelectedCards_.Add(JobCard->JobType);
+							SelectedCards.Add(Card);
 							SubOfficerCount--;
 						}
 						break;
@@ -203,7 +200,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, TArray<EJobType>& S
 					{
 						if (OutlawCount != 0)
 						{
-							SelectedCards_.Add(JobCard->JobType);
+							SelectedCards.Add(Card);
 							OutlawCount--;
 						}
 						break;
@@ -212,7 +209,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, TArray<EJobType>& S
 					{
 						if (BetrayerCount != 0)
 						{
-							SelectedCards_.Add(JobCard->JobType);
+							SelectedCards.Add(Card);
 							BetrayerCount--;
 						}
 						break;
@@ -222,7 +219,7 @@ void UBangCardManager::GetJobByPlayer(const int PlayerCount, TArray<EJobType>& S
 		}
 	}
 
-	ShuffleArray(SelectedCards_);
+	ShuffleCards(SelectedCards_);
 }
 
 // 덱 섞기

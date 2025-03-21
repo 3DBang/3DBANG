@@ -13,4 +13,8 @@ class CH4_TEAM3_BANG_API ABangGameState : public AGameState
 
 public:
 	virtual void BeginPlay() override;
+	
+	
+	UPROPERTY()
+	UBangCardManager* CardManager;
 };

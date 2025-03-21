@@ -3,17 +3,13 @@
 
 #include "BangCharacter/BangCharacter.h"
 #include "PlayerController/BangPlayerController.h"
-#include "CharacterUIActor/BangUIActor.h"
-#include "CharacterUIActor/BangHPActor.h"
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "InputActionValue.h"
-#include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
-
 // Sets default values
 ABangCharacter::ABangCharacter()
 {
@@ -44,38 +40,17 @@ ABangCharacter::ABangCharacter()
 void ABangCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	/**Set TextActor*/
-	//HasAuthority 설정 필수 !서버에만 스폰이 되게
-	if (HasAuthority() && TextActorUIClass)
-	{
-		//
-		float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-		
-		FVector RelativeLocation(0.f, 0.f, CapsuleHalfHeight + 70.f);
-		FRotator RelativeRotation = FRotator::ZeroRotator;
-		FTransform RelativeTransform(RelativeRotation, RelativeLocation);
-
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = this;
-		//지연스폰 ! FinishSpawingActor를 호출하면 그 때 스폰됨
-		ABangUIActor* DeferredTextActor = GetWorld()->SpawnActorDeferred<ABangUIActor>(TextActorUIClass, RelativeTransform, this);
-		if (DeferredTextActor)
-		{
-			// CapsuleComponent에 부착하면서 KeepRelativeTransform 규칙을 사용
-			DeferredTextActor->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-
-			// FinishSpawningActor를 호출하면, 설정한 RelativeTransform을 기준으로 스폰
-			UGameplayStatics::FinishSpawningActor(DeferredTextActor, RelativeTransform);
-			TextActor = DeferredTextActor;
-		}
-	}
+	
 }
+
+// Called every frame
 void ABangCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
+
+// Called to bind functionality to input
 void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -191,71 +166,4 @@ void ABangCharacter::Click(const FInputActionValue& Value)
 	//How Can I GET Users Controller?
 	//Server Player?
 }
-/**히든 처리*/
-void ABangCharacter::UpdateHPActors(int32 NewHP)
-{
-	for (int32 i = 0; i < HPActors.Num(); i++)
-	{
-		if (HPActors[i].IsValid())
-		{
-			bool bVisible = (i < NewHP);
-			HPActors[i]->SetHiddenActorState(!bVisible);
-		}
-	}
-}
 
-void ABangCharacter::SetHP(int32 NewHP)
-{
-	/**Set HPActor*/
-	//HasAuthority 설정 필수 ! 서버에만 스폰이 되게 
-	if (HasAuthority() && HPActorClass)
-	{
-		HP = NewHP;
-		const float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-		for (int32 i = 0; i < NewHP; i++)
-		{
-			
-			FVector RelativeLocation(0.f, (i - (HP - 1) / 2.f) * 30.f, CapsuleHalfHeight + 10.f);
-			FRotator RelativeRotation = FRotator::ZeroRotator;
-			FTransform RelativeTransform(RelativeRotation, RelativeLocation);
-
-			FVector Offset = FVector(0.f, i * 30.f, 100.f);
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = this;
-
-			ABangHPActor* HPActor = GetWorld()->SpawnActorDeferred<ABangHPActor>(
-				HPActorClass, RelativeTransform, this);
-			if (HPActor)
-			{
-				HPActor->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-				HPActor->SetHiddenActorState(false);
-				UGameplayStatics::FinishSpawningActor(HPActor, RelativeTransform);
-				HPActors.Add(HPActor);
-			}
-		}
-	}
-}
-
-void ABangCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-
-	// 서버 권한에서만 HP / Text Actor 파괴 (안전 장치) 
-	if (HasAuthority())
-	{
-		if (TextActor.IsValid())
-		{
-			TextActor->Destroy();
-			TextActor = nullptr;
-		}
-
-		for (auto& WeakHP : HPActors)
-		{
-			if (WeakHP.IsValid())
-			{
-				WeakHP->Destroy();
-			}
-		}
-		HPActors.Empty(); 
-	}
-}
