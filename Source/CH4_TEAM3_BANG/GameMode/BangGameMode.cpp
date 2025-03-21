@@ -66,14 +66,32 @@ void ABangGameMode::AddPlayer(const uint32& UniqueID)
 
 	FPlayerInformation PlayerInfo;
 	PlayerInfo.PlayerUniqueID = UniqueID;
-	Players.Players.Add(PlayerInfo);
+	LobbyPlayers.Players.Add(PlayerInfo);
+}
+
+void ABangGameMode::RemovePlayer(const uint32& UniqueID)
+{
+	if (CurrentGameState == EGameState::GamePlaying) return;
+
+	for (FPlayerInformation Player : LobbyPlayers.Players)
+	{
+		if (Player.PlayerUniqueID == UniqueID)
+		{
+			LobbyPlayers.Players.Remove(Player);
+			break;
+		}
+	}
 }
 
 void ABangGameMode::ArrangeSeats()
 {
-	ShuffleSeats(Players);
-	// 플레이어 스테이트에 Players 전달
+	// 로비 플레이어 등록 후 자리 배치
+	for (FPlayerInformation Player : LobbyPlayers.Players)
+	{
+		Players.Players.Add(Player);
+	}
 	
+	ShuffleSeats(Players);
 }
 
 void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
@@ -91,6 +109,8 @@ void ABangGameMode::StartGame()
 {
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager || Players.Players.Num() < 4 || Players.Players.Num() > 7) return;
 
+	ArrangeSeats();
+	
 	CurrentGameState = EGameState::GamePlaying;
 
 	// 카드 매니저에 게임 시작 알림
@@ -339,7 +359,7 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID,
 
 void ABangGameMode::UseCard(
 	const uint32 UniqueID,
-	const FSingleCard& Card, 
+	const FPlayerCardCollection& Card, 
 	const EActiveType ActiveType,
 	const EPassiveType PassiveType,
 	const ECharacterType CharacterType,

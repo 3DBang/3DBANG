@@ -54,12 +54,12 @@ public:
 	virtual void BeginPlay() override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
-	// 플레이어 등록
+	// 로비 플레이어 등록
 	UFUNCTION()
 	void AddPlayer(const uint32& UniqueID);
-	// 플레이어 자리 배치
+	// 로비 플레이어 삭제
 	UFUNCTION()
-	void ArrangeSeats();
+	void RemovePlayer(const uint32& UniqueID);
 	// 게임 시작
 	UFUNCTION()
 	void StartGame();
@@ -67,7 +67,7 @@ public:
 	UFUNCTION() // 실제 객체 주소가 넘어가는지 확인 필요
 	void UseCard(
 		const uint32 UniqueID,
-		const FSingleCard& Card, 
+		const FPlayerCardCollection& Card, 
 		const EActiveType ActiveType,
 		const EPassiveType PassiveType,
 		const ECharacterType CharacterType,
@@ -113,9 +113,12 @@ private:
 	// 카드 매니저
 	UPROPERTY()
 	TObjectPtr<UBangCardManager> CardManager;
-	// 현재 플레이어 목록
+	// 개임중인 플레이어 목록
 	UPROPERTY()
 	FPlayerCollection Players;
+	// 현재 플레이어 목록
+	UPROPERTY()
+	FPlayerCollection LobbyPlayers;
 	// 현재 플레이어 인덱스
 	int16 PlayerIndex;
 	// 현재 게임 상태
@@ -127,7 +130,10 @@ private:
 	// 현재 플레이어의 턴 상태
 	UPROPERTY()
 	EPlayerTurnState CurrentPlayerTurnState;
-	
+
+	// 플레이어 자리 배치
+	UFUNCTION()
+	void ArrangeSeats();
 	// 게임 턴 이동 (플레이어 변경)
 	UFUNCTION()
 	void AdvanceGameTurn();
