@@ -3,6 +3,14 @@
 #include "Data/CardEnums.h"
 #include "GameMode/BangGameMode.h"
 #include "PlayerState/BangPlayerState.h"
+#include "BangCharacter/BangCharacter.h"
+#include "CharacterUIActor/BangUIActor.h"
+
+//Team_State
+#include "Data/BangPlayerStatData.h"
+#include "UI/BangInGameChattingWidget.h"
+#include "UI/BangInGamePlayerListWidget.h"
+#include "UI/BangPlayerHUD.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -13,6 +21,27 @@ void ABangPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UE_LOG(LogTemp, Error, TEXT("ABangPlayerController BeginPlay"));
+
+	// 순서 변경 필요
+	if (IsLocalController())
+	{
+		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			BangHUD->ChattingWidgetInstance->AddMessage(FText::FromString("Hello from Controller!"), FSlateColor(FLinearColor::Green));
+
+			TArray<UBangPlayerStatData*> PlayerStats;
+
+			const auto Stat = NewObject<UBangPlayerStatData>();
+			Stat->PlayerId = "PlayerOne";
+			Stat->bIsAlive = true;
+			PlayerStats.Add(Stat);
+			
+			BangHUD->PlayerListWidgetInstance->UpdatePlayerList(PlayerStats);
+		}
+	}
+	// 순서 변경 필요
+	
 	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
@@ -106,7 +135,6 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveTyp
     //서버에 카드 사용 요청 보내기
     Server_UseCard(SelectedActiveCard, SelectedPassiveCard, TargetPlayerID);
 }
-
 
 void ABangPlayerController::Client_SelectTarget_Implementation()
 {

@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -91,20 +89,20 @@ public:
 
 	//void OnPossess(APawn* InPawn) override;
 
-	/*UFUNCTION(BlueprintCallable, Category = "UI")
+
+	UFUNCTION(BlueprintCallable, Category = "UI")
 	void UpdatePlayerUI(FName& NewText);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void UpdatePlayerHP(int32 NewHP);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
-	void SetInitializeHP(int32 NewHP);*/
+	void SetInitializeHP(int32 NewHP);
+
 
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
-public:
-	//virtual void Tick(float DeltaTime) override;
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
 

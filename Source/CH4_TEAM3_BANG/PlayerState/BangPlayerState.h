@@ -21,12 +21,13 @@ struct FPlayerStat
 	UPROPERTY()
 	float Health;
 
-	UPROPERTY()
+	UPROPERTY() // UPROPERTY 가 붙어있으면 기본적으로해줌 
 	int32 Score;
 
 	// NetSerialize 함수: 읽기/쓰기를 동일 순서로 처리해야 합니다.
 	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
 	{
+		// Ar.IsLoading 클라에서 읽을때 else 쓸때
 		Ar << Value;
 		Ar << Health;
 		Ar << Score;
@@ -54,7 +55,8 @@ public:
 	ABangPlayerState();
 
 	virtual void BeginPlay() override;
-	
+
+	//블루프린트에서 플레이어 정보를 설정이 필요할때 부르는 이벤트
 	UFUNCTION(BlueprintImplementableEvent, Category = "Player State")
 	void InitPlayerInfo();
 	
@@ -86,12 +88,13 @@ public:
 
 	//카드를 버리는 함수
 
-	
-	//카드를 사용했을때 적과 나의 거리를 체크하는 함수
-	// @상대방의 정보 ex, 스테이트 or 플레이어 인포
-	// @사용한 카드
-	// @플레이어 위치정보
-	void Calculate_Distance(TObjectPtr<UBangCardBase> _UseCard, FPlayerCollection& _Collection);
+
+	// 플레이어 컨트롤러에서 호출하는 함수
+	// 카드를 사용했을때 적과 나의 거리를 체크하는 함수
+	// @ 상대방의 정보 ex, 스테이트 or 플레이어 인포
+	// @ FPlayerCardSymbol _UseCard 사용한 카드
+	// @ FPlayerInformation 플레이어 위치정보
+	void Calculate_Distance(FPlayerCardSymbol _UseCard, uint32 _ToUniqueID, const EActiveType ActiveType, const EPassiveType PassiveType);
 	
 	// 카드의 사용 조건이 맞을때 효과를 적용하는 함수
 	// 효과를 발생시킨 플레이어 , 사용한 카드

@@ -77,6 +77,9 @@ public:
 		const uint32 ToUniqueID, // 대상
 		const ECharacterType ToCharacterType // 대상 캐릭터 타입
 		) const;
+	// 카드 뽑기 (Play Role)
+	UFUNCTION()
+	void DrawCard(const FPlayerCardSymbol& Card);
 	// 버릴 카드 선택 (Play Role)
 	UFUNCTION()
 	void LooseCard(const FCardCollection CardList);

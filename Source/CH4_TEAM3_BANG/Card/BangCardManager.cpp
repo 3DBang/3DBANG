@@ -54,30 +54,64 @@ void UBangCardManager::HandCards(const int CardCount, FCardCollection& OutCards_
 }
 
 // 카드 심볼과 번호로 카드 찾기
-void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsFromHanded, FSingleCard& FoundCard_)
+void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType, FSingleCard& FoundCard_)
 {
 	if (HandedCards.CardList.Num() == 0 && UsedCards.CardList.Num() == 0) return;
-	
-	if (IsFromHanded)
+
+	switch (DeckType)
 	{
-		for (const FSingleCard HandedCard : HandedCards.CardList)
+	case EDeckType::HandedCard:
 		{
-			if (HandedCard.Card->SymbolType == SymbolType && HandedCard.Card->SymbolNumber == SymbolNumber)
+			for (const FSingleCard HandedCard : HandedCards.CardList)
 			{
-				FoundCard_ = HandedCard;
-				break;
+				if (HandedCard.Card->SymbolType == SymbolType && HandedCard.Card->SymbolNumber == SymbolNumber)
+				{
+					FoundCard_ = HandedCard;
+					break;
+				}
 			}
+			break;
+		}
+	case EDeckType::UsedCards:
+		{
+			for (const FSingleCard UsedCard : UsedCards.CardList)
+			{
+				if (UsedCard.Card->SymbolType == SymbolType && UsedCard.Card->SymbolNumber == SymbolNumber)
+				{
+					FoundCard_ = UsedCard;
+					break;
+				}
+			}
+			break;
+		}
+	case EDeckType::AvailCards:
+		{
+			for (const FSingleCard UsedCard : AvailCards.CardList)
+			{
+				if (UsedCard.Card->SymbolType == SymbolType && UsedCard.Card->SymbolNumber == SymbolNumber)
+				{
+					FoundCard_ = UsedCard;
+					break;
+				}
+			}
+			break;
 		}
 	}
-	else
+}
+
+// 카드 심볼과 번호로 카드 찾기
+void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& FoundCard_) const
+{
+	if (!CardData) return;
+
+	for (const TObjectPtr<UBangCardBase> Card : CardData->Cards)
 	{
-		for (const FSingleCard UsedCard : UsedCards.CardList)
+		if (!Card) return;
+
+		if (Card->SymbolType == SymbolType && Card->SymbolNumber == SymbolNumber)
 		{
-			if (UsedCard.Card->SymbolType == SymbolType && UsedCard.Card->SymbolNumber == SymbolNumber)
-			{
-				FoundCard_ = UsedCard;
-				break;
-			}
+			FoundCard_.Card = Card;
+			break;
 		}
 	}
 }
