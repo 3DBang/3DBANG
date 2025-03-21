@@ -22,6 +22,20 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
+	//여기에서 HasAuthoriy를 사용하면 서버이자 클라이언트는 Tick이 활성화가 되지 않는다
+	if (IsLocalController())
+	{
+		SetActorTickEnabled(true);
+	}
+	else
+	{
+		SetActorTickEnabled(false);
+	}
+	/*FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	InputMode.SetWidgetToFocus(nullptr);
+	SetInputMode(InputMode);*/
+	bShowMouseCursor = true;
 }
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
@@ -89,3 +103,28 @@ void ABangPlayerController::SetInitializeHP(int32 NewHP)
 		}
 	}
 }
+///////////////////////////
+//// 원명 추가 
+//////////////////////////
+void ABangPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	FHitResult HitResult;
+	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
+	{
+		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
+		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
+		if (HitChar && HitChar != GetPawn())
+		{
+			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
+			{
+				OtherPlayers = OtherPlayer;
+				CurrentMouseCursor = EMouseCursor::Hand;
+				return;
+			}
+		}
+	}
+	OtherPlayers = nullptr;
+	CurrentMouseCursor = EMouseCursor::Default;
+}
+

@@ -10,7 +10,7 @@
 class UInputMappingContext;
 class UInputAction;
 class ABangPlayerState;
-
+class ABangCharacter;
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
 {
@@ -96,5 +96,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void SetInitializeHP(int32 NewHP);
 
-	
+///////////////////////////
+//// 원명 추가 
+//////////////////////////
+public:
+	virtual void Tick(float DeltaTime) override;
+private:
+	TObjectPtr<ABangCharacter> OtherPlayers;
 };

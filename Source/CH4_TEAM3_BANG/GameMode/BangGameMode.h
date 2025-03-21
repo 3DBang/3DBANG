@@ -151,4 +151,7 @@ private:
 	// 캣벌로우사용 (Play Role)
 	UFUNCTION()
 	void UseCatBalouCard(const EActiveType ActiveType, const EPassiveType PassiveType);
+
+	UFUNCTION(BlueprintCallable)
+	void SetUserHP();
 };
