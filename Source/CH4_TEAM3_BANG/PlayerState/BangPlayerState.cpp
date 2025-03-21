@@ -229,13 +229,12 @@ void ABangPlayerState::OnCharacterDrawPhase()
 
 EJobType ABangPlayerState::GetJobType()
 {
-	UBangJobCard* JobCard = Cast<UBangJobCard>(PlayerInfo.JobCard.Card);
-	return JobCard->JobType;
+	
+	return PlayerInfo.JobCardType;
 }
 
 ECharacterType ABangPlayerState::GetCharacterType()
 {
-	UBangCharacterCard* CharacterCard = Cast<UBangCharacterCard>(PlayerInfo.JobCard.Card);
-	return CharacterCard->CharacterType;
+	return PlayerInfo.CharacterCardType;
 }
 
