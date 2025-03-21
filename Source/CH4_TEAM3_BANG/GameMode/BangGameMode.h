@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Card/BangCardManager.h"
 #include "Data/PlayerInformation.h"
 #include "GameFramework/GameMode.h"
 #include "PlayerController/BangPlayerController.h"
@@ -63,11 +64,24 @@ public:
 	UFUNCTION()
 	void StartGame();
 	// 단일 카드 사용 (Play Role)
-	UFUNCTION()
-	void UseCard(const uint32 UniqueID, const ECardType CardType, const EActiveType ActiveType, const EPassiveType PassiveType, const uint32 ToUniqueID) const;
+	UFUNCTION() // 실제 객체 주소가 넘어가는지 확인 필요
+	void UseCard(
+		const uint32 UniqueID,
+		const FSingleCard& Card, 
+		const EActiveType ActiveType,
+		const EPassiveType PassiveType,
+		const ECharacterType CharacterType,
+		const uint32 ToUniqueID,
+		const ECharacterType ToCharacterType
+		) const;
 	// 버릴 카드 선택 (Play Role)
 	UFUNCTION()
-	void LooseCard(const TArray<EActiveType> ActiveType, const TArray<EPassiveType> PassiveType);
+	void LooseCard(const FCardCollection CardList);
+
+	// 버릴 카드 선택 (시드 케첨 용)
+	UFUNCTION()
+	void LooseSidKetchumCard(const FCardCollection CardList);
+
 	// 카드 버려서 생명력 회복
 
 	// 플레이어 사망
@@ -130,4 +144,11 @@ private:
 	// UniqueID로 PlayerController 받아오기
 	UFUNCTION()
 	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangPlayerControllerCollection& PlayerController_);
+
+	// 강탈카드사용 (Play Role)
+	UFUNCTION()
+	void UsePanicCard(const EActiveType ActiveType, const EPassiveType PassiveType);
+	// 캣벌로우사용 (Play Role)
+	UFUNCTION()
+	void UseCatBalouCard(const EActiveType ActiveType, const EPassiveType PassiveType);
 };

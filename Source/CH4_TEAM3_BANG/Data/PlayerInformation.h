@@ -1,8 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BlueprintDataDefinitions.h"
-#include "Card/BaseCard/BangCardBase.h"
+#include "Card/BangCardManager.h"
 #include "PlayerInformation.generated.h"
 
 USTRUCT(BlueprintType)
@@ -50,6 +49,13 @@ struct FPlayerInformation
 	//장착된 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	TArray<TObjectPtr<UBangCardBase>> EquippedCards;
+	UPROPERTY()
+	FSingleCard JobCard;
+
+	UPROPERTY()
+	FSingleCard CharacterCard;
+
+
 	
 };
 

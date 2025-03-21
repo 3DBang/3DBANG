@@ -34,6 +34,7 @@ enum class EJobType : uint8
 UENUM(BlueprintType)
 enum class EActiveType : uint8
 {
+	None UMETA(DisplayName = "None"),
 	Bang UMETA(DisplayName = "Bang"),						// 뱅 (공격 카드)
 	Missed UMETA(DisplayName = "Missed"),					// 빗나감 (방어 카드)
 	Stagecoach UMETA(DisplayName = "Stagecoach"),			// 역마차 (카드 2장 뽑기)
@@ -53,6 +54,7 @@ enum class EActiveType : uint8
 UENUM(BlueprintType)
 enum class EPassiveType : uint8
 {
+	None UMETA(DisplayName = "None"),
 	Barrel UMETA(DisplayName = "Barrel"),          // 술통
 	Scope UMETA(DisplayName = "Scope"),            // 조준경
 	Mustang UMETA(DisplayName = "Mustang"),        // 야생마
