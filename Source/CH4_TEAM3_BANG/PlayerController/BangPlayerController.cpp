@@ -4,6 +4,10 @@
 #include "GameMode/BangGameMode.h"
 #include "PlayerState/BangPlayerState.h"
 #include "BangCharacter/BangCharacter.h"
+
+#include "CharacterUIActor/BangUIActor.h"
+
+//Team_State
 #include "Data/BangPlayerStatData.h"
 #include "UI/BangInGameChattingWidget.h"
 #include "UI/BangInGamePlayerListWidget.h"
@@ -89,6 +93,40 @@ void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator
 	}	
 }
 
+void ABangPlayerController::UpdatePlayerUI(FName& NewText)
+{
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacter = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacter && BangCharacter->TextActor.IsValid())
+		{
+			BangCharacter->TextActor->SetDisplayText(NewText);
+		}
+	}
+}
+void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
+{
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacters = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacters)
+		{
+			BangCharacters->UpdateHPActors(NewHP);
+		}
+	}
+
+}
+void ABangPlayerController::SetInitializeHP(int32 NewHP)
+{
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacterHP = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacterHP)
+		{
+			BangCharacterHP->SetHP(NewHP);
+		}
+	}
+}
 void ABangPlayerController::Client_SelectCard_Implementation()
 {
     // UI 창 띄우기 (보유 중인 카드 표시)
