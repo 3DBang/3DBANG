@@ -52,7 +52,7 @@ void ABangCharacter::BeginPlay()
 		//
 		float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 		
-		FVector RelativeLocation(0.f, 0.f, CapsuleHalfHeight + 50.f);
+		FVector RelativeLocation(0.f, 0.f, CapsuleHalfHeight + 70.f);
 		FRotator RelativeRotation = FRotator::ZeroRotator;
 		FTransform RelativeTransform(RelativeRotation, RelativeLocation);
 
@@ -211,25 +211,26 @@ void ABangCharacter::SetHP(int32 NewHP)
 	if (HasAuthority() && HPActorClass)
 	{
 		HP = NewHP;
+		const float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 		for (int32 i = 0; i < NewHP; i++)
 		{
-			float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-
-			FVector RelativeLocation(0.f, i * 30.f, CapsuleHalfHeight + 100.f);
+			
+			FVector RelativeLocation(0.f, (i - (HP - 1) / 2.f) * 30.f, CapsuleHalfHeight + 10.f);
 			FRotator RelativeRotation = FRotator::ZeroRotator;
 			FTransform RelativeTransform(RelativeRotation, RelativeLocation);
-
 
 			FVector Offset = FVector(0.f, i * 30.f, 100.f);
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = this;
 
-			ABangHPActor* NewHPActor = GetWorld()->SpawnActor<ABangHPActor>(HPActorClass, GetActorLocation() + Offset, FRotator::ZeroRotator, SpawnParams);
-			if (NewHPActor)
+			ABangHPActor* HPActor = GetWorld()->SpawnActorDeferred<ABangHPActor>(
+				HPActorClass, RelativeTransform, this);
+			if (HPActor)
 			{
-				NewHPActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-				NewHPActor->SetHiddenActorState(false);
-				HPActors.Add(NewHPActor);
+				HPActor->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+				HPActor->SetHiddenActorState(false);
+				UGameplayStatics::FinishSpawningActor(HPActor, RelativeTransform);
+				HPActors.Add(HPActor);
 			}
 		}
 	}
@@ -255,6 +256,6 @@ void ABangCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 				WeakHP->Destroy();
 			}
 		}
-		HPActors.Empty();
+		HPActors.Empty(); 
 	}
 }

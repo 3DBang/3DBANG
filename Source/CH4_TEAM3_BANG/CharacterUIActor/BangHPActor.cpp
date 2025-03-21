@@ -10,8 +10,12 @@ ABangHPActor::ABangHPActor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true; 
+
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	SetRootComponent(SceneRoot);
+
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
-	SetRootComponent(MeshComponent);
+	MeshComponent->SetupAttachment(SceneRoot);
 }
 void ABangHPActor::SetHiddenActorState(bool bIsHiddenHp)
 {

@@ -21,12 +21,16 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HP")
 	UStaticMeshComponent* MeshComponent;
+
 	/**불 값을 서버와 동기화 시켜서 Hidden처리 , Hidden은 서버와 자동동기화가 되지 않음 */
 	UPROPERTY(ReplicatedUsing = OnRep_HiddenState, VisibleAnywhere, Category = "HP")
 	bool bIsHpHidden = false;
 
 	UFUNCTION()
 	void OnRep_HiddenState();
+
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* SceneRoot;
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
