@@ -74,7 +74,7 @@ void ABangPlayerState::AddDrawnCards(FCardCollection& DrawCards)
 //어떤 카드 때문에 응답을 받았는지 전해주기 찬효님과 이야기 해야함
 
 //거리 체크
-void ABangPlayerState::Calculate_Distance(TObjectPtr<UBangCardBase> _UseCard, FPlayerCollection& _Collection) // 상대 구분
+void ABangPlayerState::Calculate_Distance(FPlayerCardSymbol _UseCard, FPlayerCollection& _Collection) // 상대 구분
 {
 	// 플레이어 컬렉션에서 상대 플레이어와 나의 정보를 가져와서 거리 체크
 	//거리체크 후 공격을 못하는 상황이면 플레이어에게 못한다는 알림

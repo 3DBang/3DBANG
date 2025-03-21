@@ -91,9 +91,9 @@ public:
 	// 플레이어 컨트롤러에서 호출하는 함수
 	// 카드를 사용했을때 적과 나의 거리를 체크하는 함수
 	// @ 상대방의 정보 ex, 스테이트 or 플레이어 인포
-	// @ FPlayerCardCollection _UseCard 사용한 카드
+	// @ FPlayerCardSymbol _UseCard 사용한 카드
 	// @ FPlayerInformation 플레이어 위치정보
-	void Calculate_Distance(TObjectPtr<UBangCardBase> _UseCard, FPlayerCollection& _Collection);
+	void Calculate_Distance(FPlayerCardSymbol _UseCard, FPlayerCollection& _Collection);
 	
 	// 카드의 사용 조건이 맞을때 효과를 적용하는 함수
 	// 효과를 발생시킨 플레이어 , 사용한 카드
