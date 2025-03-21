@@ -122,14 +122,6 @@ private:
 	// 플레이어 자리 섞기
 	UFUNCTION()
 	void ShuffleSeats(FPlayerCollection& ToShufflePlayers) const;
-	/**Test*/
-	UFUNCTION(BlueprintCallable, Category = "Player")
-	void ChangePlayerName(FName Newname);
-
-	UFUNCTION(BlueprintCallable, Category = "Player")
-	void ChangePlayerHP(int32 NewHP);
-
-	UFUNCTION(BlueprintCallable, Category = "Player")
-	void SetPlayerHP(int32 NewHP);
+	
 
 };

@@ -66,46 +66,6 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
 		ToShufflePlayers.Players.Swap(i, RandomIndex);
 	}
 }
-
-void ABangGameMode::ChangePlayerName(FName Newname)
-{
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 1);
-	if (PC)
-	{
-		ABangPlayerController* MyPC = Cast<ABangPlayerController>(PC);
-		if (MyPC)
-		{
-			MyPC->UpdatePlayerUI(Newname);
-		}
-	}
-}
-
-void ABangGameMode::ChangePlayerHP(int32 NewHP)
-{
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 1);
-	if (PC)
-	{
-		ABangPlayerController* MyPC = Cast<ABangPlayerController>(PC);
-		if (MyPC)
-		{
-			MyPC->UpdatePlayerHP(NewHP);
-		}
-	}
-}
-
-void ABangGameMode::SetPlayerHP(int32 NewHP)
-{
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 1);
-	if (PC)
-	{
-		ABangPlayerController* MyPC = Cast<ABangPlayerController>(PC);
-		if (MyPC)
-		{
-			MyPC->SetInitializeHP(NewHP);
-		}
-	}
-}
-
 void ABangGameMode::StartGame()
 {
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager || Players.Players.Num() < 4 || Players.Players.Num() > 7) return;
