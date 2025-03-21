@@ -9,6 +9,9 @@
 
 class UInputMappingContext;
 class UInputAction;
+enum class EJobType : uint8;
+enum class ECharacterType : uint8;
+class ABangGameMode;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
@@ -49,30 +52,35 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-
 ///////////////////////////
 ////서버 관련 로직 작성란
 //////////////////////////
-/*
-	// 사용 버튼을 클릭하면, 선택된 카드를 GameMode에게 전달
-	UFUNCTION(Server, Reliable, WithValidation)
-	void UseCard(ECardType SelectedCard);
 
-	// 공격 대상 선택 후, 대상과 사용한 카드 정보를 GameMode에게 전달
-	UFUNCTION(Server, Reliable, WithValidation)
-	void SelectTargetAndUseCard(APlayerState* TargetPlayer, ECardType UsedCard);
-*/
+public:
+//서버에 턴 종료 요청 
+	UFUNCTION(Server, Reliable)
+	void Server_EndTurn();
 
+	UFUNCTION(Server, Reliable)
+	void Server_UseCard(uint32 UniqueID, ECardType CardType, EActiveType ActiveType, EPassiveType PassiveType, uint32 ToUniqueID);
+private:
+	uint32 MyPlayerID;
+	EJobType MyJobType;
+	ECharacterType MyCharacterType;
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
-	
-	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
-	//UFUNCTION(Client, Reliable)
-	//void ShowOwnedCards();
-	
 public:
+	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
+	UFUNCTION(Client, Reliable)
+	void MyTurn_SelectCard();
+	
+	UFUNCTION(Client, Reliable)
+	void Client_HandleCardSelection(EActiveType SelectedActiveCard, EPassiveType SelectedPassiveCard);
+
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SelectTarget();
 };
