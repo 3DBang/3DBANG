@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CharacterCard/BangCharacterCard.h"
 #include "Data/CardEnums.h"
 #include "UObject/Object.h"
 #include "BangCardManager.generated.h"
@@ -28,15 +29,7 @@ class UBangCardDataAsset;
 	PlayerState, Component 로 뺴서 케릭터 특성 구현 고려
 */
 
-USTRUCT(BlueprintType)
-struct FCardCollection
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TArray<TObjectPtr<UBangCardBase>> CardList;
-};
-
+// 카드 객체
 USTRUCT(BlueprintType)
 struct FSingleCard
 {
@@ -44,6 +37,25 @@ struct FSingleCard
 
 	UPROPERTY()
 	TObjectPtr<UBangCardBase> Card;
+
+	bool operator==(const FSingleCard& Other) const
+	{
+		return Card == Other.Card;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FCardCollection
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TArray<FSingleCard> CardList;
+
+	bool operator==(const FCardCollection& Other) const
+	{
+		return CardList == Other.CardList;
+	}
 };
 
 UCLASS(BlueprintType)
@@ -84,27 +96,29 @@ public:
 
 	// 건내준 카드를 다시 사용된 카드 덱에 넣는다
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
-	void ReorderUsedCards(FSingleCard HandedCard);
+	void ReorderUsedCards(const FSingleCard HandedCard);
 	
 	// 건내준 카드를 다시 사용할 카드 덱에 넣는다
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
-	void ReorderAvailCards(FSingleCard HandedCard);
+	void ReorderAvailCards(const FSingleCard HandedCard);
 	
 	// 인원에 맞는 직업카드 추출 로직
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
-	void GetJobByPlayer(const int PlayerCount, FCardCollection& SelectedCards_);
+	void GetJobByPlayer(const int PlayerCount, TArray<EJobType>& SelectedCards_);
 
 	// 카드 심볼과 번호로 카드 찾기 IsFromHanded = true -> 건내준 카드목록, false -> 사용된 카드목록
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsFromHanded, FSingleCard& FoundCard_);
 
-	// 단일 케릭터 카드 추출
+	// 최상위 단일 케릭터 카드 추출
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
-	FORCEINLINE_DEBUGGABLE UBangCardBase* GetCharacterCard() {
-		if (CharacterCards.CardList.Num() == 0) return nullptr;
-		TObjectPtr<UBangCardBase> Card = CharacterCards.CardList[0];
-		CharacterCards.CardList.RemoveAt(0);
-		return Card;
+	FORCEINLINE_DEBUGGABLE ECharacterType GetCharacterCard() {
+		if (CharacterCards.CardList.Num() != 0) {
+			const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(CharacterCards.CardList[0].Card);
+			CharacterCards.CardList.RemoveAt(0);
+			return CharacterCard->CharacterType;
+		}
+		return ECharacterType::None;
 	}
 
 private:
@@ -140,4 +154,17 @@ private:
 
 	UFUNCTION()
 	void ShuffleCards(FCardCollection& Cards);
+
+	template<typename T>
+	static void ShuffleArray(TArray<T>& Array)
+	{
+		const int32 Count = Array.Num();
+		if (Count <= 1) return;
+
+		for (int32 i = Count - 1; i > 0; --i)
+		{
+			const int32 RandomIndex = FMath::RandRange(0, i);
+			Array.Swap(i, RandomIndex);
+		}
+	}
 };

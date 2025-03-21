@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BlueprintDataDefinitions.h"
-#include "Card/BaseCard/BangCardBase.h"
+#include "Card/CharacterCard/BangCharacterCard.h"
+#include "Card/JobCard/BangJobCard.h"
 #include "PlayerInformation.generated.h"
 
 USTRUCT(BlueprintType)
@@ -17,13 +17,25 @@ struct FPlayerInformation
 	FString PlayerName;
 
 	UPROPERTY()
-	TObjectPtr<UBangCardBase> JobCard;
+	EJobType JobCardType;
 
 	UPROPERTY()
-	TObjectPtr<UBangCardBase> CharacterCard;
+	ECharacterType CharacterCardType;
 
 
 	
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerCardCollection
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	ESymbolType SymbolType;
+
+	UPROPERTY()
+	int32 SymbolNumber;
 };
 
 USTRUCT(BlueprintType)
