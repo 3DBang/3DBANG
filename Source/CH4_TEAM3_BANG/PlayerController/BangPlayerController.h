@@ -61,21 +61,27 @@ protected:
 public:
 //서버에 턴 종료 요청 
 	UFUNCTION(Server, Reliable)
-	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+	void Server_EndTurn();
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(EActiveType SelectedActiveCard, EPassiveType SelectedPassiveCard, uint32 TargetPlayerID);
+
+	UFUNCTION(Server, Reliable)
+	void Server_DiscardCards(const TArray<EActiveType>& DiscardedActiveCards, const TArray<EPassiveType>& DiscardedPassiveCards);
 
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
 public:
-	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
+	// 보유중인 카드 보고 선택 (UI에서 클릭하면 카드 선택 가능)
 	UFUNCTION(Client, Reliable)
 	void Client_SelectCard();
-	
+	//선택한 카드 사용
 	UFUNCTION(Client, Reliable)
 	void Client_HandleCardSelection(EActiveType SelectedActiveCard, EPassiveType SelectedPassiveCard);
+
+	UFUNCTION(Client, Reliable)
+	void ShowDiscardUI(const TArray<EActiveType>& ActiveCards, const TArray<EPassiveType>& PassiveCards);
 
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
@@ -85,20 +91,20 @@ public:
 
 	//void OnPossess(APawn* InPawn) override;
 
-	UFUNCTION(BlueprintCallable, Category = "UI")
+	/*UFUNCTION(BlueprintCallable, Category = "UI")
 	void UpdatePlayerUI(FName& NewText);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void UpdatePlayerHP(int32 NewHP);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
-	void SetInitializeHP(int32 NewHP);
+	void SetInitializeHP(int32 NewHP);*/
 
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
 public:
-	virtual void Tick(float DeltaTime) override;
+	//virtual void Tick(float DeltaTime) override;
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
 

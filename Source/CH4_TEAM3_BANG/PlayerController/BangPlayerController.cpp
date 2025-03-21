@@ -30,13 +30,18 @@ void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 	
 }
 
-void ABangPlayerController::Server_EndTurn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter)
+void ABangPlayerController::Server_EndTurn_Implementation()
 {
-	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (GM)
-	{
-		GM->EndTurn(UniqueID, PlayerCharacter);
-	}
+    ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+
+    if (!PS)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[PlayerController] PlayerState를 찾을 수 없습니다!"));
+        return;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[PlayerController] PlayerState에게 턴 종료 요청 전송"));
+    //PlayerState->HandleTurnEnd();
 }
 
 
@@ -86,6 +91,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveTyp
     if (NeedsTarget)
     {
         // 대상 선택 UI 표시 (또는 레이 트레이싱 등)
+        // 다같이 카메라 위로 해줘()
         Client_SelectTarget();
         UE_LOG(LogTemp, Log, TEXT("TargetSelect"));
         //테스트용 임시 타겟 (실제는 GetSelectedTargetID() 등으로 구현)
@@ -120,3 +126,47 @@ void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelecteSel
         //BangPlayerState->ProcessCardUsage(SelectedCard, TargetPlayerID);
     }
 }
+
+void ABangPlayerController::ShowDiscardUI_Implementation(const TArray<EActiveType>& ActiveCards, const TArray<EPassiveType>& PassiveCards)
+{/*
+    UE_LOG(LogTemp, Log, TEXT("[PlayerController] 카드 버리기 UI를 띄웁니다."));
+
+    if (!DiscardUIWidget)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[PlayerController] DiscardUI 위젯이 설정되지 않았습니다!"));
+        return;
+    }
+
+    UDiscardUI* DiscardUI = CreateWidget<UDiscardUI>(this, DiscardUIWidget);
+    if (!DiscardUI)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[PlayerController] 카드 버리기 UI 생성 실패!"));
+        return;
+    }
+
+    // 🔥 보유 중인 카드 목록을 UI에 전달
+    DiscardUI->SetupDiscardUI(ActiveCards, PassiveCards);
+
+    // 🔥 UI 표시
+    DiscardUI->AddToViewport();*/
+}
+
+
+
+void ABangPlayerController::Server_DiscardCards_Implementation(const TArray<EActiveType>& DiscardedActiveCards, const TArray<EPassiveType>& DiscardedPassiveCards)
+{
+    ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+
+    if (!PS)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[PlayerController] PlayerState를 찾을 수 없습니다!"));
+        return;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[PlayerController] 유저가 버릴 카드 선택 - 액티브 %d장, 패시브 %d장"),
+        DiscardedActiveCards.Num(), DiscardedPassiveCards.Num());
+
+    // PlayerState로 카드 버리기 요청 전송
+    //PlayerState->HandleDiscardCards(DiscardedActiveCards, DiscardedPassiveCards);
+}
+

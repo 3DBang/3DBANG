@@ -420,13 +420,13 @@ void ABangGameMode::UseCatBalouCard(const EActiveType ActiveType, const EPassive
 	
 }
 
-void ABangGameMode::SetUserHP()
+/*void ABangGameMode::SetUserHP()
 {
 	if (ABangPlayerController* PlayerController = Cast<ABangPlayerController>(PlayerControllers[1]))
 	{
 		PlayerController->SetInitializeHP(5);
 	}
-}
+}*/
 
 void ABangGameMode::AdvancePlayerTurn()
 {

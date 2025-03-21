@@ -160,6 +160,6 @@ private:
 	UFUNCTION()
 	void UseCatBalouCard(const EActiveType ActiveType, const EPassiveType PassiveType);
 
-	UFUNCTION(BlueprintCallable)
-	void SetUserHP();
+	//UFUNCTION(BlueprintCallable)
+	//void SetUserHP();
 };
