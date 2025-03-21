@@ -1,5 +1,6 @@
 #include "BangPlayerState.h"
 
+#include "BangCharacter/BangCharacter.h"
 #include "Card/BangCardManager.h"
 #include "Card/ActiveCard/BangActiveCard.h"
 #include "Card/BaseCard/BangCardBase.h"
@@ -7,6 +8,7 @@
 #include "Card/JobCard/BangJobCard.h"
 #include "Card/PassiveCard/BangPassiveCard.h"
 #include "GameMode/BangGameMode.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 ABangPlayerState::ABangPlayerState(): PlayerStat()
@@ -56,19 +58,162 @@ void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& O
 	DOREPLIFETIME(ABangPlayerState, PlayerStat);
 }
 
-void ABangPlayerState::AddDrawnCards(FCardCollection& DrawCards)
+void ABangPlayerState::AddCards_Implementation(const FPlayerCardCollection& DrawCards)
 {
-	if (HasAuthority())
+	//카드 매니저에 있는
+	//GetCardBySymbolAndNumber 호출해서 심볼을 준다
+	//카드를 넣고 플레이어에게
+
+	PlayerInfo.MyCards.PlayerCards.Append(DrawCards.PlayerCards);
+	
+	APlayerController* PlayerController = Cast<APlayerController>(GetOwner());
+	if (PlayerController)
 	{
-		//카드 매니저에 있는
-		//GetCardBySymbolAndNumber 호출해서 심볼을 준다
-		//카드를 넣고 플레이어에게
+		//플레이어 컨트롤러에게 턴이 시작됐다 알림
+	}
+	
+}
+
+void ABangPlayerState::RemoveCards(FPlayerCardCollection& DrawCards)
+{
+}
+
+void ABangPlayerState::UseCard(const FPlayerCardSymbol UseCard,const uint32 _ToUniqueID_, const EActiveType ActiveType, const EPassiveType PassiveType)
+{
+	// 카드가 무슨카드인지
+	TObjectPtr<UBangCardManager> CardManager;
+	FSingleCard SearchCard;
+	
+	CardManager->GetCardBySymbolAndNumberFromDataAsset(UseCard.SymbolType, UseCard.SymbolNumber, SearchCard);
+
+	UBangCharacterCard* BangCharacterCard = Cast<UBangCharacterCard>(SearchCard.Card);
+
+	switch (BangCharacterCard->CharacterType)
+	{
+	case ECharacterType::None:
+		break;
+	case ECharacterType::PaulRegret:
+		break;
+	case ECharacterType::BartCassidy:
+		break;
+	case ECharacterType::CalamityJanet:
+		break;
+	case ECharacterType::Jourdonnais:
+		break;
+	case ECharacterType::PedroRamirez:
+		break;
+	case ECharacterType::BlackJack:
+		break;
+	case ECharacterType::JesseJones:
+		break;
+	case ECharacterType::SuzyLafayette:
+		break;
+	case ECharacterType::SidKetchum:
+		break;
+	case ECharacterType::LuckyDuke:
+		break;
+	case ECharacterType::SlabTheKiller:
+		break;
+	case ECharacterType::ElGringo:
+		break;
+	case ECharacterType::RoseDoolan:
+		break;
+	case ECharacterType::WillyTheKid:
+		break;
+	case ECharacterType::VultureSam:
+		break;
+	case ECharacterType::KitCarlson:
+		break;
+	}
+	
+	switch (ActiveType)
+	{
+	case EActiveType::None:
+		break;
+	case EActiveType::Bang:
+		break;
+	case EActiveType::Missed:
+		break;
+	case EActiveType::Stagecoach:
+		break;
+	case EActiveType::WellsFargoBank:
+		break;
+	case EActiveType::Beer:
+		break;
+	case EActiveType::GatlingGun:
+		break;
+	case EActiveType::Robbery:
+		break;
+	case EActiveType::CatBalou:
+		break;
+	case EActiveType::Saloon:
+		break;
+	case EActiveType::Duel:
+		break;
+	case EActiveType::GeneralStore:
+		break;
+	case EActiveType::Indians:
+		break;
+	case EActiveType::Jail:
+		break;
+	case EActiveType::Dynamite:
+		break;
+	}
+
+	switch (PassiveType)
+	{
+	case EPassiveType::None:
+		break;
+	case EPassiveType::Barrel:
+		break;
+	case EPassiveType::Scope:
+		break;
+	case EPassiveType::Mustang:
+		break;
+	case EPassiveType::Schofield:
+		break;
+	case EPassiveType::Volcanic:
+		break;
+	case EPassiveType::Remington:
+		break;
+	case EPassiveType::Carbine:
+		break;
+	case EPassiveType::Winchester:
+		break;
+	}
+	
+}
+
+void ABangPlayerState::EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter)
+{
+	//내 체력보다 카드가 많으면 카드를 버리기
+	if(PlayerInfo.MyCards.PlayerCards.Num() > PlayerInfo.CurrentHealth)
+	{
+		//버릴 카드 플레이어에게 요청
+	}
+	else
+	{
 		
-		APlayerController* PlayerController = Cast<APlayerController>(GetOwner());
-		if (PlayerController)
-		{
-			//플레이어 컨트롤러 로직
-		}
+	}
+}
+
+void ABangPlayerState::EndTurnReturn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter)
+{
+}
+
+void ABangPlayerState::EndTurnRemoveCards(FPlayerCardCollection& DrawCards)
+{
+	//카드를 제거
+	//PlayerInfo.MyCards.PlayerCards.;
+	ABangGameMode* BangGameMode = Cast<ABangGameMode>(GetWorld()->GetAuthGameMode());
+	if (!BangGameMode)
+	{
+		return;
+	}
+	
+	for(FPlayerCardSymbol PlayerCard : DrawCards.PlayerCards)
+	{
+		//BangGameMode->LooseCardFromHanded(PlayerCard.SymbolType, PlayerCard.SymbolNumber, true);
 	}
 }
 
@@ -115,19 +260,30 @@ void ABangPlayerState::Calculate_Distance(const FPlayerCardSymbol _UseCard_,cons
 	// 카드를 사용한 사람의 아이템 확인
 	// 무기의 사거리에 따라 거리를 줄여줌
 	// 조준경을 쓰고 있으면 거리를 줄여줌
-
-	//이거 하고 있었움
+	
+	
+	TObjectPtr<UBangCardManager> CardManager;
 	PlayerInformation->EquippedCards.PlayerCards;
+	FSingleCard searchCard;
 	
 	for (int32 i = 0; i < PlayerInformation->EquippedCards.PlayerCards.Num(); i++)
 	{
-		/*int32 SymbolNumber = PlayerInformation->EquippedCards.PlayerCards[i].SymbolNumber;
-		ESymbolType SymbolNumber = PlayerInformation->EquippedCards.PlayerCards[i].SymbolType;*/
-		//GetCardBySymbolAndNumber()
+		ESymbolType SymbolType = PlayerInformation->EquippedCards.PlayerCards[i].SymbolType;
+		int32 SymbolNumber = PlayerInformation->EquippedCards.PlayerCards[i].SymbolNumber;
+		
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, searchCard);
+
+		UBangPassiveCard* BangPassiveCard = Cast<UBangPassiveCard>(searchCard.Card);
+		
+		switch (BangPassiveCard->PassiveType)
+		{
+			case EPassiveType::Scope: // Example: 조준경
+				// 조준경의 효과 적용 - 거리 줄이기
+				Distance -= 1;
+				break;
+		}
 	}
 
-
-	
 	// 사용된 대상의 아이템 확인
 	// 말을 타고 있으면 사거리 + 1
 
@@ -164,6 +320,7 @@ void ABangPlayerState::Calculate_Distance(const FPlayerCardSymbol _UseCard_,cons
 	
 
 }
+
 
 // 적용 후 컨트롤러에 호출 전달 & 컨틀
 void ABangPlayerState::TryApplyEffect(TObjectPtr<UBangCardBase> _UseCard, FPlayerCollection& _Collection)
