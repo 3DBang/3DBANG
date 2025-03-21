@@ -1,39 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BlueprintDataDefinitions.h"
-#include "Card/BaseCard/BangCardBase.h"
+#include "Data/PlayerInformation.h"
 #include "GameFramework/GameMode.h"
+#include "PlayerController/BangPlayerController.h"
+#include "PlayerState/BangPlayerState.h"
 #include "BangGameMode.generated.h"
 
 class UBangCardManager;
-
-USTRUCT(BlueprintType)
-struct FPlayerInformation
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	FBPUniqueNetId PlayerNetID;
-
-	UPROPERTY()
-	FString PlayerName;
-
-	UPROPERTY()
-	TObjectPtr<UBangCardBase> JobCard;
-
-	UPROPERTY()
-	TObjectPtr<UBangCardBase> CharacterCard;
-};
-
-USTRUCT(BlueprintType)
-struct FPlayerCollection
-{
-	GENERATED_BODY()
-	
-	UPROPERTY()
-	TArray<FPlayerInformation> Players;
-};
 
 UENUM(BlueprintType)
 enum class EGameState : uint8
@@ -50,6 +24,24 @@ enum class EPlayerTurnState : uint8
 	LooseCard UMETA(DisplayName = "LooseCard")
 };
 
+USTRUCT(BlueprintType)
+struct FBangPlayerStateCollection
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<ABangPlayerState> State;
+};
+
+USTRUCT(BlueprintType)
+struct FBangPlayerControllerCollection
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<ABangPlayerController> Controller;
+};
+
 UCLASS()
 class CH4_TEAM3_BANG_API ABangGameMode : public AGameMode
 {
@@ -63,14 +55,30 @@ public:
 
 	// 플레이어 등록
 	UFUNCTION()
-	void AddPlayer(const FBPUniqueNetId& PlayerNetID);
+	void AddPlayer(const uint32& UniqueID);
 	// 플레이어 자리 배치
 	UFUNCTION()
 	void ArrangeSeats();
 	// 게임 시작
 	UFUNCTION()
 	void StartGame();
+	// 단일 카드 사용 (Play Role)
+	UFUNCTION()
+	void UseCard(const uint32 UniqueID, const ECardType CardType, const EActiveType ActiveType, const EPassiveType PassiveType, const uint32 ToUniqueID) const;
+	// 버릴 카드 선택 (Play Role)
+	UFUNCTION()
+	void LooseCard(const TArray<EActiveType> ActiveType, const TArray<EPassiveType> PassiveType);
+	// 카드 버려서 생명력 회복
 
+	// 플레이어 사망
+	UFUNCTION()
+	void PlayerDead(const uint32 UniqueID, ECharacterType PlayerCharacter, EJobType JobType);
+	// 카드 버리기
+	UFUNCTION()
+	void LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsToUsed) const;
+	// 턴 종료
+	UFUNCTION()
+	void EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;
@@ -87,26 +95,22 @@ protected:
 	/**Test for SpawnActor*/
 	UFUNCTION(BlueprintCallable)
 	void SpawnPlayerBlue();
+	
 private:
 	// 카드 매니저
 	UPROPERTY()
 	TObjectPtr<UBangCardManager> CardManager;
-
 	// 현재 플레이어 목록
 	UPROPERTY()
 	FPlayerCollection Players;
-
 	// 현재 플레이어 인덱스
 	int16 PlayerIndex;
-	
 	// 현재 게임 상태
 	UPROPERTY()
 	EGameState CurrentGameState;
-
 	// 현재 턴인 플레이어
 	UPROPERTY()
 	FString CurrentPlayerTurn;
-
 	// 현재 플레이어의 턴 상태
 	UPROPERTY()
 	EPlayerTurnState CurrentPlayerTurnState;
@@ -114,14 +118,17 @@ private:
 	// 게임 턴 이동 (플레이어 변경)
 	UFUNCTION()
 	void AdvanceGameTurn();
-	
 	// 플레이어 게임 실행 세부 턴
 	UFUNCTION()
 	void AdvancePlayerTurn();
-
 	// 플레이어 자리 섞기
 	UFUNCTION()
 	void ShuffleSeats(FPlayerCollection& ToShufflePlayers) const;
-	
+    // UniqueID로 PlayerState 받아오기
+	UFUNCTION()
+	void GetPlayerStatesByUniqueID(const int32& UniqueID, FBangPlayerStateCollection& PlayerState_);
+	// UniqueID로 PlayerController 받아오기
+	UFUNCTION()
+	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangPlayerControllerCollection& PlayerController_);
 
 };

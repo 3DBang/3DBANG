@@ -4,9 +4,6 @@
 #include "Card/CharacterCard/BangCharacterCard.h"
 #include "Card/JobCard/BangJobCard.h"
 
-#include "BlueprintDataDefinitions.h"
-#include "AdvancedSteamFriendsLibrary.h"
-
 #include "GameState/BangGameState.h"
 #include "PlayerState/BangPlayerState.h"
 #include "PlayerController/BangPlayerController.h"
@@ -29,6 +26,30 @@ void ABangGameMode::BeginPlay()
 	CurrentPlayerTurnState = EPlayerTurnState::DrawCard;
 }
 
+void ABangGameMode::GetPlayerStatesByUniqueID(const int32& UniqueID, FBangPlayerStateCollection& PlayerState_)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ABangPlayerController* CastingController = Cast<ABangPlayerController>(It->Get());
+		if (CastingController->GetUniqueID() == UniqueID && CastingController)
+		{
+			PlayerState_.State = CastingController->GetPlayerState<ABangPlayerState>();
+		}
+	}
+}
+
+void ABangGameMode::GetPlayerControllerByUniqueID(const int32& UniqueID, FBangPlayerControllerCollection& PlayerController_)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ABangPlayerController* CastingController = Cast<ABangPlayerController>(It->Get());
+		if (CastingController->GetUniqueID() == UniqueID && CastingController)
+		{
+			PlayerController_.Controller = CastingController;
+		}
+	}
+}
+
 void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -38,14 +59,12 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	//SpawnPlayers();
 }
 
-void ABangGameMode::AddPlayer(const FBPUniqueNetId& PlayerNetID)
+void ABangGameMode::AddPlayer(const uint32& UniqueID)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
-	
-	//FString PlayerID = UAdvancedSteamFriendsLibrary::GetSteamPersonaName(PlayerNetID);
+
 	FPlayerInformation PlayerInfo;
-	PlayerInfo.PlayerNetID = PlayerNetID;
-	//PlayerInfo.PlayerName = PlayerID;
+	PlayerInfo.PlayerUniqueID = UniqueID;
 	Players.Players.Add(PlayerInfo);
 }
 
@@ -53,6 +72,7 @@ void ABangGameMode::ArrangeSeats()
 {
 	ShuffleSeats(Players);
 	// 플레이어 스테이트에 Players 전달
+	
 }
 
 void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
@@ -100,11 +120,26 @@ void ABangGameMode::StartGame()
 	AdvanceGameTurn();
 }
 
+void ABangGameMode::LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsToUsed) const
+{
+	FSingleCard SingleCard;
+	CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, true, SingleCard);
+
+	if (IsToUsed)
+	{
+		CardManager->ReorderUsedCards(SingleCard);
+	}
+	else
+	{
+		CardManager->ReorderAvailCards(SingleCard);
+	}
+}
+
 void ABangGameMode::AdvanceGameTurn()
 {
 	if (CurrentGameState == EGameState::GameOver || !CardManager) return;
 
-	if (CurrentPlayerTurnState == EPlayerTurnState::DrawCard)
+	if (CurrentPlayerTurnState == EPlayerTurnState::DrawCard) // 현재 턴인 플레이어가 카드뽑기 단계 일때
 	{
 		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard))
 		{
@@ -113,11 +148,45 @@ void ABangGameMode::AdvanceGameTurn()
 			case ECharacterType::PedroRamirez:
 				{
 					FCardCollection DrawCards;
-					CardManager->HandCards(3, DrawCards);
-					// 플레이어 스테이트 한테 넘겨줌
+					CardManager->HandCards(2, DrawCards);
+					// PlayerState 한테 넘겨줌
+					FBangPlayerStateCollection CurrentPlayerState;
+					GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
+					//CurrentPlayerState->
+
+					// 플레이어 컨트롤러한테 턴 시작 알림
+					FBangPlayerControllerCollection CurrentPlayerController;
+					GetPlayerControllerByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerController);
+					//CurrentPlayerController.Controller->Server_PlayerTurn();
 					break;
 				}
-			default: break;
+			case ECharacterType::BlackJack:
+				{
+					// 두번째로 뽑은 카드를 모든 플레이어에게 공개, 카드의 심벌이 하트나 다이아면 한장을 더 드로우
+					FCardCollection CardList;
+					CardManager->HandCards(2, CardList);
+					if (CardList.CardList[1]->SymbolType == ESymbolType::Heart || CardList.CardList[1]->SymbolType == ESymbolType::Diamond)
+					{
+						CardManager->HandCards(1, CardList);
+					}
+					// PlayerState한테 CardList 보내기
+					break;
+				}
+			case ECharacterType::KitCarlson:
+				{
+					// 카드 더미위에 3장을 보고 그중에서 두개를 가져가고 한장은 다시 뽑는 카드더미 위에 올려둔다.
+					FCardCollection CardList;
+					CardManager->HandCards(3, CardList);
+					// PlayerState한테 3보낸다. 
+					break;
+				}
+			default:
+				{
+					FCardCollection CardList;
+					CardManager->HandCards(2, CardList);
+					// PlayerState 플레이어 스테이트한테 카드 전달
+					break;
+				}
 			}
 		}
 		// 플레이어 한테 응답 받고 아래 로직 실행
@@ -126,26 +195,262 @@ void ABangGameMode::AdvanceGameTurn()
 	}
 	else if (CurrentPlayerTurnState == EPlayerTurnState::UseCard)
 	{
-		
-
-		// 플레이어 한테 응답 받고 아래 로직 실행
-		CurrentPlayerTurnState = EPlayerTurnState::LooseCard;
-		AdvanceGameTurn();
+		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard))
+		{
+			switch (CharacterCard->CharacterType)
+			{
+			case ECharacterType::PaulRegret:
+				break;
+			case ECharacterType::BartCassidy:
+				break;
+			case ECharacterType::CalamityJanet:
+				break;
+			case ECharacterType::Jourdonnais:
+				{
+					// TODO::뱅의 표적이 될때마다 카드펼치기를 할 수 있으며 하트가 나오면 총알이 빗나감
+					break;
+				}
+			case ECharacterType::PedroRamirez:
+				break;
+			case ECharacterType::BlackJack:
+				break;
+			case ECharacterType::JesseJones:
+				{
+					// TODO::카드 가저오기 단계에서 첫번쨰 카드를 다른사람에게서 가져올 수 있다.
+					break;
+				}
+			case ECharacterType::SuzyLafayette:
+				break;
+			case ECharacterType::SidKetchum:
+				break;
+			case ECharacterType::LuckyDuke:
+				break;
+			case ECharacterType::SlabTheKiller:
+				{
+					// TODO::본인이 쏜 뱅은 다른사람이 빗나감 두장으로 막아야함 PS
+					break;
+				}
+			case ECharacterType::ElGringo:
+				break;
+			case ECharacterType::RoseDoolan:
+				{
+					// TODO::다른사람을 볼때 거리 1이 가까워 진다. PS
+					break;
+				}
+			case ECharacterType::WillyTheKid:
+				break;
+			case ECharacterType::KitCarlson:
+				break;
+			}
+		}
 	}
 	else if (CurrentPlayerTurnState == EPlayerTurnState::LooseCard)
 	{
-		
+		AdvancePlayerTurn();
 	}
+}
+
+void ABangGameMode::EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter)
+{
+	CurrentPlayerTurnState = EPlayerTurnState::LooseCard;
+	AdvanceGameTurn();
+}
+
+void ABangGameMode::LooseCard(TArray<EActiveType> ActiveType, TArray<EPassiveType> PassiveType)
+{
+	if (ActiveType.Num() == 0 && PassiveType.Num() == 0) return;
+
+	
+}
+
+void ABangGameMode::PlayerDead(const uint32 UniqueID, ECharacterType PlayerCharacter, EJobType JobType)
+{
+	// TODO::카드 처리 필요
+
+	for (uint16 i = 0; i < Players.Players.Num(); i++)
+	{
+		if (Players.Players[i].PlayerUniqueID == UniqueID)
+		{
+			Players.Players.RemoveAt(i);
+			break;
+		}
+	}
+
+	// TODO::사망소식 PlayerState한테 알림
+}
+
+void ABangGameMode::UseCard(const uint32 UniqueID, const ECardType CardType, const EActiveType ActiveType, const EPassiveType PassiveType, const uint32 ToUniqueID) const
+{
+	if (UniqueID == 0) return;
+	bool bIsAbleToUse = false;
+	// 플레이어가 사용하는 카드가 타당한지 검사 후 가능여부 리턴
+
+	if (CurrentPlayerTurnState == EPlayerTurnState::UseCard)
+	{
+		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard))
+		{
+			switch (CharacterCard->CharacterType)
+			{
+			case ECharacterType::Jourdonnais:
+				{
+					// 뱅의 표적이 될때마다 카드펼치기를 할 수 있으며 하트가 나오면 총알이 빗나감
+					break;
+				}
+			case ECharacterType::JesseJones:
+				{
+					// 카드 가저오기 단계에서 첫번쨰 카드를 다른사람에게서 가져올 수 있다.
+					break;
+				}
+			case ECharacterType::SlabTheKiller:
+				{
+					// 본인이 쏜 뱅은 다른사람이 빗나감 두장으로 막아야함 PS
+					break;
+				}
+			case ECharacterType::RoseDoolan:
+				{
+					// 다른사람을 볼때 거리 1이 가까워 진다. PS
+					break;
+				}
+			default:
+				break;
+			}
+		}
+		// 플레이어 한테 응답 받고 아래 로직 실행
+	}
+
+	if (CardType == ECardType::ActiveCard) // 액티브 타입 일때
+	{
+		switch (ActiveType)
+		{
+		case EActiveType::Bang:
+			{
+				// 사거리 체크 필요
+				break;
+			}
+		case EActiveType::Missed:
+			{
+				
+				break;
+			}
+		case EActiveType::Stagecoach:
+			{
+				
+				break;
+			}
+		case EActiveType::WellsFargoBank:
+			{
+				
+				break;
+			}
+		case EActiveType::Beer:
+			{
+				
+				break;
+			}
+		case EActiveType::GatlingGun:
+			{
+				
+				break;
+			}
+		case EActiveType::Robbery:
+			{
+				
+				break;
+			}
+		case EActiveType::CatBalou:
+			{
+				
+				break;
+			}
+		case EActiveType::Saloon:
+			{
+				
+				break;
+			}
+		case EActiveType::Duel:
+			{
+				
+				break;
+			}
+		case EActiveType::GeneralStore:
+			{
+				
+				break;
+			}
+		case EActiveType::Indians:
+			{
+				
+				break;
+			}
+		case EActiveType::Jail:
+			{
+				
+				break;
+			}
+		case EActiveType::Dynamite:
+			{
+				
+				break;
+			}
+		}
+	}
+	else if (CardType == ECardType::PassiveCard) // 패시브 타입 일때
+	{
+		switch (PassiveType)
+		{
+		case EPassiveType::Barrel:
+			{
+				
+				break;
+			}
+		case EPassiveType::Scope:
+			{
+				
+				break;
+			}
+		case EPassiveType::Mustang:
+			{
+				
+				break;
+			}
+		case EPassiveType::Schofield:
+			{
+				
+				break;
+			}
+		case EPassiveType::Volcanic:
+			{
+				
+				break;
+			}
+		case EPassiveType::Remington:
+			{
+				
+				break;
+			}
+		case EPassiveType::Carbine:
+			{
+				
+				break;
+			}
+		case EPassiveType::Winchester:
+			{
+				
+				break;
+			}
+		}
+	}
+
+	//CastingController->Server_UseCardReturn(bIsAbleToUse);
 }
 
 void ABangGameMode::AdvancePlayerTurn()
 {
-	if (CurrentPlayerTurnState == EPlayerTurnState::LooseCard)
-	{
-		PlayerIndex++;
-		PlayerIndex = PlayerIndex % Players.Players.Num();
-		CurrentPlayerTurn = Players.Players[PlayerIndex].PlayerName;
-	}
+	PlayerIndex++;
+	PlayerIndex = PlayerIndex % Players.Players.Num();
+	CurrentPlayerTurn = Players.Players[PlayerIndex].PlayerName;
+	CurrentPlayerTurnState = EPlayerTurnState::DrawCard;
+	AdvanceGameTurn();
 }
 
 void ABangGameMode::SpawnPlayers()
