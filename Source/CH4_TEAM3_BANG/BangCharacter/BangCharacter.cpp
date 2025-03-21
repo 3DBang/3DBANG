@@ -70,32 +70,6 @@ void ABangCharacter::BeginPlay()
 			TextActor = DeferredTextActor;
 		}
 	}
-	/**Set HPActor*/
-	//HasAuthority 설정 필수 ! 서버에만 스폰이 되게 
-	if (HasAuthority() && HPActorClass)
-	{
-		for (int32 i = 0; i < HP; i++)
-		{
-			float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-
-			FVector RelativeLocation(0.f, i * 30.f, CapsuleHalfHeight + 100.f);
-			FRotator RelativeRotation = FRotator::ZeroRotator;
-			FTransform RelativeTransform(RelativeRotation, RelativeLocation);
-			 
-
-			FVector Offset = FVector(0.f, i * 30.f, 100.f);
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = this;
-
-			ABangHPActor* NewHPActor = GetWorld()->SpawnActor<ABangHPActor>(HPActorClass, GetActorLocation() + Offset, FRotator::ZeroRotator, SpawnParams);
-			if (NewHPActor)
-			{
-				NewHPActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-				NewHPActor->SetHiddenActorState(false);
-				HPActors.Add(NewHPActor);
-			}
-		}
-	}
 }
 void ABangCharacter::Tick(float DeltaTime)
 {
@@ -222,10 +196,65 @@ void ABangCharacter::UpdateHPActors(int32 NewHP)
 {
 	for (int32 i = 0; i < HPActors.Num(); i++)
 	{
-		if (HPActors[i])
+		if (HPActors[i].IsValid())
 		{
 			bool bVisible = (i < NewHP);
 			HPActors[i]->SetHiddenActorState(!bVisible);
 		}
+	}
+}
+
+void ABangCharacter::SetHP(int32 NewHP)
+{
+	/**Set HPActor*/
+	//HasAuthority 설정 필수 ! 서버에만 스폰이 되게 
+	if (HasAuthority() && HPActorClass)
+	{
+		HP = NewHP;
+		for (int32 i = 0; i < NewHP; i++)
+		{
+			float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+
+			FVector RelativeLocation(0.f, i * 30.f, CapsuleHalfHeight + 100.f);
+			FRotator RelativeRotation = FRotator::ZeroRotator;
+			FTransform RelativeTransform(RelativeRotation, RelativeLocation);
+
+
+			FVector Offset = FVector(0.f, i * 30.f, 100.f);
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = this;
+
+			ABangHPActor* NewHPActor = GetWorld()->SpawnActor<ABangHPActor>(HPActorClass, GetActorLocation() + Offset, FRotator::ZeroRotator, SpawnParams);
+			if (NewHPActor)
+			{
+				NewHPActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+				NewHPActor->SetHiddenActorState(false);
+				HPActors.Add(NewHPActor);
+			}
+		}
+	}
+}
+
+void ABangCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	// 서버 권한에서만 HP / Text Actor 파괴 (안전 장치) 
+	if (HasAuthority())
+	{
+		if (TextActor.IsValid())
+		{
+			TextActor->Destroy();
+			TextActor = nullptr;
+		}
+
+		for (auto& WeakHP : HPActors)
+		{
+			if (WeakHP.IsValid())
+			{
+				WeakHP->Destroy();
+			}
+		}
+		HPActors.Empty();
 	}
 }

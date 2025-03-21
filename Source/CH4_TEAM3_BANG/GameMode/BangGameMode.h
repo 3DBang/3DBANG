@@ -129,4 +129,7 @@ private:
 	UFUNCTION(BlueprintCallable, Category = "Player")
 	void ChangePlayerHP(int32 NewHP);
 
+	UFUNCTION(BlueprintCallable, Category = "Player")
+	void SetPlayerHP(int32 NewHP);
+
 };

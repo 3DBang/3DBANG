@@ -65,7 +65,7 @@ public:
 	
 	//실제 담을 인스턴스
 	UPROPERTY()
-	TObjectPtr<ABangUIActor> TextActor;
+	TWeakObjectPtr<ABangUIActor> TextActor;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "HP")
@@ -73,11 +73,14 @@ public:
 
 	// 스폰한 HPActor들을 저장할 배열
 	UPROPERTY()
-	TArray<ABangHPActor*> HPActors;
+	TArray<TWeakObjectPtr<ABangHPActor>> HPActors;
 
 public:
 	void UpdateHPActors(int32 NewHP);
-	//void SetHP(int32 NewHP);
+	void SetHP(int32 NewHP);
 private:
 	int32 HP = 5;
+
+protected:
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 };
