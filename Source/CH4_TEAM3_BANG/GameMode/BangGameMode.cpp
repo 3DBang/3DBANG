@@ -8,6 +8,7 @@
 #include "PlayerState/BangPlayerState.h"
 #include "PlayerController/BangPlayerController.h"
 #include "../BangCharacter/BangCharacter.h"
+#include "Card/ActiveCard/BangActiveCard.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
@@ -107,7 +108,7 @@ void ABangGameMode::StartGame()
 		Players.Players[i].JobCard = JobCards.CardList[i];
 		Players.Players[i].CharacterCard = CardManager->GetCharacterCard();
 		
-		if (const TObjectPtr<UBangJobCard> JobCard = Cast<UBangJobCard>(JobCards.CardList[i]))
+		if (const TObjectPtr<UBangJobCard> JobCard = Cast<UBangJobCard>(JobCards.CardList[i].Card))
 		{
 			if (JobCard->JobType == EJobType::Officer)
 			{
@@ -141,7 +142,7 @@ void ABangGameMode::AdvanceGameTurn()
 
 	if (CurrentPlayerTurnState == EPlayerTurnState::DrawCard) // 현재 턴인 플레이어가 카드뽑기 단계 일때
 	{
-		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard))
+		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard.Card))
 		{
 			switch (CharacterCard->CharacterType)
 			{
@@ -165,7 +166,7 @@ void ABangGameMode::AdvanceGameTurn()
 					// 두번째로 뽑은 카드를 모든 플레이어에게 공개, 카드의 심벌이 하트나 다이아면 한장을 더 드로우
 					FCardCollection CardList;
 					CardManager->HandCards(2, CardList);
-					if (CardList.CardList[1]->SymbolType == ESymbolType::Heart || CardList.CardList[1]->SymbolType == ESymbolType::Diamond)
+					if (CardList.CardList[1].Card->SymbolType == ESymbolType::Heart || CardList.CardList[1].Card->SymbolType == ESymbolType::Diamond)
 					{
 						CardManager->HandCards(1, CardList);
 					}
@@ -195,7 +196,7 @@ void ABangGameMode::AdvanceGameTurn()
 	}
 	else if (CurrentPlayerTurnState == EPlayerTurnState::UseCard)
 	{
-		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard))
+		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard.Card))
 		{
 			switch (CharacterCard->CharacterType)
 			{
@@ -256,11 +257,21 @@ void ABangGameMode::EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacte
 	AdvanceGameTurn();
 }
 
-void ABangGameMode::LooseCard(TArray<EActiveType> ActiveType, TArray<EPassiveType> PassiveType)
+void ABangGameMode::LooseCard(const FCardCollection CardList)
 {
-	if (ActiveType.Num() == 0 && PassiveType.Num() == 0) return;
+	if (CardList.CardList.Num() == 0) return;
 
 	
+}
+
+void ABangGameMode::LooseSidKetchumCard(const FCardCollection CardList)
+{
+	if (CardList.CardList.Num() != 2) return;
+
+	for (const FSingleCard CardType : CardList.CardList)
+	{
+		CardManager->ReorderUsedCards(CardType);
+	}
 }
 
 void ABangGameMode::PlayerDead(const uint32 UniqueID, ECharacterType PlayerCharacter, EJobType JobType)
@@ -279,7 +290,14 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID, ECharacterType PlayerChara
 	// TODO::사망소식 PlayerState한테 알림
 }
 
-void ABangGameMode::UseCard(const uint32 UniqueID, const ECardType CardType, const EActiveType ActiveType, const EPassiveType PassiveType, const uint32 ToUniqueID) const
+void ABangGameMode::UseCard(
+	const uint32 UniqueID,
+	const FSingleCard& Card, 
+	const EActiveType ActiveType,
+	const EPassiveType PassiveType,
+	const ECharacterType CharacterType,
+	const uint32 ToUniqueID,
+	const ECharacterType ToCharacterType) const
 {
 	if (UniqueID == 0) return;
 	bool bIsAbleToUse = false;
@@ -287,7 +305,7 @@ void ABangGameMode::UseCard(const uint32 UniqueID, const ECardType CardType, con
 
 	if (CurrentPlayerTurnState == EPlayerTurnState::UseCard)
 	{
-		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard))
+		if (const TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Players.Players[PlayerIndex].CharacterCard.Card))
 		{
 			switch (CharacterCard->CharacterType)
 			{
@@ -318,86 +336,52 @@ void ABangGameMode::UseCard(const uint32 UniqueID, const ECardType CardType, con
 		// 플레이어 한테 응답 받고 아래 로직 실행
 	}
 
-	if (CardType == ECardType::ActiveCard) // 액티브 타입 일때
+	
+	if (Card.Card->CardType == ECardType::ActiveCard) // 액티브 타입 일때
 	{
 		switch (ActiveType)
 		{
+		case EActiveType::None:
+			break;
 		case EActiveType::Bang:
-			{
-				// 사거리 체크 필요
-				break;
-			}
+			break;
 		case EActiveType::Missed:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::Stagecoach:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::WellsFargoBank:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::Beer:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::GatlingGun:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::Robbery:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::CatBalou:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::Saloon:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::Duel:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::GeneralStore:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::Indians:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::Jail:
-			{
-				
-				break;
-			}
+			break;
 		case EActiveType::Dynamite:
-			{
-				
-				break;
-			}
+			break;
 		}
 	}
-	else if (CardType == ECardType::PassiveCard) // 패시브 타입 일때
+	else if (Card.Card->CardType == ECardType::PassiveCard) // 패시브 타입 일때
 	{
 		switch (PassiveType)
 		{
+		case EPassiveType::None:
+			{
+				
+				break;
+			}
 		case EPassiveType::Barrel:
 			{
 				
@@ -438,10 +422,21 @@ void ABangGameMode::UseCard(const uint32 UniqueID, const ECardType CardType, con
 				
 				break;
 			}
+		default: ;
 		}
 	}
 
 	//CastingController->Server_UseCardReturn(bIsAbleToUse);
+}
+
+void ABangGameMode::UsePanicCard(const EActiveType ActiveType, const EPassiveType PassiveType)
+{
+	
+}
+
+void ABangGameMode::UseCatBalouCard(const EActiveType ActiveType, const EPassiveType PassiveType)
+{
+	
 }
 
 void ABangGameMode::AdvancePlayerTurn()
