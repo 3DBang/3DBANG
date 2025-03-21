@@ -132,7 +132,7 @@ void UBangCardManager::ReorderUsedCards(const FSingleCard HandedCard)
 	}
 }
 
-// 건내준 카드를 다시 사용된 카드 덱에 넣는다
+// 건내준 카드를 다시 사용가능한 카드 덱에 넣는다
 void UBangCardManager::ReorderAvailCards(const FSingleCard HandedCard)
 {
 	if (HandedCards.CardList.Num() == 0) return;
