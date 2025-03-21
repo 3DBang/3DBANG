@@ -4,8 +4,6 @@
 #include "Card/CharacterCard/BangCharacterCard.h"
 #include "Card/JobCard/BangJobCard.h"
 
-#include "BlueprintDataDefinitions.h"
-
 #include "GameState/BangGameState.h"
 #include "PlayerState/BangPlayerState.h"
 #include "PlayerController/BangPlayerController.h"
