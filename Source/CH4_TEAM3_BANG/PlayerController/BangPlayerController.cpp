@@ -61,3 +61,14 @@ void ABangPlayerController::UpdatePlayerUI(FName& NewText)
 		}
 	}
 }
+void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
+{
+	if (HasAuthority())
+	{
+		ABangCharacter* BangCharacterHP = Cast<ABangCharacter>(GetPawn());
+		if (BangCharacterHP)
+		{
+			BangCharacterHP->UpdateHPActors(NewHP);
+		}
+	}
+}

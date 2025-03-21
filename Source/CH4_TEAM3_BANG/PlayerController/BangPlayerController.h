@@ -86,4 +86,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void UpdatePlayerUI(FName& NewText);
+
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void UpdatePlayerHP(int32 NewHP);
+	
 };

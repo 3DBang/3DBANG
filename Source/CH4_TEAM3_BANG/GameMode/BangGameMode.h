@@ -125,4 +125,8 @@ private:
 	/**Test*/
 	UFUNCTION(BlueprintCallable, Category = "Player")
 	void ChangePlayerName(FName Newname);
+
+	UFUNCTION(BlueprintCallable, Category = "Player")
+	void ChangePlayerHP(int32 NewHP);
+
 };

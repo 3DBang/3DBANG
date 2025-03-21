@@ -11,6 +11,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class ABangUIActor;
 class UTextRenderComponent;
+class ABangHPActor;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangCharacter : public ACharacter
@@ -57,13 +58,26 @@ private:
 	UCameraComponent* FollowCamera;
 
 public:
-	//BluePrint로 수정하고 캐릭터에 달 예정
-
+	
+	//BluePrint에서 BP_xxx를 사용하기 위한 Subclass
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<ABangUIActor> TextActorUIClass;
 	
+	//실제 담을 인스턴스
 	UPROPERTY()
 	TObjectPtr<ABangUIActor> TextActor;
 
-	
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "HP")
+	TSubclassOf<ABangHPActor> HPActorClass;
+
+	// 스폰한 HPActor들을 저장할 배열
+	UPROPERTY()
+	TArray<ABangHPActor*> HPActors;
+
+public:
+	void UpdateHPActors(int32 NewHP);
+	//void SetHP(int32 NewHP);
+private:
+	int32 HP = 5;
 };

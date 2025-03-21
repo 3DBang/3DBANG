@@ -2,26 +2,40 @@
 
 
 #include "CharacterUIActor/BangHPActor.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ABangHPActor::ABangHPActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	bReplicates = true; 
+	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+	SetRootComponent(MeshComponent);
 }
-
-// Called when the game starts or when spawned
+void ABangHPActor::SetHiddenActorState(bool bIsHiddenHp)
+{
+	if (HasAuthority())
+	{
+		bIsHpHidden = bIsHiddenHp;
+		SetActorHiddenInGame(bIsHpHidden);
+	}
+}
 void ABangHPActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
-// Called every frame
-void ABangHPActor::Tick(float DeltaTime)
+void ABangHPActor::OnRep_HiddenState()
 {
-	Super::Tick(DeltaTime);
+	SetActorHiddenInGame(bIsHpHidden);
+}
 
+void ABangHPActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABangHPActor, bIsHpHidden);
 }
 

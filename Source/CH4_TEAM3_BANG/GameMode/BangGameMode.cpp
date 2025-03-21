@@ -80,6 +80,19 @@ void ABangGameMode::ChangePlayerName(FName Newname)
 	}
 }
 
+void ABangGameMode::ChangePlayerHP(int32 NewHP)
+{
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 1);
+	if (PC)
+	{
+		ABangPlayerController* MyPC = Cast<ABangPlayerController>(PC);
+		if (MyPC)
+		{
+			MyPC->UpdatePlayerHP(NewHP);
+		}
+	}
+}
+
 void ABangGameMode::StartGame()
 {
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager || Players.Players.Num() < 4 || Players.Players.Num() > 7) return;
