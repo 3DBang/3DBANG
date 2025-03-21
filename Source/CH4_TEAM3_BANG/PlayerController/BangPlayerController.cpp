@@ -2,6 +2,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Data/CardEnums.h"
 #include "GameMode/BangGameMode.h"
+#include "PlayerState/BangPlayerState.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -22,16 +23,6 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
-
-    if (ABangPlayerState* PS = GetPlayerState<ABangPlayerState>())
-    {
-        if (PS)
-        {
-            MyPlayerID = PS->GetPlayerId();
-           //MyJobType = PS->GetJobType();
-           //MyCharacterType = PS->GetCharacterType();
-        }
-    }
 }
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
@@ -48,14 +39,6 @@ void ABangPlayerController::Server_EndTurn_Implementation(const uint32 UniqueID,
 	}
 }
 
-void ABangPlayerController::Server_UseCard_Implementation(uint32 UniqueID, ECardType CardType, EActiveType ActiveType, EPassiveType PassiveType, uint32 ToUniqueID)
-{
-    ABangGameMode* GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
-    if (GameMode)
-    {
-        GameMode->UseCard(UniqueID, CardType, ActiveType, PassiveType, ToUniqueID);
-    }
-}
 
 void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator NewRotation)
 {
@@ -76,44 +59,33 @@ void ABangPlayerController::Client_SelectCard_Implementation()
     EPassiveType SelectedPassiveCard = EPassiveType::None;
 
     // 카드 선택 후 처리 (별도 함수 호출)
-    Client_HandleCardSelection(SelectedActiveCard, SelectedPassiveCard);
+    Client_HandleCardSelection(SelectedActiveCard);
 }
 
 
 
-void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveType SelectedActiveCard, EPassiveType SelectedPassiveCard)
+void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveType SelectedCard)
 {
-    const uint32 FromID = MyPlayerID;
-    const uint32 ToID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
+    uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
 
-    switch (SelectedActiveCard)
+    bool NeedsTarget = (SelectedCard == EActiveType::Bang ||
+        SelectedCard == EActiveType::Robbery ||
+        SelectedCard == EActiveType::CatBalou ||
+        SelectedCard == EActiveType::Duel ||
+        SelectedCard == EActiveType::Jail);
+
+    if (NeedsTarget)
     {
-    case EActiveType::Missed:
-    case EActiveType::Stagecoach:
-    case EActiveType::WellsFargoBank:
-    case EActiveType::Beer:
-    case EActiveType::GatlingGun:
-    case EActiveType::Saloon:
-    case EActiveType::GeneralStore:
-    case EActiveType::Indians:
-    case EActiveType::Dynamite:
-        // 서버에 카드 사용 요청 보내기
-        Server_UseCard(FromID, ECardType::ActiveCard, SelectedActiveCard, SelectedPassiveCard, ToID);
-        break;
-    case EActiveType::Bang:
-    case EActiveType::Robbery:
-    case EActiveType::CatBalou:
-    case EActiveType::Duel:
-    case EActiveType::Jail:
-        // 상대방이 필요한 경우, 상대방 ID 가져오기
         Client_SelectTarget();
-        Server_UseCard(FromID, ECardType::ActiveCard, SelectedActiveCard, SelectedPassiveCard, ToID);
-        break;
-
-    default:
-        UE_LOG(LogTemp, Warning, TEXT("잘못된 카드 선택"));
-        break;
+        // 공격할 대상 선택 (레이 트레이싱 등)
+        TargetPlayerID = 57;//SelectTarget();
+        if (TargetPlayerID == 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("대상이 필요한 카드인데 선택되지 않음!"));
+            return;
+        }
     }
+    Server_UseCard(SelectedCard, TargetPlayerID);
 }
 
 void ABangPlayerController::Client_SelectTarget_Implementation()
@@ -122,6 +94,15 @@ void ABangPlayerController::Client_SelectTarget_Implementation()
 
     if (TargetPlayerID > 0)
     {
-        Server_UseCard(MyPlayerID, ECardType::ActiveCard, EActiveType::Bang, EPassiveType::None, TargetPlayerID);
+
+    }
+}
+
+void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelectedCard, uint32 TargetPlayerID)
+{
+    ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
+    if (BangPlayerState)
+    {
+        //BangPlayerState->ProcessCardUsage(SelectedCard, TargetPlayerID);
     }
 }
