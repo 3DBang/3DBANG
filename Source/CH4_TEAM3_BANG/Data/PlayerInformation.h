@@ -32,28 +32,23 @@ struct FPlayerInformation
 	// 내가 볼 때 사거리 (내 기준)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	int32 RangeFromMe;
-
-	// 여기 카드 타입 바꿔야함
+	
 	//역할 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	TObjectPtr<UBangCardBase> JobCard;
+	FSingleCard JobCard;
 	
 	//캐릭터 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	TObjectPtr<UBangCardBase> CharacterCard;
+	FSingleCard CharacterCard;
 	
 	//보유한 카드(사용가능한 카드)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	TArray<TObjectPtr<UBangCardBase>> MyCards;
+	FCardCollection MyCards;
 	
 	//장착된 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	TArray<TObjectPtr<UBangCardBase>> EquippedCards;
-	UPROPERTY()
-	FSingleCard JobCard;
+	FCardCollection EquippedCards;
 
-	UPROPERTY()
-	FSingleCard CharacterCard;
 
 
 	
