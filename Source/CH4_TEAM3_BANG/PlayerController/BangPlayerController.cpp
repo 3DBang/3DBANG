@@ -23,16 +23,14 @@ void ABangPlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	UE_LOG(LogTemp, Error, TEXT("ABangPlayerController BeginPlay"));
-	
-	if (TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+
+	// 순서 변경 필요
+	if (IsLocalController())
 	{
-		if (const TObjectPtr<UBangInGameChattingWidget> ChatWidget = BangHUD->GetChattingWidget())
+		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 		{
-			ChatWidget->AddMessage(FText::FromString("Hello from Controller!"), FSlateColor(FLinearColor::Green));
-		}
-		
-		if (const TObjectPtr<UBangInGamePlayerListWidget> ListWidget = BangHUD->GetPlayerListWidget())
-		{
+			BangHUD->ChattingWidgetInstance->AddMessage(FText::FromString("Hello from Controller!"), FSlateColor(FLinearColor::Green));
+
 			TArray<UBangPlayerStatData*> PlayerStats;
 
 			const auto Stat = NewObject<UBangPlayerStatData>();
@@ -40,10 +38,11 @@ void ABangPlayerController::BeginPlay()
 			Stat->bIsAlive = true;
 			PlayerStats.Add(Stat);
 			
-			ListWidget->UpdatePlayerList(PlayerStats);
+			BangHUD->PlayerListWidgetInstance->UpdatePlayerList(PlayerStats);
 		}
 	}
-
+	// 순서 변경 필요
+	
 	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())

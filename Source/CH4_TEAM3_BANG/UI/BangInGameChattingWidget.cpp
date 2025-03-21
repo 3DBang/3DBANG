@@ -21,7 +21,7 @@ void UBangInGameChattingWidget::AddMessage(const FText& Message, const FSlateCol
 {
 	if (!IsValid(ChatScrollBox)) return;
 
-	if (UTextBlock* NewMessage = NewObject<UTextBlock>(this))
+	if (const TObjectPtr<UTextBlock> NewMessage = NewObject<UTextBlock>(this))
 	{
 		NewMessage->SetText(Message);
 		NewMessage->Font.Size = 20;

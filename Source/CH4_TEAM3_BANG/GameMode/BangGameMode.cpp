@@ -148,7 +148,7 @@ void ABangGameMode::StartGame()
 void ABangGameMode::LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsToUsed) const
 {
 	FSingleCard SingleCard;
-	CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, true, SingleCard);
+	//CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, true, SingleCard);
 
 	if (IsToUsed)
 	{
@@ -364,6 +364,14 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID,
 	}
 }
 
+// 카드 뽑기 (Play Role)
+void ABangGameMode::DrawCard(const FPlayerCardSymbol& Card)
+{
+	FSingleCard FoundCard;
+	CardManager->GetCardBySymbolAndNumber(Card.SymbolType, Card.SymbolNumber, EDeckType::AvailCards, FoundCard);
+	// 뽑은 후에 PS 전달
+}
+
 void ABangGameMode::UseCard(
 	const uint32 UniqueID,
 	const FPlayerCardSymbol& Card, 
@@ -405,6 +413,43 @@ void ABangGameMode::UseCard(
 			break;
 		}	
 		// 플레이어 한테 응답 받고 아래 로직 실행
+	}
+
+	switch (ActiveType)
+	{
+	case EActiveType::None:
+		break;
+	case EActiveType::Bang:
+		break;
+	case EActiveType::Missed:
+		break;
+	case EActiveType::Stagecoach:
+		break;
+	case EActiveType::WellsFargoBank:
+		{
+			// 카드를 한장씩 각각 PS에 전달
+			break;
+		}
+	case EActiveType::Beer:
+		break;
+	case EActiveType::GatlingGun:
+		break;
+	case EActiveType::Robbery:
+		break;
+	case EActiveType::CatBalou:
+		break;
+	case EActiveType::Saloon:
+		break;
+	case EActiveType::Duel:
+		break;
+	case EActiveType::GeneralStore:
+		break;
+	case EActiveType::Indians:
+		break;
+	case EActiveType::Jail:
+		break;
+	case EActiveType::Dynamite:
+		break;
 	}
 
 	//CastingController->Server_UseCardReturn(bIsAbleToUse);
