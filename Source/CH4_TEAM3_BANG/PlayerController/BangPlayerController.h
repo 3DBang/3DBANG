@@ -59,7 +59,7 @@ protected:
 public:
 //서버에 턴 종료 요청 
 	UFUNCTION(Server, Reliable)
-	void Server_EndTurn();
+	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(uint32 UniqueID, ECardType CardType, EActiveType ActiveType, EPassiveType PassiveType, uint32 ToUniqueID);
@@ -73,7 +73,7 @@ private:
 public:
 	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
 	UFUNCTION(Client, Reliable)
-	void MyTurn_SelectCard();
+	void Client_SelectCard();
 	
 	UFUNCTION(Client, Reliable)
 	void Client_HandleCardSelection(EActiveType SelectedActiveCard, EPassiveType SelectedPassiveCard);

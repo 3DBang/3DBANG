@@ -23,9 +23,14 @@ void ABangPlayerController::BeginPlay()
 		}
 	}
 
-    if (APlayerState* PS = GetPlayerState<APlayerState>())
+    if (ABangPlayerState* PS = GetPlayerState<ABangPlayerState>())
     {
-        MyPlayerID = PS->GetPlayerId();
+        if (PS)
+        {
+            MyPlayerID = PS->GetPlayerId();
+           //MyJobType = PS->GetJobType();
+           //MyCharacterType = PS->GetCharacterType();
+        }
     }
 }
 
@@ -34,12 +39,12 @@ void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 	
 }
 
-void ABangPlayerController::Server_EndTurn_Implementation()
+void ABangPlayerController::Server_EndTurn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter)
 {
-	ABangGameModeBase* GM = GetWorld()->GetAuthGameMode<ABangGameModeBase>();
+	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (GM)
 	{
-		GM->EndTurn();
+		GM->EndTurn(UniqueID, PlayerCharacter);
 	}
 }
 
@@ -57,11 +62,10 @@ void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator
 	if (IsLocalController())
 	{
 		SetControlRotation(NewRotation);
-	}
-	
+	}	
 }
 
-void ABangPlayerController::MyTurn_SelectCard_Implementation()
+void ABangPlayerController::Client_SelectCard_Implementation()
 {
     // UI 창 띄우기 (보유 중인 카드 표시)
     // 예시: UWidget* CardUI = CreateWidget<UWidget>(this, CardUIClass);
