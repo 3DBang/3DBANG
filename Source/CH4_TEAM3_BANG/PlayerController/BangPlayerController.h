@@ -152,5 +152,9 @@ private:
 	FTimerHandle CameraBlendHandle;
 
 	bool bIsCameraMode = false;
+
+	FTimerHandle CameraOpenBlendTimerHandle;
+	//혹시 동작 제대로 안할까봐 OpenCamera,CloseCamera용 타이머핸들 2개만들게요
+	FTimerHandle CameraCloseBlendTimerHandle;
 };
 

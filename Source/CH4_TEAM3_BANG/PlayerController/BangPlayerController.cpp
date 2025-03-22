@@ -8,6 +8,8 @@
 #include "Camera/CameraComponent.h" 
 #include "Engine/Engine.h"
 #include "Camera/CameraActor.h"
+#include "Materials/MaterialInterface.h"
+#include "Camera/PlayerCameraManager.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -153,21 +155,27 @@ void ABangPlayerController::MouseClicked()
 	{
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
-		if (bIsCameraMode)
+		
+		if(HitChar && HitChar != GetPawn())
 		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				5.f,
-				FColor::Red,
-				TEXT("This is a Camera Mode")
-			);
-		}
-		else if(HitChar && HitChar != GetPawn())
-		{
+
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
-				//OtherPlayers = OtherPlayer;
 				CurrentMouseCursor = EMouseCursor::Hand;
+				if (bIsCameraMode)
+				{
+					GEngine->AddOnScreenDebugMessage(
+						-1,
+						5.f,
+						FColor::Red,
+						TEXT("Touch Character In Camera Mode ")
+					);
+					uint32 GetUID = GetUniqueID();
+					
+					//SendToServer And Send CloseCamera Request
+					Server_CloseCamera();
+				}
+
 				/**Test*/
 				uint32 PlayerStateID = 0;
 				uint32 TestTemp = 0;
@@ -200,13 +208,20 @@ void ABangPlayerController::MouseClicked()
 
 void ABangPlayerController::Client_OpenCamera_Implementation()
 {
-	if (!IsLocalController()) return;
-
-	bIsCameraMode = true;
-	if (ABangCharacter* PC = Cast<ABangCharacter>(GetPawn()))
+	if (!IsLocalController())
 	{
-		UCameraComponent* StartCam = PC->FollowCamera;
-		UCameraComponent* EndCam = PC->BangCamera;
+		return;
+	}
+	if (UMaterialInterface* OutlinePP = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_OutlinePP")))
+	{
+		PlayerCameraManager->GetCameraCachePOV().PostProcessSettings.AddBlendable(OutlinePP, 1.f);
+	}
+	
+	bIsCameraMode = true;
+	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
+	{
+		UCameraComponent* StartCam = BangPlayer->FollowCamera;
+		UCameraComponent* EndCam = BangPlayer->BangCamera;
 		if (!StartCam || !EndCam) return;
 
 	
@@ -216,40 +231,55 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		if (!TempCam) return;
 
 	
-		PC->FollowCamera->Deactivate();
-		PC->BangCamera->Deactivate();
+		BangPlayer->FollowCamera->Deactivate();
+		BangPlayer->BangCamera->Deactivate();
 
-		constexpr float BlendTime = 10.f;
+		constexpr float BlendTime = 5.f;
 		float Elapsed = 0.f;
 		//VTBlend_EaseInOut
-		SetViewTargetWithBlend(TempCam, BlendTime, EViewTargetBlendFunction::VTBlend_Cubic);
+		SetViewTargetWithBlend(TempCam, BlendTime, EViewTargetBlendFunction::VTBlend_EaseInOut);
 
 		
 		const FVector StartLocation = StartTransform.GetLocation();
 		const FVector EndLocation = EndCam->GetComponentLocation()+300.f;
-		const FVector FlagLocation = PC->GetFlagLocation();
+		//BangCamera의 위치를 한번 봐야할듯
+		const FVector FlagLocation = BangPlayer->GetFlagLocation();
 
-		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda(
-			[this, PC, TempCam, StartLocation, EndLocation, FlagLocation, TimerHandle, Elapsed]() mutable
+		GetWorldTimerManager().SetTimer(CameraOpenBlendTimerHandle, FTimerDelegate::CreateLambda(
+			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, Elapsed]() mutable
 			{
 				Elapsed += GetWorld()->GetDeltaSeconds();
 				float Alpha = FMath::Clamp(Elapsed / BlendTime, 0.f, 1.f);
 
 				FVector NewLoc = FMath::Lerp(StartLocation, EndLocation, Alpha);
 				TempCam->SetActorLocation(NewLoc);
+				//왜 시간이 엄청 지난 후에 여기에서 중단점이? -Fix
 				TempCam->SetActorRotation((FlagLocation - NewLoc).Rotation());
-
 				if (Alpha >= 1.f)
 				{
-				
-					PC->BangCamera->Activate();
-					SetViewTarget(PC);
+					GEngine->AddOnScreenDebugMessage(
+						-1,
+						5.f,
+						FColor::Red,
+						TEXT("Alpha")
+					);
+					BangPlayer->BangCamera->Activate();
+					SetViewTarget(BangPlayer);
 
-					GetWorldTimerManager().ClearTimer(TimerHandle);
+					GetWorldTimerManager().ClearTimer(CameraOpenBlendTimerHandle);
+					if (GetWorldTimerManager().IsTimerActive(CameraOpenBlendTimerHandle))
+					{
+						GEngine->AddOnScreenDebugMessage(
+							-1,
+							5.f,
+							FColor::Red,
+							TEXT("Error OpenTimer Acive")
+						);
+						TempCam->Destroy();
+					}
 					TempCam->Destroy();
 				}
-			}), 0.01f, true);//
+			}), 0.01f, true);
 	}
 }
 void ABangPlayerController::Client_SetInputEnabled_Implementation(bool IsAttacker)
@@ -298,11 +328,85 @@ void ABangPlayerController::Server_OpenCamera_Implementation()
 
 void ABangPlayerController::Server_CloseCamera_Implementation()
 {
-	//
+	//왜 HasAuthority를 사용했는가? ->서버의 컨트롤러에서만 하게하려고 
+	//아니라면 이야기해주세요 -원명
+	if (!HasAuthority())
+	{
+		return;
+	}
+	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (GM)
+	{
+		GM->CloseCamera();
+	}
 }
 void ABangPlayerController::Client_CloseCamera_Implementation()
 {
+	if (!IsLocalController())
+	{
+		return;
+	}
 	bIsCameraMode = false;
+
+	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
+	{
+		UCameraComponent* StartCam = BangPlayer->BangCamera; 
+		UCameraComponent* EndCam = BangPlayer->FollowCamera;
+		if (!StartCam || !EndCam) return;
+
+
+		const FTransform StartTransform = StartCam->GetComponentTransform();
+		ACameraActor* TempCam = GetWorld()->SpawnActor<ACameraActor>(
+			ACameraActor::StaticClass(), StartTransform);
+		if (!TempCam) return;
+
+
+		BangPlayer->FollowCamera->Deactivate();
+		BangPlayer->BangCamera->Deactivate();
+
+		constexpr float BlendTime = 5.f;
+		float Elapsed = 0.f;
+		//VTBlend_EaseInOut
+		SetViewTargetWithBlend(TempCam, BlendTime, EViewTargetBlendFunction::VTBlend_EaseInOut);
+
+
+		const FVector StartLocation = StartTransform.GetLocation();
+		const FVector EndLocation = EndCam->GetComponentLocation() + 300.f;
+		//BangCamera의 위치를 한번 봐야할듯 + Camera의 로케이션 로테이션 어떻게 받는지 체크 
+		const FVector FlagLocation = BangPlayer->GetFlagLocation();
+
+		
+		GetWorldTimerManager().SetTimer(CameraCloseBlendTimerHandle, FTimerDelegate::CreateLambda(
+			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation,Elapsed]() mutable
+			{
+				Elapsed += GetWorld()->GetDeltaSeconds();
+				float Alpha = FMath::Clamp(Elapsed / BlendTime, 0.f, 1.f);
+
+				FVector NewLoc = FMath::Lerp(StartLocation, EndLocation, Alpha);
+				TempCam->SetActorLocation(NewLoc);
+				TempCam->SetActorRotation((FlagLocation - NewLoc).Rotation());
+
+				if (Alpha >= 1.f)
+				{
+
+					BangPlayer->FollowCamera->Activate();
+					SetViewTarget(BangPlayer);
+
+					GetWorldTimerManager().ClearTimer(CameraCloseBlendTimerHandle);
+					if (GetWorldTimerManager().IsTimerActive(CameraCloseBlendTimerHandle))
+					{
+						GEngine->AddOnScreenDebugMessage(
+							-1,
+							5.f,
+							FColor::Red,
+							TEXT("Error CloseTimer Acive")
+						);
+						TempCam->Destroy();
+					}
+					TempCam->Destroy();
+				}
+			}), 0.01f, true);
+	}
 }
 
 void ABangPlayerController::Client_SelectTarget_Implementation()

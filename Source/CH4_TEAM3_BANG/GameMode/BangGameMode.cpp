@@ -549,8 +549,8 @@ void ABangGameMode::CloseCamera()
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			PC->Client_SetInputEnabled(true);
 			PC->Client_CloseCamera();
+			PC->Client_SetInputEnabled(true);
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;
