@@ -21,7 +21,6 @@ class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
 //// Enhanced Input
 //////////////////////////
 
-
 public:
 	ABangPlayerController();
 
@@ -97,5 +96,25 @@ private:
 
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
+
+	///////////////////////////
+	//// 찬호 추가 
+	//////////////////////////
+
+public:
+	UFUNCTION(Client, Reliable)
+	void Client_DisplayBangUI();
+
+	UFUNCTION(Server, Reliable)
+	void Server_HUDLoaded();
+
+	UFUNCTION()
+	void NotifyHUDLoaded();
+
+	UFUNCTION()
+	void StartButtonCLicked();
+
+	UFUNCTION(Server, Reliable)
+	void Server_StartGame();
 };
 

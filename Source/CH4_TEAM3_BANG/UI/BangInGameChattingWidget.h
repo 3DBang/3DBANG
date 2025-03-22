@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Button.h"
 #include "BangInGameChattingWidget.generated.h"
 
 class UEditableText;
@@ -19,8 +20,14 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UEditableText> ChatTextField;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> StartButton;
+
 	UFUNCTION(BlueprintCallable)
 	void AddMessage(const FText& Message, const FSlateColor& Color);
+
+	UFUNCTION(BlueprintCallable)
+	void OnStartButtonClicked();
 	
 protected:
 	virtual void NativeConstruct() override;

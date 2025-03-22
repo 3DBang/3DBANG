@@ -53,7 +53,16 @@ public:
 	
 	virtual void BeginPlay() override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
-	
+
+	/////////////////
+	/// UI 로직
+	/// /////////////
+	UFUNCTION()
+	void UpdatePlayerHUD();
+
+	/////////////////
+	/// 통신 로직
+	/// /////////////
 	// 로비 플레이어 삭제
 	UFUNCTION()
 	void RemovePlayer(const uint32& UniqueID);
@@ -97,7 +106,7 @@ protected:
 	float Radius = 500.f;
 
 	// 원멍 : 플레이어 컨트롤러 임시저장 
-	TArray<APlayerController*> PlayerControllers;
+	TArray<ABangPlayerController*> BangPlayerControllers;
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnPlayers();

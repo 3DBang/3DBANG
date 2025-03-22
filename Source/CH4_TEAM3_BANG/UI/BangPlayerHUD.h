@@ -17,14 +17,8 @@ public:
 
 	UPROPERTY()
 	TObjectPtr<UBangInGameChattingWidget> ChattingWidgetInstance;
-	
-	UPROPERTY()
-	TObjectPtr<UBangInGamePlayerListWidget> PlayerListWidgetInstance;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UBangInGameChattingWidget> ChattingWidgetClass;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UBangInGamePlayerListWidget> PlayerListWidgetClass;
 };

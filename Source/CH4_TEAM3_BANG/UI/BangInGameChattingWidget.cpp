@@ -15,6 +15,11 @@ void UBangInGameChattingWidget::NativeConstruct()
 	{
 		ChatTextField->OnTextCommitted.AddDynamic(this, &UBangInGameChattingWidget::OnTextCommittedFunction);
 	}
+
+	if (IsValid(StartButton))
+	{
+		StartButton->OnClicked.AddDynamic(this, &UBangInGameChattingWidget::OnStartButtonClicked);
+	}
 }
 
 void UBangInGameChattingWidget::AddMessage(const FText& Message, const FSlateColor& Color)
@@ -29,6 +34,14 @@ void UBangInGameChattingWidget::AddMessage(const FText& Message, const FSlateCol
 
 		ChatScrollBox->AddChild(NewMessage);
 		ChatScrollBox->ScrollToEnd();
+	}
+}
+
+void UBangInGameChattingWidget::OnStartButtonClicked()
+{
+	if (const TObjectPtr<ABangPlayerController> OwningPlayerController = Cast<ABangPlayerController>(GetOwningPlayer()))
+	{
+		OwningPlayerController->StartButtonCLicked();
 	}
 }
 
