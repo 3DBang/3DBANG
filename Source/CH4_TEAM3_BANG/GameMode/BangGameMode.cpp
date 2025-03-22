@@ -520,6 +520,7 @@ void ABangGameMode::SpawnPlayerBlue()
 
 void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 {
+	ControllerIDAtCameraMode = BangPlayerControllerID;
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
@@ -538,15 +539,19 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 		}
 	}
 }
-
-//void ABangGameMode::CloseCamera()
-//{
-//	// 모든 PlayerController에 대해 Main 카메라로 복귀하도록 RPC 호출
-//	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-//	{
-//		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
-//		{
-//			PC->Client_SwitchToCameraByTag(PC->GetPawn(), MainCameraTag, CameraBlendTime);
-//		}
-//	}
-//}
+void ABangGameMode::CloseCamera()
+{
+	if (ControllerIDAtCameraMode == INDEX_NONE)
+	{
+		return;
+	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			PC->Client_SetInputEnabled(true);
+			PC->Client_CloseCamera();
+		}
+	}
+	ControllerIDAtCameraMode = INDEX_NONE;
+}

@@ -7,6 +7,7 @@
 #include "CharacterUIActor/BangUIActor.h"
 #include "Camera/CameraComponent.h" 
 #include "Engine/Engine.h"
+#include "Camera/CameraActor.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -143,11 +144,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveTyp
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
-void ABangPlayerController::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	
-}
+
 
 void ABangPlayerController::MouseClicked()
 {
@@ -156,7 +153,16 @@ void ABangPlayerController::MouseClicked()
 	{
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
-		if (HitChar && HitChar != GetPawn())
+		if (bIsCameraMode)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				5.f,
+				FColor::Red,
+				TEXT("This is a Camera Mode")
+			);
+		}
+		else if(HitChar && HitChar != GetPawn())
 		{
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
@@ -165,6 +171,12 @@ void ABangPlayerController::MouseClicked()
 				/**Test*/
 				uint32 PlayerStateID = 0;
 				uint32 TestTemp = 0;
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					5.f,
+					FColor::Red,
+					TEXT("This is a debug message!")
+				);
 				if (OtherPlayer->GetPlayerState())
 				{
 					PlayerStateID = OtherPlayer->GetPlayerState()->GetPlayerId();
@@ -177,11 +189,8 @@ void ABangPlayerController::MouseClicked()
 				}
 			}
 		}
+
 	}
-
-	//플레이어 스테이트에 보내야한다.
-	//OtherPlayers = nullptr;
-
 	else
 	{
 		//CloseHuD 
@@ -191,29 +200,85 @@ void ABangPlayerController::MouseClicked()
 
 void ABangPlayerController::Client_OpenCamera_Implementation()
 {
-	if (!HasAuthority())
-	{
-		if (ABangCharacter* PC = Cast<ABangCharacter>(GetPawn()))
-		{
-			if (UCameraComponent* CamComp = FindCameraByTag(PC, FName("AtBang")))
-			{
-				const FTransform CamTransformBefore = CamComp->GetComponentTransform();
-				PC->FollowCamera->Deactivate();
-				PC->BangCamera->Activate();
+	if (!IsLocalController()) return;
 
-				constexpr float BlendTime = 5.0f;
-				SetViewTargetWithBlend(PC, BlendTime, EViewTargetBlendFunction::VTBlend_EaseInOut);
-			}
-		}
+	bIsCameraMode = true;
+	if (ABangCharacter* PC = Cast<ABangCharacter>(GetPawn()))
+	{
+		UCameraComponent* StartCam = PC->FollowCamera;
+		UCameraComponent* EndCam = PC->BangCamera;
+		if (!StartCam || !EndCam) return;
+
+	
+		const FTransform StartTransform = StartCam->GetComponentTransform();
+		ACameraActor* TempCam = GetWorld()->SpawnActor<ACameraActor>(
+			ACameraActor::StaticClass(), StartTransform);
+		if (!TempCam) return;
+
+	
+		PC->FollowCamera->Deactivate();
+		PC->BangCamera->Deactivate();
+
+		constexpr float BlendTime = 10.f;
+		float Elapsed = 0.f;
+		//VTBlend_EaseInOut
+		SetViewTargetWithBlend(TempCam, BlendTime, EViewTargetBlendFunction::VTBlend_Cubic);
+
+		
+		const FVector StartLocation = StartTransform.GetLocation();
+		const FVector EndLocation = EndCam->GetComponentLocation()+300.f;
+		const FVector FlagLocation = PC->GetFlagLocation();
+
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda(
+			[this, PC, TempCam, StartLocation, EndLocation, FlagLocation, TimerHandle, Elapsed]() mutable
+			{
+				Elapsed += GetWorld()->GetDeltaSeconds();
+				float Alpha = FMath::Clamp(Elapsed / BlendTime, 0.f, 1.f);
+
+				FVector NewLoc = FMath::Lerp(StartLocation, EndLocation, Alpha);
+				TempCam->SetActorLocation(NewLoc);
+				TempCam->SetActorRotation((FlagLocation - NewLoc).Rotation());
+
+				if (Alpha >= 1.f)
+				{
+				
+					PC->BangCamera->Activate();
+					SetViewTarget(PC);
+
+					GetWorldTimerManager().ClearTimer(TimerHandle);
+					TempCam->Destroy();
+				}
+			}), 0.01f, true);//
 	}
 }
 void ABangPlayerController::Client_SetInputEnabled_Implementation(bool IsAttacker)
 {
-	if (!HasAuthority()) 
+	if (!IsLocalController())
 	{
-		bEnableClickEvents = IsAttacker;
-		bEnableMouseOverEvents = IsAttacker;
-		SetIgnoreMoveInput(IsAttacker);
+		return;
+	}
+		
+	if (IsAttacker)
+	{
+		if (auto LocalPlayer = GetLocalPlayer())
+		{
+			if (auto Sub = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+			{
+				Sub->RemoveMappingContext(InputMappingContext);
+				Sub->AddMappingContext(InputMappingContext, 0);
+			}
+		}
+	}
+	else
+	{
+		if (ULocalPlayer* LP = GetLocalPlayer())
+		{
+			if (auto* Subsys = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+			{
+				Subsys->RemoveMappingContext(InputMappingContext);
+			}
+		}
 	}
 }
 
@@ -231,10 +296,14 @@ void ABangPlayerController::Server_OpenCamera_Implementation()
 	}
 }
 
-//void ABangPlayerController::HandleInputClick()
-//{
-//	MouseClicked();
-//}
+void ABangPlayerController::Server_CloseCamera_Implementation()
+{
+	//
+}
+void ABangPlayerController::Client_CloseCamera_Implementation()
+{
+	bIsCameraMode = false;
+}
 
 void ABangPlayerController::Client_SelectTarget_Implementation()
 {
@@ -253,16 +322,6 @@ void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelectedCa
     {
         //BangPlayerState->ProcessCardUsage(SelectedCard, TargetPlayerID);
     }
-}
-
-void ABangPlayerController::OnPossess(APawn* InPawn)
-{
-	Super::OnPossess(InPawn);
-
-	/*if (ABangCharacter* BangPlayers = Cast<ABangCharacter>(InPawn))
-	{
-		BangPlayers->OnMouseClicked.AddDynamic(this, &ABangPlayerController::HandleInputClick);
-	}*/
 }
 UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const FName& Tag)
 {

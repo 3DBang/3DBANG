@@ -97,7 +97,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
 	void Server_EndTurn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter);
-	void OnPossess(APawn* InPawn) override;
+
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void UpdatePlayerUI(FName& NewText);
@@ -111,8 +111,7 @@ public:
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
-public:
-	virtual void Tick(float DeltaTime) override;
+
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
 
@@ -122,9 +121,6 @@ private:
 
 public:
 	void MouseClicked();
-
-	/*UFUNCTION()
-	void HandleInputClick();*/
 public:
 	FName TestPlayerController;
 
@@ -142,6 +138,19 @@ public:
 	void Server_OpenCamera();
 	void Server_OpenCamera_Implementation();
 
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_CloseCamera();
+	void Server_CloseCamera_Implementation();
+
+	UFUNCTION(Client, Reliable)
+	void Client_CloseCamera();
+	void Client_CloseCamera_Implementation();
+
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
+private:
+	float CameraBlendElapsed = 0.f;
+	FTimerHandle CameraBlendHandle;
+
+	bool bIsCameraMode = false;
 };
 

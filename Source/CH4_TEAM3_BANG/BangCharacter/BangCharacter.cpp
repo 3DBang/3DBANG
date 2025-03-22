@@ -84,7 +84,7 @@ void ABangCharacter::BeginPlay()
 	{
 		FVector TargetLocation = TempPlayerStart->GetActorLocation();
 		FlagLocation = TargetLocation;
-		TargetLocation.Z += 500.f;
+		TargetLocation.Z += 1000.f;
 		BangCamera->SetWorldLocation(TargetLocation);
 
 		FVector DownVector = -TempPlayerStart->GetActorUpVector();
