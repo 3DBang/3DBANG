@@ -6,9 +6,7 @@
 #include "BangCharacter/BangCharacter.h"
 
 #include "CharacterUIActor/BangUIActor.h"
-#include "Data/BangPlayerStatData.h"
 #include "UI/BangInGameChattingWidget.h"
-#include "UI/BangInGamePlayerListWidget.h"
 #include "UI/BangPlayerHUD.h"
 
 ABangPlayerController::ABangPlayerController()
@@ -19,7 +17,6 @@ void ABangPlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	bShowMouseCursor = true;
-
 	bEnableClickEvents = true;
 	bEnableMouseOverEvents = true;
 
@@ -27,27 +24,6 @@ void ABangPlayerController::BeginPlay()
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
-
-	// 순서 변경 필요
-	/*
-	if (IsLocalController())
-	{
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-		{
-			BangHUD->ChattingWidgetInstance->AddMessage(FText::FromString("Hello from Controller!"), FSlateColor(FLinearColor::Green));
-
-			TArray<UBangPlayerStatData*> PlayerStats;
-
-			const auto Stat = NewObject<UBangPlayerStatData>();
-			Stat->PlayerId = "PlayerOne";
-			Stat->bIsAlive = true;
-			PlayerStats.Add(Stat);
-			
-			BangHUD->PlayerListWidgetInstance->UpdatePlayerList(PlayerStats);
-		}
-	}
-	*/
-	// 순서 변경 필요
 	
 	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
 	{
@@ -200,3 +176,60 @@ void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelectedCa
     }
 }
 
+///////////////////////////
+//// 찬호 추가 
+//////////////////////////
+void ABangPlayerController::Client_DisplayBangUI_Implementation()
+{
+	if (!HasAuthority())
+	{
+		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			BangHUD->ChattingWidgetInstance->AddMessage(
+				FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
+				FSlateColor(FLinearColor::Green)
+			);
+		}	
+	}
+}
+
+void ABangPlayerController::NotifyHUDLoaded()
+{
+	Server_HUDLoaded();
+	if (!HasAuthority())
+	{
+		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
+void ABangPlayerController::Server_HUDLoaded_Implementation()
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->UpdatePlayerHUD();
+}
+
+void ABangPlayerController::Server_StartGame_Implementation()
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->StartGame();
+}
+
+void ABangPlayerController::StartButtonCLicked()
+{
+	Server_StartGame();
+}

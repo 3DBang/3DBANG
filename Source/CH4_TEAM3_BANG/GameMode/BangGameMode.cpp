@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
+#include "Instance/BangGameInstance.h"
 
 ABangGameMode::ABangGameMode()
 {
@@ -26,37 +27,49 @@ ABangGameMode::ABangGameMode()
 void ABangGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// 카드매니저 가져오기
+	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()))
+	{
+		FCardManagerInstance OutCardManager;
+		BangGameInstance->GetCardManager(OutCardManager);
+		CardManager = OutCardManager.CardManager;
+		UE_LOG(LogTemp, Warning, TEXT("BangGameMode::CardManager Loaded"));
+
+		// 카드 매니저 초기 셋팅
+		CardManager->PlayBeginByRole();
+	}
 }
 
 void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-	PlayerControllers.Add(NewPlayer);
+	if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
+	{
+		BangPlayerControllers.Add(BangPlayerController);
+	}
 
 	const FString MapName = GetWorld()->GetMapName();
-
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.f,
-			FColor::Yellow,
-			FString::Printf(TEXT("ABangGameMode::PostLogin [%d][%s]"), NewPlayer->GetUniqueID(), *MapName)
-		);
-	}
 	
 	if (MapName.Contains("StageMap"))
 	{
-		for (const TObjectPtr<APlayerController> PlayerController : PlayerControllers)
+		for (const TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
 		{
-			AddPlayer(PlayerController->GetUniqueID());
+			AddPlayer(BangPlayerController->GetUniqueID());
 		}
 	}
 	
 	//게임 시작버튼을 누르면 그때 Player위치 조정함수 사용
 	//현재는 테스트용 입니다 
 	//SpawnPlayers();
+}
+
+void ABangGameMode::UpdatePlayerHUD()
+{
+	for (const TObjectPtr<ABangPlayerController> BangPlayerController: BangPlayerControllers)
+	{
+		BangPlayerController->Client_DisplayBangUI();
+	}
 }
 
 void ABangGameMode::GetPlayerStatesByUniqueID(const int32& UniqueID, FBangPlayerStateCollection& PlayerState_)
@@ -94,11 +107,19 @@ void ABangGameMode::AddPlayer(const uint32& UniqueID)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
 
+	uint32 DummyIndex;
+	if (LobbyPlayers.GetPlayerInformation(UniqueID, DummyIndex) != nullptr)
+	{
+		// 이미 존재하는 플레이어라면 추가하지 않음
+		UE_LOG(LogTemp, Warning, TEXT("Duplicate Player ID: %u - Not Adding"), UniqueID);
+		return;
+	}
+
 	FPlayerInformation PlayerInfo;
 	PlayerInfo.PlayerUniqueID = UniqueID;
-	LobbyPlayers.Players.Add(PlayerInfo);
-
+	PlayerInfo.PlayerName = "이름 어떻게 가져오지?";
 	UE_LOG(LogTemp, Warning, TEXT("Player ID: %u"), UniqueID);
+	LobbyPlayers.Players.Add(PlayerInfo);
 }
 
 void ABangGameMode::RemovePlayer(const uint32& UniqueID)
@@ -139,14 +160,13 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
 }
 void ABangGameMode::StartGame()
 {
-	if (CurrentGameState == EGameState::GamePlaying || !CardManager || Players.Players.Num() < 4 || Players.Players.Num() > 7) return;
+	UE_LOG(LogTemp, Warning, TEXT("StartGame [%d]"), LobbyPlayers.Players.Num());
+	if (CurrentGameState == EGameState::GamePlaying || !CardManager) return;
+	if (LobbyPlayers.Players.Num() < 4 || LobbyPlayers.Players.Num() > 7) return;
 
 	ArrangeSeats();
 	
 	CurrentGameState = EGameState::GamePlaying;
-
-	// 카드 매니저에 게임 시작 알림
-	CardManager->PlayBeginByRole();
 	
 	// 직업 선택
 	TArray<EJobType> JobCards;
@@ -159,6 +179,7 @@ void ABangGameMode::StartGame()
 	{
 		Players.Players[i].JobCardType = JobCards[i];
 		Players.Players[i].CharacterCardType = CardManager->GetCharacterCard();
+		Players.Players[i].MaxHealth = CardManager->GetHealthByCharacteType(CardManager->GetCharacterCard());
 		
 		if (JobCards[i] == EJobType::Officer)
 		{
@@ -166,6 +187,16 @@ void ABangGameMode::StartGame()
 			PlayerIndex = i;
 		}
 	}
+
+	for (FPlayerInformation Player : Players.Players)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s"), *Player.PlayerName);
+		UE_LOG(LogTemp, Warning, TEXT("JobCardType: %d"), Player.JobCardType);
+		UE_LOG(LogTemp, Warning, TEXT("MaxHealth: %d"), Player.MaxHealth);
+		UE_LOG(LogTemp, Warning, TEXT("CharacterCardType: %d"), Player.CharacterCardType);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("CurrentPlayerTurn: %s"), *CurrentPlayerTurn);
 
 	AdvanceGameTurn();
 }
@@ -501,10 +532,8 @@ void ABangGameMode::UseCatBalouCard(const EActiveType ActiveType, const EPassive
 
 void ABangGameMode::SetUserHP()
 {
-	if (ABangPlayerController* PlayerController = Cast<ABangPlayerController>(PlayerControllers[1]))
-	{
-		//PlayerController->SetInitializeHP(5);
-	}
+	if (BangPlayerControllers.Num() == 0) return;
+	BangPlayerControllers[0]->SetInitializeHP(5);
 }
 
 void ABangGameMode::AdvancePlayerTurn()
@@ -530,7 +559,7 @@ void ABangGameMode::SpawnPlayers()
 
     FVector Center = BasePlayerStart->GetActorLocation();
 
-    int32 PlayersNum = PlayerControllers.Num();
+    int32 PlayersNum = BangPlayerControllers.Num();
     UE_LOG(LogTemp, Error, TEXT("Player Num is %d"),PlayersNum);
     if (PlayersNum <= 0)
     {
@@ -548,22 +577,19 @@ void ABangGameMode::SpawnPlayers()
         SpawnRotation -= DefaultRotation;
 
         FActorSpawnParameters SpawnParams;
-        SpawnParams.Owner = PlayerControllers[i];
-        SpawnParams.Instigator = PlayerControllers[i]->GetPawn();
+        SpawnParams.Owner = BangPlayerControllers[i];
+        SpawnParams.Instigator = BangPlayerControllers[i]->GetPawn();
 
         ABangCharacter* Player = GetWorld()->SpawnActor<ABangCharacter>(DefaultPawnClass, SpawnLocation, SpawnRotation, SpawnParams);
         if (Player)
         {
-            PlayerControllers[i]->Possess(Player);
+            BangPlayerControllers[i]->Possess(Player);
             UE_LOG(LogTemp, Error, TEXT("플레이어컨트롤러가 폰에 빙의했습니다."));
            
-            if (ABangPlayerController* PlayerController = Cast<ABangPlayerController>(PlayerControllers[i]))
-            {
-                PlayerController->Client_SetControllerRotation(SpawnRotation);
-            }
+        	BangPlayerControllers[i]->Client_SetControllerRotation(SpawnRotation);
            //TODO : Suffle
 
-            UE_LOG(LogTemp, Error, TEXT("Player Controller is %s"), *PlayerControllers[i]->GetName());
+            UE_LOG(LogTemp, Error, TEXT("Player Controller is %s"), *BangPlayerControllers[i]->GetName());
 
             UE_LOG(LogTemp, Error, TEXT("Spawn Location is : %s"), *SpawnLocation.ToString());
         }

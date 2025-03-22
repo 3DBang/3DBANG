@@ -93,8 +93,6 @@ struct FPlayerInformation
 			   MyCards           == Other.MyCards &&
 			   EquippedCards     == Other.EquippedCards;
 	}
-
-	
 };
 
 USTRUCT(BlueprintType)
