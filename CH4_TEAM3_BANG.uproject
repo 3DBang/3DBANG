@@ -26,13 +26,13 @@
 			"Enabled": true
 		},
 		{
-			"Name": "SteamSockets",
-			"Enabled": true
-		},
-		{
 			"Name": "GameLogsSystem",
 			"Enabled": false,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/368bbb09622040d9817c5f01e8ef3557"
+		},
+		{
+			"Name": "SteamSockets",
+			"Enabled": true
 		}
 	]
 }
