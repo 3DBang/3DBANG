@@ -55,7 +55,8 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		for (const TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
 		{
-			AddPlayer(BangPlayerController->GetUniqueID());
+			BangPlayerController->Init();
+			AddPlayer(BangPlayerController->GetUniqueID(), BangPlayerController->PlayerNickname);
 		}
 	}
 	
@@ -103,29 +104,26 @@ void ABangGameMode::GetPlayerCollection(FPlayerCollection& PlayerCollection_) co
 	PlayerCollection_ = Players;
 }
 
-void ABangGameMode::AddPlayer(const uint32& UniqueID)
+void ABangGameMode::AddPlayer(const uint32& UniqueID, const FString& PlayerNickName)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
 
-	
 	if (LobbyPlayers.GetPlayerInformation(UniqueID) != nullptr)
 	{
-		// 이미 존재하는 플레이어라면 추가하지 않음
 		UE_LOG(LogTemp, Warning, TEXT("Duplicate Player ID: %u - Not Adding"), UniqueID);
 		return;
 	}
 
 	FPlayerInformation PlayerInfo;
 	PlayerInfo.PlayerUniqueID = UniqueID;
-	PlayerInfo.PlayerName = "이름 어떻게 가져오지?";
+	PlayerInfo.PlayerName = PlayerNickName;
 	UE_LOG(LogTemp, Warning, TEXT("Player ID: %u"), UniqueID);
 	LobbyPlayers.Players.Add(PlayerInfo);
 }
 
+// 로비 플레이어 삭제
 void ABangGameMode::RemovePlayer(const uint32& UniqueID)
 {
-	if (CurrentGameState == EGameState::GamePlaying) return;
-
 	for (const FPlayerInformation Player : LobbyPlayers.Players)
 	{
 		if (Player.PlayerUniqueID == UniqueID)
@@ -133,6 +131,30 @@ void ABangGameMode::RemovePlayer(const uint32& UniqueID)
 			LobbyPlayers.Players.Remove(Player);
 			break;
 		}
+	}
+}
+
+// 플레이어 삭제
+void ABangGameMode::ForceUpdate_RemovePlayer(const uint32& UniqueID)
+{
+	if (CurrentGameState == EGameState::GamePlaying) return;
+
+	for (const FPlayerInformation Player : Players.Players)
+	{
+		if (Player.PlayerUniqueID == UniqueID)
+		{
+			Players.Players.Remove(Player);
+			break;
+		}
+	}
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
+		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
+		
+		BangPlayerState->PlayerInfo.RemovePlayer(UniqueID);
+		BangPlayerState->ForceNetUpdate();
 	}
 }
 
@@ -162,60 +184,11 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
 void ABangGameMode::StartGame()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartGame"));
-
-	// 플레이어는 이미 등록되어있지만 이거슨 테스트용
-	FPlayerInformation PlayerInfoA;
-	PlayerInfoA.PlayerUniqueID = 1;
-	PlayerInfoA.PlayerName = "A";
-	UE_LOG(LogTemp, Warning, TEXT("Player ID: %u"), PlayerInfoA.PlayerUniqueID);
-	Players.Players.Add(PlayerInfoA);
-
-	// 플레이어는 이미 등록되어있지만 이거슨 테스트용
-	FPlayerInformation PlayerInfoB;
-	PlayerInfoB.PlayerUniqueID = 2;
-	PlayerInfoB.PlayerName = "B";
-	UE_LOG(LogTemp, Warning, TEXT("Player ID: %u"), PlayerInfoB.PlayerUniqueID);
-	Players.Players.Add(PlayerInfoB);
 	
-	if (const TObjectPtr<ABangGameState> BangGameState = Cast<ABangGameState>(GetWorld()->GetGameState()))
-	{
-		for (APlayerState* PlayerState : BangGameState->PlayerArray)
-		{
-			if (ABangPlayerState* BangPlayerState = Cast<ABangPlayerState>(PlayerState))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("GetPlayerName: [%s]"), *PlayerState->GetPlayerName());
-				UE_LOG(LogTemp, Warning, TEXT("GetUniqueID: [%d]"), PlayerState->GetPlayerController()->GetUniqueID());
-				// PlayerState에 등록하는 과정이 필요
-				BangPlayerState->PlayerInfo.Players.Add(PlayerInfoA);
-				BangPlayerState->PlayerInfo.Players.Add(PlayerInfoB);
-				BangPlayerState->ForceNetUpdate();
-				
-				// 최초 카드 분배 (테스트)
-				for (int16 i = 0; i < Players.Players.Num(); i++)
-				{
-					// 카드 뽑기
-					FCardCollection DrawCards;
-					CardManager->HandCards(2, DrawCards);
-
-					for (auto [Card] : DrawCards.CardList)
-					{
-						//UE_LOG(LogTemp, Warning, TEXT("Draw Card: [%s]"), *BangPlayerState->PlayerInfo.Players[i].PlayerName);
-						//UE_LOG(LogTemp, Warning, TEXT("Draw Card: [%s]"), *Card->CardName.ToString());
-						FPlayerCardSymbol CardSymbol;
-						CardSymbol.SymbolNumber = Card->SymbolNumber;
-						CardSymbol.SymbolType = Card->SymbolType;
-						BangPlayerState->PlayerInfo.Players[i].MyCards.PlayerCards.Add(CardSymbol);
-					}
-				}
-	
-				BangPlayerState->ForceNetUpdate();
-			}
-		}
-	}
 }
 
-// 바꿔줘야함
-void ABangGameMode::StartGame_Real()
+// 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
+void ABangGameMode::ForceUpdate_StartGame_Real()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartGame [%d]"), LobbyPlayers.Players.Num());
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager) return;
@@ -228,7 +201,6 @@ void ABangGameMode::StartGame_Real()
 	// 직업 선택
 	TArray<EJobType> JobCards;
 	CardManager->GetJobByPlayer(Players.Players.Num(), JobCards);
-	FPlayerInformation PlayerInfo;
 	
 	// 케릭터 카드 분배 & 보안관 먼저 시작
 	FCardCollection CharacterCards;
@@ -255,12 +227,22 @@ void ABangGameMode::StartGame_Real()
 
 	UE_LOG(LogTemp, Warning, TEXT("CurrentPlayerTurn: %s"), *CurrentPlayerTurn);
 
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
+		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
+
+		// 최초 등록 동기화
+		BangPlayerState->PlayerInfo = Players;
+		BangPlayerState->ForceNetUpdate();
+	}
+
 	AdvanceGameTurn();
 }
 
 void ABangGameMode::LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType) const
 {
-	FSingleCard SingleCard;
+	const FSingleCard SingleCard;
 	//CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, true, SingleCard);
 
 	switch (DeckType)
@@ -483,7 +465,7 @@ void ABangGameMode::GetCardBySymbol(const FPlayerCardSymbol& Card)
 }
 
 // 카드 뽑아서 PS에 전달
-void ABangGameMode::DrawCard(const uint32 UniqueID, const uint16 CardCount)
+void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount)
 {
 	FBangSinglePlayerState PlayerState;
 	GetPlayerStatesByUniqueID(UniqueID, PlayerState);
@@ -492,6 +474,7 @@ void ABangGameMode::DrawCard(const uint32 UniqueID, const uint16 CardCount)
 	CardManager->HandCards(CardCount, DrawCards);
 
 	PlayerState.State->PlayerInfo.GetPlayerInformation(UniqueID)->MyCards.AddCardCollectionToPlayerCards(DrawCards);
+	PlayerState.State->ForceNetUpdate();
 }
 
 void ABangGameMode::UseCard(
