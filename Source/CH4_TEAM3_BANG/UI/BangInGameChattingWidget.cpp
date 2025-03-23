@@ -20,6 +20,11 @@ void UBangInGameChattingWidget::NativeConstruct()
 	{
 		StartButton->OnClicked.AddDynamic(this, &UBangInGameChattingWidget::OnStartButtonClicked);
 	}
+	
+	if (IsValid(TestButton))
+	{
+		TestButton->OnClicked.AddDynamic(this, &UBangInGameChattingWidget::OnTestButtonClicked);
+	}
 }
 
 void UBangInGameChattingWidget::AddMessage(const FText& Message, const FSlateColor& Color)
@@ -42,6 +47,14 @@ void UBangInGameChattingWidget::OnStartButtonClicked()
 	if (const TObjectPtr<ABangPlayerController> OwningPlayerController = Cast<ABangPlayerController>(GetOwningPlayer()))
 	{
 		OwningPlayerController->StartButtonCLicked();
+	}
+}
+
+void UBangInGameChattingWidget::OnTestButtonClicked()
+{
+	if (const TObjectPtr<ABangPlayerController> OwningPlayerController = Cast<ABangPlayerController>(GetOwningPlayer()))
+	{
+		OwningPlayerController->TestButtonCLicked();
 	}
 }
 

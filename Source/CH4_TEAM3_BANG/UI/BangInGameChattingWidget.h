@@ -23,16 +23,24 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> StartButton;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> TestButton;
+
 	UFUNCTION(BlueprintCallable)
 	void AddMessage(const FText& Message, const FSlateColor& Color);
 
-	UFUNCTION(BlueprintCallable)
-	void OnStartButtonClicked();
-	
 protected:
 	virtual void NativeConstruct() override;
+
+	UFUNCTION(BlueprintCallable)
+	void OnStartButtonClicked();
+
+	UFUNCTION(BlueprintCallable)
+	void OnTestButtonClicked();
 
 private:
 	UFUNCTION()
 	void OnTextCommittedFunction(const FText& Text, const ETextCommit::Type CommitMethod);
+
+	
 };
