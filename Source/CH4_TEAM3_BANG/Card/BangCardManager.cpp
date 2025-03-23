@@ -2,7 +2,9 @@
 
 #include "Card/BaseCard/BangCardBase.h"
 #include "BangCardDataAsset.h"
+#include "ActiveCard/BangActiveCard.h"
 #include "JobCard/BangJobCard.h"
+#include "PassiveCard/BangPassiveCard.h"
 
 UBangCardManager::UBangCardManager()
 {
@@ -126,6 +128,32 @@ void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType S
 		if (Card->SymbolType == SymbolType && Card->SymbolNumber == SymbolNumber)
 		{
 			OutFoundCard.Card = Card;
+			break;
+		}
+	}
+}
+
+// DataAsset에서 카드 타입 가져오기
+void UBangCardManager::GetCardTypeFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, EActiveType& OutActiveType, EPassiveType& OutPassiveType) const
+{
+	if (!CardData) return;
+
+	for (const TObjectPtr<UBangCardBase> Card : CardData->Cards)
+	{
+		if (!Card) return;
+
+		if (Card->SymbolType == SymbolType && Card->SymbolNumber == SymbolNumber)
+		{
+			if (const UBangActiveCard* ActiveCard = Cast<UBangActiveCard>(Card))
+			{
+				OutActiveType = ActiveCard->ActiveType;
+				OutPassiveType = EPassiveType::None;
+			}
+			else if (const UBangPassiveCard* PassiveCard = Cast<UBangPassiveCard>(Card))
+			{
+				OutPassiveType = PassiveCard->PassiveType;
+				OutActiveType = EActiveType::None;
+			}
 			break;
 		}
 	}

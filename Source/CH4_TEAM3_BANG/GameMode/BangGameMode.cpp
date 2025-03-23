@@ -195,7 +195,22 @@ void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartTest"));
 
-	SpawnPlayers();
+	ArrangeSeats();
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
+		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
+
+		for (FPlayerInformation Player : Players.Players)
+		{
+			Player.CurrentHealth = 2;
+		}
+		
+		// 최초 등록 동기화
+		BangPlayerState->PlayerInfo = Players;
+		BangPlayerState->ForceNetUpdate();
+	}
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
@@ -219,6 +234,14 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 	{
 		Players.Players[i].JobCardType = JobCards[i];
 		Players.Players[i].CharacterCardType = CardManager->GetCharacterCard();
+		if (Players.Players[i].CharacterCardType == ECharacterType::RoseDoolan)
+		{
+			Players.Players[i].Range++;
+		}
+		else if (Players.Players[i].CharacterCardType == ECharacterType::PaulRegret)
+		{
+			Players.Players[i].CharacterRange++;
+		}
 		Players.Players[i].MaxHealth = CardManager->GetHealthByCharacteType(CardManager->GetCharacterCard());
 
 		// 최초 카드 분배
