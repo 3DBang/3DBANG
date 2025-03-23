@@ -63,15 +63,15 @@ public:
 	/////////////////
 	/// 통신 로직
 	/// /////////////
-	// 로비 플레이어 삭제
+	// 플레이어 삭제
 	UFUNCTION()
-	void RemovePlayer(const uint32& UniqueID);
+	void ForceUpdate_RemovePlayer(const uint32& UniqueID);
 	// 게임 시작
 	UFUNCTION()
 	void StartGame();
 	// 게임 시작
 	UFUNCTION()
-	void StartGame_Real();
+	void ForceUpdate_StartGame_Real();
 	// 게임 중인 플레이어의 정보를 가져온다.
 	UFUNCTION()
 	void GetPlayerCollection(FPlayerCollection& PlayerCollection_) const;
@@ -91,7 +91,7 @@ public:
 	void GetCardBySymbol(const FPlayerCardSymbol& Card);
 	// 카드 뽑아서 PS에 전달
 	UFUNCTION()
-	void DrawCard(const uint32 UniqueID, const uint16 CardCount);
+	void ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount);
 	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
 	UFUNCTION()
 	void LooseSidKetchumCard(const FCardCollection CardList);
@@ -107,11 +107,11 @@ public:
 	// 턴 종료
 	UFUNCTION()
 	void EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;
-
-	// 원멍 : 플레이어 컨트롤러 임시저장
+	
 	UPROPERTY()
 	TArray<ABangPlayerController*> BangPlayerControllers;
 
@@ -149,7 +149,10 @@ private:
 
 	// 로비 플레이어 등록
 	UFUNCTION()
-	void AddPlayer(const uint32& UniqueID);
+	void AddPlayer(const uint32& UniqueID, const FString& PlayerNickName);
+	// 로비 플레이어 삭제
+	UFUNCTION()
+	void RemovePlayer(const uint32& UniqueID);
 	// 플레이어 자리 배치
 	UFUNCTION()
 	void ArrangeSeats();

@@ -134,4 +134,20 @@ struct FPlayerCollection
 		UE_LOG(LogTemp, Error, TEXT("[PlayerInformation::GetPlayerInformation] Player UniqueID not found"));
 		return nullptr;
 	}
+
+	// 특정 플레이어 삭제
+	void RemovePlayer(const uint32 InPlayerUniqueID)
+	{
+		for (int32 i = 0; i < Players.Num(); ++i)
+		{
+			if (Players[i].PlayerUniqueID == InPlayerUniqueID)
+			{
+				Players.RemoveAt(i);
+				UE_LOG(LogTemp, Warning, TEXT("[PlayerInformation::GetPlayerInformation] Removed Player with ID: %u"), InPlayerUniqueID);
+				return;
+			}
+		}
+
+		UE_LOG(LogTemp, Error, TEXT("[PlayerInformation::GetPlayerInformation] Player with ID: %u not found. Cannot remove."), InPlayerUniqueID);
+	}
 };
