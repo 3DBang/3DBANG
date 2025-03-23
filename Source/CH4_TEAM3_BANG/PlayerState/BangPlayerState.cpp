@@ -56,8 +56,7 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, FSingleCard SingleCard,
 		
 	}
 
-	// 서버에서 카드 지움
-	Server_UseCard(FromUniqueID, SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, EDeckType::HandedCard);
+	RestoreCard(FromUniqueID, SingleCard);
 }
 
 void ABangPlayerState::Server_UseCard_Implementation(const int32 FromUniqueID, const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType)
@@ -79,7 +78,57 @@ void ABangPlayerState::UseCardToAll(const int32 FromUniqueID, FSingleCard Single
 
 void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard)
 {
+	// 서버에서 카드 지움
+	Server_UseCard(FromUniqueID, SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, EDeckType::HandedCard);
+}
+
+// 턴 종료 모든 처리 끝나면 호출
+void ABangPlayerState::EndTurn(const int32 InPlayerUniqueID)
+{
+	if (InPlayerUniqueID == 0) return;
+	Server_EndTurn(InPlayerUniqueID);
+}
+
+
+void ABangPlayerState::Server_PlayerDead_Implementation(const int32 FromUniqueID)
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	const ECharacterType PlayerCharacter = PlayerInfo.GetPlayerInformation(FromUniqueID)->CharacterCardType;
+	const EJobType JobType = PlayerInfo.GetPlayerInformation(FromUniqueID)->JobCardType;
+	FPlayerCardCollection CardList;
+	PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
 	
+	GameMode->PlayerDead(FromUniqueID, PlayerCharacter, JobType, CardList);
+}
+
+void ABangPlayerState::Server_EndTurn_Implementation(const int32 InPlayerUniqueID)
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->EndTurn(InPlayerUniqueID);
+}
+
+void ABangPlayerState::Server_DrawCard_Implementation(const uint32 UniqueID, const uint16 CardCount)
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+	
+	GameMode->ForceUpdate_DrawCard(UniqueID, CardCount);
 }
 
 void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
