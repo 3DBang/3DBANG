@@ -38,14 +38,15 @@ void UBangInGameChattingWidget::OnTextCommittedFunction(const FText& Text, const
 	{
 		if (Text.IsEmpty()) return;
 
-		const ABangPlayerController* Controller = Cast<ABangPlayerController>(GetOwningPlayer());
+		ABangPlayerController* Controller = Cast<ABangPlayerController>(GetOwningPlayer());
 		if (!Controller)
 		{
 			UE_LOG(LogTemp, Error, TEXT("PlayerController is NULL!"));
 			return;
 		}
-		
-		//Controller->SendMessageToServer(Text.ToString());
+
+		Controller->Server_RequestSendChatMessage(Text.ToString());
+
 		ChatTextField->SetText(FText::FromString(""));
 	}
 }

@@ -4,8 +4,8 @@
 #include "GameMode/BangGameMode.h"
 #include "PlayerState/BangPlayerState.h"
 #include "BangCharacter/BangCharacter.h"
-
 #include "CharacterUIActor/BangUIActor.h"
+#include "GameState/BangGameState.h"
 
 //Team_State
 #include "Data/BangPlayerStatData.h"
@@ -24,10 +24,22 @@ void ABangPlayerController::BeginPlay()
 
 	UE_LOG(LogTemp, Error, TEXT("ABangPlayerController BeginPlay"));
 
+	const FString MapName = GetWorld()->GetMapName();
+	if (MapName == "StageMap")
+	{
+		if (TObjectPtr<AGameModeBase> GameMode = GetWorld()->GetAuthGameMode())
+		{
+			if (TObjectPtr<ABangGameMode> BangGameMode = Cast<ABangGameMode>(GameMode))
+			{
+				BangGameMode->AddPlayer(GetUniqueID());
+			}
+		}
+	}
+
 	// 순서 변경 필요
 	if (IsLocalController())
 	{
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		/*if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 		{
 			BangHUD->ChattingWidgetInstance->AddMessage(FText::FromString("Hello from Controller!"), FSlateColor(FLinearColor::Green));
 
@@ -39,7 +51,7 @@ void ABangPlayerController::BeginPlay()
 			PlayerStats.Add(Stat);
 			
 			BangHUD->PlayerListWidgetInstance->UpdatePlayerList(PlayerStats);
-		}
+		}*/
 	}
 	// 순서 변경 필요
 	
@@ -194,3 +206,48 @@ void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelectedCa
     }
 }
 
+void ABangPlayerController::SendChatMessage(const FString& Message)
+{
+	ABangPlayerState* MyPlayerState = GetPlayerState<ABangPlayerState>();
+	ABangGameState* GameState = GetWorld()->GetGameState<ABangGameState>();
+
+	if (!MyPlayerState)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SendChatMessage 실패: PlayerState가 nullptr입니다!"));
+	}
+	if (!GameState)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SendChatMessage 실패: GameState가 nullptr입니다!"));
+	}
+
+	if (MyPlayerState && GameState)
+	{
+		uint32 MyUniqueID = MyPlayerState->PlayerInfo.PlayerUniqueID;
+		GameState->Server_SendChatMessage(MyUniqueID, Message);
+
+		UE_LOG(LogTemp, Log, TEXT("[Client] 채팅 전송: UniqueID=%d, Message=%s"), MyUniqueID, *Message);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("채팅 전송 실패: PlayerState 또는 GameState 없음"));
+	}
+}
+
+void ABangPlayerController::Server_RequestSendChatMessage_Implementation(const FString& Message)
+{
+	ABangGameState* GameState = GetWorld()->GetGameState<ABangGameState>();
+	if (GameState)
+	{
+		ABangPlayerState* MyPlayerState = GetPlayerState<ABangPlayerState>();
+		if (MyPlayerState)
+		{
+			uint32 MyUniqueID = MyPlayerState->PlayerInfo.PlayerUniqueID;
+			GameState->Server_SendChatMessage(MyUniqueID, Message);
+		}
+	}
+}
+
+bool ABangPlayerController::Server_RequestSendChatMessage_Validate(const FString& Message)
+{
+	return !Message.IsEmpty();  // 기본적인 검증
+}

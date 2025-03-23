@@ -9,6 +9,8 @@
 #include "GameMode/BangGameMode.h"
 #include "Net/UnrealNetwork.h"
 
+static int32 GlobalPlayerCounter = 1;
+
 ABangPlayerState::ABangPlayerState(): PlayerStat()
 {
 	bReplicates = true;
@@ -17,8 +19,8 @@ ABangPlayerState::ABangPlayerState(): PlayerStat()
 void ABangPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	if (!HasAuthority())
+
+	if (HasAuthority())
 	{
 		InitPlayerInfo();
 		//FPlayerStat NewStat;
@@ -27,6 +29,7 @@ void ABangPlayerState::BeginPlay()
 		//Server_UpdateStruct(NewStat);
 	}
 }
+
 
 void ABangPlayerState::Server_UpdateStruct_Implementation(const FPlayerStat& NewStruct)
 {

@@ -2,6 +2,7 @@
 
 #include "BangInGameChattingWidget.h"
 #include "BangInGamePlayerListWidget.h"
+#include "UI/BangInGameChattingWidget.h"
 #include "Blueprint/UserWidget.h"
 
 void ABangPlayerHUD::BeginPlay()

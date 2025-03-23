@@ -50,6 +50,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_UseCardReturn(bool IsAble);
 
+	UFUNCTION(Exec)
+	void SendChatMessage(const FString& Message);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_RequestSendChatMessage(const FString& Message);
+
 protected:
 	virtual void BeginPlay() override;
 ///////////////////////////
