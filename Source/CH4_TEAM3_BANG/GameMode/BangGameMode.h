@@ -162,6 +162,6 @@ private:
 	UFUNCTION()
 	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSinglePlayerController& PlayerController_);
 
-	//UFUNCTION(BlueprintCallable)
-	//void SetUserHP();
+	UFUNCTION(BlueprintCallable)
+	void SetUserHP();
 };
