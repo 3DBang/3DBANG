@@ -4,23 +4,33 @@
 #include "GameMode/BangGameMode.h"
 #include "PlayerState/BangPlayerState.h"
 #include "BangCharacter/BangCharacter.h"
+
 #include "CharacterUIActor/BangUIActor.h"
 #include "Camera/CameraComponent.h" 
-#include "Engine/Engine.h"
 #include "Camera/CameraActor.h"
 #include "Materials/MaterialInterface.h"
 #include "Camera/PlayerCameraManager.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameState/BangGameState.h"
+#include "UI/BangInGameChattingWidget.h"
+#include "UI/BangPlayerHUD.h"
 
 ABangPlayerController::ABangPlayerController()
-{
-	UE_LOG(LogTemp, Error, TEXT("플레이어 컨트롤러가 생성되었습니다 순서는 누가 더 빠른가요?"));
-}
+{}
 
 void ABangPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
+
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+	
 	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
@@ -46,13 +56,8 @@ void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 
 void ABangPlayerController::Server_EndTurn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter)
 {
-	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (GM)
-	{
-		GM->EndTurn(UniqueID, PlayerCharacter);
-	}
+	
 }
-
 
 void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator NewRotation)
 {
@@ -73,6 +78,7 @@ void ABangPlayerController::UpdatePlayerUI(FName& NewText)
 		}
 	}
 }
+
 void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
 {
 	if (HasAuthority())
@@ -85,6 +91,7 @@ void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
 	}
 
 }
+
 void ABangPlayerController::SetInitializeHP(int32 NewHP)
 {
 	if (HasAuthority())
@@ -96,6 +103,7 @@ void ABangPlayerController::SetInitializeHP(int32 NewHP)
 		}
 	}
 }
+
 void ABangPlayerController::Client_SelectCard_Implementation()
 {
     // UI 창 띄우기 (보유 중인 카드 표시)
@@ -109,8 +117,6 @@ void ABangPlayerController::Client_SelectCard_Implementation()
     // 카드 선택 후 처리 (별도 함수 호출)
     Client_HandleCardSelection(SelectedActiveCard);
 }
-
-
 
 void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveType SelectedCard)
 {
@@ -461,6 +467,7 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 	if (!IsLocalController())
 		return;
 
+
 	APawn* MyPawn = GetPawn();
 	if (!MyPawn) return;
 
@@ -472,4 +479,140 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 		Mesh->SetRenderCustomDepth(bEnable);
 		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
 	}
+}
+///////////////////////////
+//// 찬호 추가 
+//////////////////////////
+void ABangPlayerController::Client_DisplayBangUI_Implementation()
+{
+	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		BangHUD->ChattingWidgetInstance->AddMessage(
+			FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
+			FSlateColor(FLinearColor::Green)
+		);
+	}	
+}
+
+void ABangPlayerController::NotifyHUDLoaded()
+{
+	Server_HUDLoaded();
+	if (!HasAuthority())
+	{
+		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
+void ABangPlayerController::Server_HUDLoaded_Implementation()
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->UpdatePlayerHUD();
+}
+
+void ABangPlayerController::SendMessageToServer(FString Message)
+{
+	if (Message.IsEmpty()) return;
+
+	FString ToPlayerNickname = "";
+
+	// 귓속말의 경우 /{플레이어 아이디} {채팅내용}
+	if (Message[0] == '/')
+	{
+		// 귓속말
+		FString RawContent = Message.RightChop(1);
+
+		FString TargetIDString;
+		FString ChatContent;
+
+		if (RawContent.Split(TEXT(" "), &TargetIDString, &ChatContent))
+		{
+			ToPlayerNickname = TargetIDString;
+		}
+	}
+
+	// 전체챗팅
+	Server_SendMessage(Message, PlayerNickname, ToPlayerNickname);
+}
+
+void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
+{
+	if (Message.IsEmpty()) return;
+
+	if (FromNickname.IsEmpty())
+	{
+		// 전역
+		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			BangHUD->ChattingWidgetInstance->AddMessage(
+				FText::FromString(FString::Printf(TEXT("%s: %s"),*FromNickname, *Message)),
+				FSlateColor(FLinearColor::White)
+			);
+		}	
+	}
+	else
+	{
+		// 특정
+		if (PlayerNickname == FromNickname)
+		{
+			if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+			{
+				BangHUD->ChattingWidgetInstance->AddMessage(
+					FText::FromString(FString::Printf(TEXT("%s: %s"),*FromNickname, *Message)),
+					FSlateColor(FLinearColor::Red)
+				);
+			}
+		}
+	}
+}
+
+void ABangPlayerController::Server_SendMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
+{
+	if (ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>())
+	{
+		BangGameState->BroadcastChatMessage(Message, FromNickname, ToPlayerNickname);
+	}
+}
+
+void ABangPlayerController::Server_StartGame_Implementation()
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->ForceUpdate_StartGame_Real();
+}
+
+void ABangPlayerController::StartButtonCLicked()
+{
+	Server_StartGame();
+}
+
+void ABangPlayerController::Server_StartTest_Implementation()
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->StartTest();
+}
+
+void ABangPlayerController::TestButtonCLicked()
+{
+	Server_StartTest();
+
 }

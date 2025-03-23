@@ -33,6 +33,30 @@ struct FPlayerCardCollection
 	{
 		return PlayerCards == Other.PlayerCards;
 	}
+	
+	//카드의 심볼과 번호정보로 카드 삭제
+	void RemoveCard(const ESymbolType SymbolType, const int32 SymbolNumber)
+	{
+		for (int16 i = 0; i < PlayerCards.Num(); i++)
+		{
+			if (PlayerCards[i].SymbolType == SymbolType && PlayerCards[i].SymbolNumber == SymbolNumber)
+			{
+				PlayerCards.RemoveAt(i);
+			}
+		}
+	}
+	
+	//카드의 심볼과 번호정보를 플레이어 카드 리스트 안에 넣는 함수
+	void AddCardCollectionToPlayerCards(FCardCollection& GivenCards)
+	{
+		for (const auto [Card] : GivenCards.CardList)
+		{
+			FPlayerCardSymbol SingleSymbol;
+			SingleSymbol.SymbolNumber = Card->SymbolNumber;
+			SingleSymbol.SymbolType = Card->SymbolType;
+			PlayerCards.Add(SingleSymbol);
+		}
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -42,27 +66,31 @@ struct FPlayerInformation
 
 	//플레이어 아이디
 	UPROPERTY()
-	uint32 PlayerUniqueID;
+	uint32 PlayerUniqueID = 0;
 
 	//플레이어 이름
 	UPROPERTY()
-	FString PlayerName;
+	FString PlayerName = "Default";
 
 	// 플레이어가 가지는 최대 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 MaxHealth;
+	int32 MaxHealth = 0;
 
 	// 플레이어 현재 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 CurrentHealth;
+	int32 CurrentHealth = 0;
 
 	// 나를 볼 때 사거리 (다른 플레이어 기준)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 RangeToMe;
+	int32 RangeToMe = 0;
 
 	// 내가 볼 때 사거리 (내 기준)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 RangeFromMe;
+	int32 RangeFromMe = 0;
+
+	// 내 턴인지 확인
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	bool bIsMyTurn = false;
 
 	//직업 타입
 	UPROPERTY()
@@ -79,6 +107,19 @@ struct FPlayerInformation
 	//장착된 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FPlayerCardCollection EquippedCards;
+
+	void GetAllCardList(FPlayerCardCollection& OutCardList_)
+	{
+		for (auto Card : MyCards.PlayerCards)
+		{
+			OutCardList_.PlayerCards.Add(Card);
+		}
+		
+		for (auto Card : EquippedCards.PlayerCards)
+		{
+			OutCardList_.PlayerCards.Add(Card);
+		}
+	}
 
 	bool operator==(const FPlayerInformation& Other) const
 	{
@@ -106,5 +147,36 @@ struct FPlayerCollection
 	bool operator==(const FPlayerCollection& Other) const
 	{
 		return Players == Other.Players;
+	}
+
+	//플레이어 아이디를 넣으면 플레이어 정보를 반환하는 함수
+	FPlayerInformation* GetPlayerInformation(const uint32 InPlayerUniqueID)
+	{
+		for (int32 i = 0; i < Players.Num(); ++i)
+		{
+			if (Players[i].PlayerUniqueID == InPlayerUniqueID)
+			{
+				return &Players[i];
+			}
+		}
+
+		UE_LOG(LogTemp, Error, TEXT("[PlayerInformation::GetPlayerInformation] Player UniqueID not found"));
+		return nullptr;
+	}
+
+	// 특정 플레이어 삭제
+	void RemovePlayer(const uint32 InPlayerUniqueID)
+	{
+		for (int32 i = 0; i < Players.Num(); ++i)
+		{
+			if (Players[i].PlayerUniqueID == InPlayerUniqueID)
+			{
+				Players.RemoveAt(i);
+				UE_LOG(LogTemp, Warning, TEXT("[PlayerInformation::GetPlayerInformation] Removed Player with ID: %u"), InPlayerUniqueID);
+				return;
+			}
+		}
+
+		UE_LOG(LogTemp, Error, TEXT("[PlayerInformation::GetPlayerInformation] Player with ID: %u not found. Cannot remove."), InPlayerUniqueID);
 	}
 };

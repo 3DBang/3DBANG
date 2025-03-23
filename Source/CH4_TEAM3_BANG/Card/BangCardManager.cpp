@@ -4,6 +4,21 @@
 #include "BangCardDataAsset.h"
 #include "JobCard/BangJobCard.h"
 
+UBangCardManager::UBangCardManager()
+{
+	static ConstructorHelpers::FObjectFinder<UBangCardDataAsset> CardDataAsset(TEXT("/Game/BANG/Cards/CardDataAsset.CardDataAsset"));
+
+	if (CardDataAsset.Succeeded())
+	{
+		CardData = CardDataAsset.Object;
+		UE_LOG(LogTemp, Warning, TEXT("CardData loaded successfully in constructor."));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load CardData in constructor."));
+	}
+}
+
 // 최초 게임 시작시에 실행
 // GetAllCards()
 // ShuffleDeck()
@@ -54,30 +69,64 @@ void UBangCardManager::HandCards(const int CardCount, FCardCollection& OutCards_
 }
 
 // 카드 심볼과 번호로 카드 찾기
-void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsFromHanded, FSingleCard& FoundCard_)
+void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType, FSingleCard& FoundCard_)
 {
 	if (HandedCards.CardList.Num() == 0 && UsedCards.CardList.Num() == 0) return;
-	
-	if (IsFromHanded)
+
+	switch (DeckType)
 	{
-		for (const FSingleCard HandedCard : HandedCards.CardList)
+	case EDeckType::HandedCard:
 		{
-			if (HandedCard.Card->SymbolType == SymbolType && HandedCard.Card->SymbolNumber == SymbolNumber)
+			for (const FSingleCard HandedCard : HandedCards.CardList)
 			{
-				FoundCard_ = HandedCard;
-				break;
+				if (HandedCard.Card->SymbolType == SymbolType && HandedCard.Card->SymbolNumber == SymbolNumber)
+				{
+					FoundCard_ = HandedCard;
+					break;
+				}
 			}
+			break;
+		}
+	case EDeckType::UsedCards:
+		{
+			for (const FSingleCard UsedCard : UsedCards.CardList)
+			{
+				if (UsedCard.Card->SymbolType == SymbolType && UsedCard.Card->SymbolNumber == SymbolNumber)
+				{
+					FoundCard_ = UsedCard;
+					break;
+				}
+			}
+			break;
+		}
+	case EDeckType::AvailCards:
+		{
+			for (const FSingleCard UsedCard : AvailCards.CardList)
+			{
+				if (UsedCard.Card->SymbolType == SymbolType && UsedCard.Card->SymbolNumber == SymbolNumber)
+				{
+					FoundCard_ = UsedCard;
+					break;
+				}
+			}
+			break;
 		}
 	}
-	else
+}
+
+// 카드 심볼과 번호로 카드 찾기
+void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& OutFoundCard) const
+{
+	if (!CardData) return;
+
+	for (const TObjectPtr<UBangCardBase> Card : CardData->Cards)
 	{
-		for (const FSingleCard UsedCard : UsedCards.CardList)
+		if (!Card) return;
+
+		if (Card->SymbolType == SymbolType && Card->SymbolNumber == SymbolNumber)
 		{
-			if (UsedCard.Card->SymbolType == SymbolType && UsedCard.Card->SymbolNumber == SymbolNumber)
-			{
-				FoundCard_ = UsedCard;
-				break;
-			}
+			OutFoundCard.Card = Card;
+			break;
 		}
 	}
 }
@@ -98,7 +147,7 @@ void UBangCardManager::ReorderUsedCards(const FSingleCard HandedCard)
 	}
 }
 
-// 건내준 카드를 다시 사용된 카드 덱에 넣는다
+// 건내준 카드를 다시 사용가능한 카드 덱에 넣는다
 void UBangCardManager::ReorderAvailCards(const FSingleCard HandedCard)
 {
 	if (HandedCards.CardList.Num() == 0) return;
@@ -124,7 +173,9 @@ void UBangCardManager::GetAllCards()
 	PassiveCards.CardList.Empty();
 	ActiveCards.CardList.Empty();
 	JobCards.CardList.Empty();
-	CardDeckByType.Empty();
+	UsedCards.CardList.Empty();
+	HandedCards.CardList.Empty();
+	AvailCards.CardList.Empty();
 
 	for (UBangCardBase* Card : CardData->Cards)
 	{
@@ -134,7 +185,6 @@ void UBangCardManager::GetAllCards()
 		SingleCard.Card = Card;
 		
 		AllCards.CardList.Add(SingleCard);
-		CardDeckByType.FindOrAdd(Card->CardType).CardList.Add(SingleCard);
 		switch (Card->CardType)
 		{
 			case ECardType::JobCard:
@@ -159,6 +209,28 @@ void UBangCardManager::GetAllCards()
 				}
 		}
 	}
+}
+
+// 캐릭터의 고유 채력 받아오기
+int16 UBangCardManager::GetHealthByCharacteType(const ECharacterType CharacterType)
+{
+	if (!CardData) return 0;
+
+	for (const TObjectPtr<UBangCardBase> Card : CardData->Cards)
+	{
+		if (!Card) return 0;
+
+		if (TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Card))
+		{
+			if (CharacterCard->CharacterType == CharacterType)
+			{
+				return CharacterCard->Health;
+				break;
+			}
+		}
+	}
+	
+	return 0;
 }
 
 // 인원에 맞는 직업카드 추출 로직

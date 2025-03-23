@@ -11,11 +11,15 @@ public class CH4_TEAM3_BANG : ModuleRules
 			"CoreUObject", 
 			"Engine", 
 			"InputCore", 
-			"EnhancedInput", 
+			"EnhancedInput",
+			"Slate",
+			"SlateCore",
+			"UMG",
 			"OnlineSubsystem",
 			"AdvancedSessions",
 			"AdvancedSteamSessions",
-			"OnlineSubsystemSteam"
+			"OnlineSubsystemSteam",
+			"HTTP"
 		});
 		
         PrivateIncludePaths.Add("CH4_TEAM3_BANG");

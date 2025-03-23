@@ -1,10 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "GameMode/BangGameModeBase.h"
 #include "BangPlayerController.generated.h"
 
 class UInputMappingContext;
@@ -23,7 +20,6 @@ class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
 ///////////////////////////
 //// Enhanced Input
 //////////////////////////
-
 
 public:
 	ABangPlayerController();
@@ -68,49 +64,49 @@ public:
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
-public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	FString PlayerNickname;
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Init")
+	void Init();
+	
 	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
 	UFUNCTION(Client, Reliable)
 	void Client_SelectCard();
-	void Client_SelectCard_Implementation();
 	
 	UFUNCTION(Client, Reliable)
 	void Client_HandleCardSelection(EActiveType SelectedCard);
-	void Client_HandleCardSelection_Implementation(EActiveType SelectedCard);
+
+
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
 	
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
-	void Client_SelectTarget_Implementation();
+
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(EActiveType SelectedCard, uint32 TargetPlayerID);
-	void Server_UseCard_Implementation(EActiveType SelectedCard, uint32 TargetPlayerID);
 
-	void Client_SetControllerRotation_Implementation(FRotator NewRotation);
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCardReturn(bool IsAble);
-	void Server_UseCardReturn_Implementation(bool IsAble);
+
 
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
-	void Server_EndTurn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter);
 
 
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	void UpdatePlayerUI(FName& NewText);
-
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	void UpdatePlayerHP(int32 NewHP);
-
-	UFUNCTION(BlueprintCallable, Category = "UI")
-	void SetInitializeHP(int32 NewHP);
 
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
+
+public:
+
+	void UpdatePlayerUI(FName& NewText);
+	void UpdatePlayerHP(int32 NewHP);
+	void SetInitializeHP(int32 NewHP);
 
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
@@ -127,28 +123,22 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_OpenCamera(); // 여기에 추가적으로 PlayerStateID 들어가야함 
 
-	void Client_OpenCamera_Implementation();
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetInputEnabled(bool IsAttacker);
 
-	void Client_SetInputEnabled_Implementation(bool IsAttacker);
-
 	UFUNCTION(BlueprintCallable,Server, Reliable)
 	void Server_OpenCamera();
-	void Server_OpenCamera_Implementation();
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void Server_CloseCamera();
-	void Server_CloseCamera_Implementation();
 
 	UFUNCTION(Client, Reliable)
 	void Client_CloseCamera();
-	void Client_CloseCamera_Implementation();
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetOutline(bool bEnable, int32 StencilValue);
-	void Client_SetOutline_Implementation(bool bEnable, int32 StencilValue);
+
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
 private:
 	float CameraBlendElapsed = 0.f;
@@ -168,5 +158,43 @@ protected:
 private:
 
 	FTransform CachedBangCameraTransform;
+
+public:
+	void Client_SelectTarget();
+
+	///////////////////////////
+	//// 찬호 추가 
+	//////////////////////////
+
+public:
+	UFUNCTION(Client, Reliable)
+	void Client_DisplayBangUI();
+
+	UFUNCTION(Server, Reliable)
+	void Server_HUDLoaded();
+
+	UFUNCTION()
+	void NotifyHUDLoaded();
+
+	UFUNCTION()
+	void StartButtonCLicked();
+
+	UFUNCTION(Server, Reliable)
+	void Server_StartGame();
+
+	UFUNCTION()
+	void TestButtonCLicked();
+
+	UFUNCTION(Server, Reliable)
+	void Server_StartTest();
+	
+	UFUNCTION()
+	void SendMessageToServer(FString Message);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+	
+	UFUNCTION(Client, Reliable)
+	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 };
 

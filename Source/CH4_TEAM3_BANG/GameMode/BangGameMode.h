@@ -26,7 +26,7 @@ enum class EPlayerTurnState : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FBangPlayerStateCollection
+struct FBangSinglePlayerState
 {
 	GENERATED_BODY()
 
@@ -35,7 +35,7 @@ struct FBangPlayerStateCollection
 };
 
 USTRUCT(BlueprintType)
-struct FBangPlayerControllerCollection
+struct FBangSinglePlayerController
 {
 	GENERATED_BODY()
 
@@ -53,54 +53,57 @@ public:
 	
 	virtual void BeginPlay() override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
 
-	// 로비 플레이어 등록
+	// 테스트용
 	UFUNCTION()
-	void AddPlayer(const uint32& UniqueID);
-	// 로비 플레이어 삭제
+	void StartTest();
+
+	/////////////////
+	/// UI 로직
+	/// /////////////
 	UFUNCTION()
-	void RemovePlayer(const uint32& UniqueID);
+	void UpdatePlayerHUD();
+
+	/////////////////
+	/// 통신 로직
+	////////////////
+	
+	// 플레이어 삭제
+	UFUNCTION()
+	void ForceUpdate_RemovePlayer(const uint32& UniqueID);
 	// 게임 시작
 	UFUNCTION()
-	void StartGame();
+	void ForceUpdate_StartGame_Real();
 	// 게임 중인 플레이어의 정보를 가져온다.
 	UFUNCTION()
 	void GetPlayerCollection(FPlayerCollection& PlayerCollection_) const;
-	// 단일 카드 사용 (Play Role)
-	UFUNCTION() // 실제 객체 주소가 넘어가는지 확인 필요
-	void UseCard(
-		const uint32 UniqueID, // 사용한 사람의 아이디
-		const FPlayerCardSymbol& Card, // 카드 정보
-		const EActiveType ActiveType, // 액티브 타입
-		const EPassiveType PassiveType, // 패시브 타입
-		const ECharacterType CharacterType, // 캐릭터 타입
-		const uint32 ToUniqueID, // 대상
-		const ECharacterType ToCharacterType // 대상 캐릭터 타입
-		) const;
-	// 버릴 카드 선택 (Play Role)
+	// 심볼로 특정 카드 찾기 (Play Role)
 	UFUNCTION()
-	void LooseCard(const FCardCollection CardList);
+	void GetCardBySymbol(const FPlayerCardSymbol& Card);
+	// 카드 뽑아서 PS에 전달
+	UFUNCTION()
+	void ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount);
 	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
-	UFUNCTION()
-	void LooseSidKetchumCard(const FCardCollection CardList);
 	// 플레이어 사망
 	UFUNCTION()
 	void PlayerDead(const uint32 UniqueID,
 		const ECharacterType PlayerCharacter,
 		const EJobType JobType,
-		const FCardCollection CardList);
+		FPlayerCardCollection CardList);
 	// 카드 버리기
 	UFUNCTION()
-	void LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const bool IsToUsed) const;
+	void ForceUpdate_LooseCardFromHanded(const int32 FromUniqueID, const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType);
 	// 턴 종료
 	UFUNCTION()
-	void EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+	void EndTurn(const uint32 UniqueID);
+	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;
-
-	// 원멍 : 플레이어 컨트롤러 임시저장 
-	TArray<APlayerController*> PlayerControllers;
+	
+	UPROPERTY()
+	TArray<TObjectPtr<ABangPlayerController>> BangPlayerControllers;
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnPlayers();
@@ -129,11 +132,17 @@ private:
 	EGameState CurrentGameState;
 	// 현재 턴인 플레이어
 	UPROPERTY()
-	FString CurrentPlayerTurn;
+	uint32 CurrentTurnPlayerUniqeID;
 	// 현재 플레이어의 턴 상태
 	UPROPERTY()
 	EPlayerTurnState CurrentPlayerTurnState;
 
+	// 로비 플레이어 등록
+	UFUNCTION()
+	void AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName);
+	// 로비 플레이어 삭제
+	UFUNCTION()
+	void RemoveLobbyPlayer(const uint32& UniqueID);
 	// 플레이어 자리 배치
 	UFUNCTION()
 	void ArrangeSeats();
@@ -145,20 +154,13 @@ private:
 	void AdvancePlayerTurn();
 	// 플레이어 자리 섞기
 	UFUNCTION()
-	void ShuffleSeats(FPlayerCollection& ToShufflePlayers) const;
+	void ShuffleSeats(FPlayerCollection& ToShufflePlayers);
     // UniqueID로 PlayerState 받아오기
 	UFUNCTION()
-	void GetPlayerStatesByUniqueID(const int32& UniqueID, FBangPlayerStateCollection& PlayerState_);
+	void GetPlayerStatesByUniqueID(const int32& UniqueID, FBangSinglePlayerState& PlayerState_);
 	// UniqueID로 PlayerController 받아오기
 	UFUNCTION()
-	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangPlayerControllerCollection& PlayerController_);
-
-	// 강탈카드사용 (Play Role)
-	UFUNCTION()
-	void UsePanicCard(const EActiveType ActiveType, const EPassiveType PassiveType);
-	// 캣벌로우사용 (Play Role)
-	UFUNCTION()
-	void UseCatBalouCard(const EActiveType ActiveType, const EPassiveType PassiveType);
+	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSinglePlayerController& PlayerController_);
 
 	UFUNCTION(BlueprintCallable)
 	void SetUserHP();
