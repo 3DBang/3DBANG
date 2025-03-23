@@ -165,7 +165,9 @@ void ABangPlayerController::MouseClicked()
 				{
 					uint32 GetUID = GetUniqueID();
 					//SendToServer And Send CloseCamera Request
+					//TODO : SendToServerMethod()
 					Server_CloseCamera();
+
 				}
 
 				/**Test*/
@@ -624,4 +626,29 @@ void ABangPlayerController::TestButtonCLicked()
 {
 	Server_StartTest();
 
+}
+void ABangPlayerController::Client_ToggleMappingContext_Implementation()
+{
+	if (!IsLocalController())
+	{
+		return;
+	}
+
+	if (ULocalPlayer* LocalBangPlayer = GetLocalPlayer())
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsys = LocalBangPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+		{
+			if (bIsCameraContextActive)
+			{
+				Subsys->RemoveMappingContext(CameraMappingContext);
+				Subsys->AddMappingContext(InputMappingContext, 0);
+			}
+			else
+			{
+				Subsys->RemoveMappingContext(InputMappingContext);
+				Subsys->AddMappingContext(CameraMappingContext, 0);
+			}
+			bIsCameraContextActive = !bIsCameraContextActive;
+		}
+	}
 }

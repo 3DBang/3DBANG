@@ -195,5 +195,13 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+///////////////////////////
+//// 원명 추가 
+//////////////////////////
+public:
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleMappingContext();
+private:
+	bool bIsCameraContextActive;
 };
 
