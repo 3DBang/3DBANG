@@ -403,16 +403,6 @@ void ABangGameMode::EndTurn(const uint32 UniqueID)
 	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::EndTurn] UniqueID: %d, CurrentPlayerTurn: %d"), UniqueID, CurrentPlayerTurnState);
 }
 
-void ABangGameMode::LooseSidKetchumCard(const FCardCollection CardList)
-{
-	if (CardList.CardList.Num() != 2 || !CardManager) return;
-
-	for (const FSingleCard CardType : CardList.CardList)
-	{
-		CardManager->ReorderUsedCards(CardType);
-	}
-}
-
 void ABangGameMode::PlayerDead(const uint32 UniqueID,
 		const ECharacterType PlayerCharacter,
 		const EJobType JobType,
@@ -513,16 +503,6 @@ void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 Car
 
 	PlayerState.State->PlayerInfo.GetPlayerInformation(UniqueID)->MyCards.AddCardCollectionToPlayerCards(DrawCards);
 	PlayerState.State->ForceNetUpdate();
-}
-
-void ABangGameMode::UsePanicCard(const EActiveType ActiveType, const EPassiveType PassiveType)
-{
-	
-}
-
-void ABangGameMode::UseCatBalouCard(const EActiveType ActiveType, const EPassiveType PassiveType)
-{
-	
 }
 
 // 플레이어 HUD 노출

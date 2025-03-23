@@ -63,7 +63,7 @@ public:
 	
 	// 플레이어 카드 뽑기
 	UFUNCTION(Server, Reliable)
-	void Server_DrawCard(const uint32 UniqueID, const uint16 CardCount);
+	void Server_DrawCard(const uint32 FromUniqueID, const uint16 CardCount);
 private:
 	// 카드매니저
 	UPROPERTY()

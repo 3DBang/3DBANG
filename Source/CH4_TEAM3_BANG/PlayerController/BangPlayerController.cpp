@@ -6,6 +6,7 @@
 #include "BangCharacter/BangCharacter.h"
 
 #include "CharacterUIActor/BangUIActor.h"
+#include "GameState/BangGameState.h"
 #include "UI/BangInGameChattingWidget.h"
 #include "UI/BangPlayerHUD.h"
 
@@ -58,13 +59,8 @@ void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 
 void ABangPlayerController::Server_EndTurn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter)
 {
-	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (GM)
-	{
-		GM->EndTurn(UniqueID, PlayerCharacter);
-	}
+	
 }
-
 
 void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator NewRotation)
 {
@@ -85,6 +81,7 @@ void ABangPlayerController::UpdatePlayerUI(FName& NewText)
 		}
 	}
 }
+
 void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
 {
 	if (HasAuthority())
@@ -97,6 +94,7 @@ void ABangPlayerController::UpdatePlayerHP(int32 NewHP)
 	}
 
 }
+
 void ABangPlayerController::SetInitializeHP(int32 NewHP)
 {
 	if (HasAuthority())
@@ -108,6 +106,7 @@ void ABangPlayerController::SetInitializeHP(int32 NewHP)
 		}
 	}
 }
+
 void ABangPlayerController::Client_SelectCard_Implementation()
 {
     // UI 창 띄우기 (보유 중인 카드 표시)
@@ -121,8 +120,6 @@ void ABangPlayerController::Client_SelectCard_Implementation()
     // 카드 선택 후 처리 (별도 함수 호출)
     Client_HandleCardSelection(SelectedActiveCard);
 }
-
-
 
 void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveType SelectedCard)
 {
@@ -181,16 +178,13 @@ void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelectedCa
 //////////////////////////
 void ABangPlayerController::Client_DisplayBangUI_Implementation()
 {
-	if (!HasAuthority())
+	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-		{
-			BangHUD->ChattingWidgetInstance->AddMessage(
-				FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
-				FSlateColor(FLinearColor::Green)
-			);
-		}	
-	}
+		BangHUD->ChattingWidgetInstance->AddMessage(
+			FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
+			FSlateColor(FLinearColor::Green)
+		);
+	}	
 }
 
 void ABangPlayerController::NotifyHUDLoaded()
@@ -215,6 +209,70 @@ void ABangPlayerController::Server_HUDLoaded_Implementation()
 	}
 
 	GameMode->UpdatePlayerHUD();
+}
+
+void ABangPlayerController::SendMessageToServer(FString Message)
+{
+	if (Message.IsEmpty()) return;
+
+	FString ToPlayerNickname = "";
+
+	// 귓속말의 경우 /{플레이어 아이디} {채팅내용}
+	if (Message[0] == '/')
+	{
+		// 귓속말
+		FString RawContent = Message.RightChop(1);
+
+		FString TargetIDString;
+		FString ChatContent;
+
+		if (RawContent.Split(TEXT(" "), &TargetIDString, &ChatContent))
+		{
+			ToPlayerNickname = TargetIDString;
+		}
+	}
+
+	// 전체챗팅
+	Server_SendMessage(Message, PlayerNickname, ToPlayerNickname);
+}
+
+void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
+{
+	if (Message.IsEmpty()) return;
+
+	if (FromNickname.IsEmpty())
+	{
+		// 전역
+		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			BangHUD->ChattingWidgetInstance->AddMessage(
+				FText::FromString(FString::Printf(TEXT("%s: %s"),*FromNickname, *Message)),
+				FSlateColor(FLinearColor::White)
+			);
+		}	
+	}
+	else
+	{
+		// 특정
+		if (PlayerNickname == FromNickname)
+		{
+			if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+			{
+				BangHUD->ChattingWidgetInstance->AddMessage(
+					FText::FromString(FString::Printf(TEXT("%s: %s"),*FromNickname, *Message)),
+					FSlateColor(FLinearColor::Red)
+				);
+			}
+		}
+	}
+}
+
+void ABangPlayerController::Server_SendMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
+{
+	if (ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>())
+	{
+		BangGameState->BroadcastChatMessage(Message, FromNickname, ToPlayerNickname);
+	}
 }
 
 void ABangPlayerController::Server_StartGame_Implementation()
