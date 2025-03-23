@@ -48,7 +48,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction = nullptr;
 	
-
+	UPROPERTY()
+	TObjectPtr<UBangCardManager> CardManager;
 protected:
 	virtual void BeginPlay() override;
 ///////////////////////////
@@ -56,12 +57,16 @@ protected:
 //////////////////////////
 	
 public:
-//서버에 턴 종료 요청 
-	/*UFUNCTION(Server, Reliable)
-	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
 
 	UFUNCTION(Server, Reliable)
-	void Server_UseCard(EActiveType SelectedCard, uint32 TargetPlayerID);*/
+	void Server_UseCard(const FSingleCard& SingleCard, int32 TargetID);
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseCardReturn(bool IsAble);
+
+
+	UFUNCTION(Server, Reliable)
+	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
 
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
@@ -77,7 +82,7 @@ public:
 	void Client_SelectCard();
 	
 	UFUNCTION(Client, Reliable)
-	void Client_HandleCardSelection(EActiveType SelectedCard);
+	void Client_HandleCardSelection(const FSingleCard& SingleCard);
 
 
 	UFUNCTION(Client,Reliable)
@@ -85,19 +90,9 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
-
-
-	UFUNCTION(Server, Reliable)
-	void Server_UseCard(EActiveType SelectedCard, uint32 TargetPlayerID);
-
-
-	UFUNCTION(Server, Reliable)
-	void Server_UseCardReturn(bool IsAble);
-
-
-	UFUNCTION(Server, Reliable)
-	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
 	
+	UFUNCTION(Client, Reliable)
+	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 MaxAllowedCardCount);
 
 ///////////////////////////
 //// 원명 추가 
