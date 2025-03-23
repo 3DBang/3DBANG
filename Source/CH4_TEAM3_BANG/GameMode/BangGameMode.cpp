@@ -194,7 +194,6 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartTest"));
-
 	Players.Players.Empty();
 
 	// 호스트 설정
@@ -267,6 +266,14 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 	{
 		Players.Players[i].JobCardType = JobCards[i];
 		Players.Players[i].CharacterCardType = CardManager->GetCharacterCard();
+		if (Players.Players[i].CharacterCardType == ECharacterType::RoseDoolan)
+		{
+			Players.Players[i].Range++;
+		}
+		else if (Players.Players[i].CharacterCardType == ECharacterType::PaulRegret)
+		{
+			Players.Players[i].CharacterRange++;
+		}
 		Players.Players[i].MaxHealth = CardManager->GetHealthByCharacteType(CardManager->GetCharacterCard());
 
 		// 최초 카드 분배
@@ -568,6 +575,7 @@ void ABangGameMode::SetUserHP()
 	BangPlayerControllers[0]->SetInitializeHP(5);
 }
 
+
 void ABangGameMode::AdvancePlayerTurn()
 {
 	PlayerIndex++;
@@ -612,7 +620,6 @@ void ABangGameMode::SpawnPlayers()
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = BangPlayerControllers[i];
         SpawnParams.Instigator = BangPlayerControllers[i]->GetPawn();
-
         ABangCharacter* Player = GetWorld()->SpawnActor<ABangCharacter>(DefaultPawnClass, SpawnLocation, SpawnRotation, SpawnParams);
         if (Player)
         {
@@ -654,4 +661,48 @@ APlayerStart* ABangGameMode::ChooseStartLocation() const
 void ABangGameMode::SpawnPlayerBlue()
 {
     SpawnPlayers();
+}
+
+void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
+{
+	ControllerIDAtCameraMode = BangPlayerControllerID;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			bool bIsTarget = (PC->GetUniqueID() == BangPlayerControllerID);
+
+			PC->Client_SetInputEnabled(bIsTarget);
+			PC->Client_OpenCamera();
+			PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
+			/*if (PC->GetUniqueID() == BangPlayerControllerID)
+			{
+				PC->Client_SetInputEnabled(true);
+				PC->Client_OpenCamera();
+				PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
+			}
+			else
+			{
+				PC->Client_SetInputEnabled(false);
+				PC->Client_OpenCamera();
+			}*/
+
+		}
+	}
+}
+void ABangGameMode::CloseCamera()
+{
+	if (ControllerIDAtCameraMode == INDEX_NONE)
+	{
+		return;
+	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			PC->Client_CloseCamera();
+			PC->Client_SetInputEnabled(true);
+		}
+	}
+	ControllerIDAtCameraMode = INDEX_NONE;
 }

@@ -164,4 +164,15 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	void SetUserHP();
+
+public:
+	UFUNCTION()
+	void OpenCamera(uint32 BangPlayerStateID);
+
+	UFUNCTION()
+	void CloseCamera();
+
+private:
+	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum
+	
 };

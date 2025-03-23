@@ -43,6 +43,7 @@ void ABangPlayerState::OnRep_PlayerInfo()
 	}
 }
 
+// 컨트롤러가 카드 조회 호출용
 void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection)
 {
 	if (InPlayerUniqueID == 0) return;
@@ -56,15 +57,85 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 	}
 }
 
+void CaculateDistance(const int32 FromUniqueID, const int32 ToUniqueID)
+{
+	
+}
+
 void ABangPlayerState::UseCard(const int32 FromUniqueID, FSingleCard SingleCard, const int32 ToUniqueID)
 {
 	// 카드 각종 분기 처리 카드를 사용할 수 없는 경우에는 PC에 응답 후 리턴처리
+	if (!CardManager) return;
 
+	// 거리 접근 가능한지 확인
+	if (!PlayerInfo.IsDistanceAble(FromUniqueID, ToUniqueID))
+	{
+		// 거리 안된다고 PC에 알려줘야함
+		return;
+	}
+
+	EActiveType OutActiveType;
+	EPassiveType OutPassiveType;
+	CardManager->GetCardTypeFromDataAsset(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, OutActiveType, OutPassiveType);
+
+	switch (OutActiveType)
+	{
+	case EActiveType::None:
+		break;
+	case EActiveType::Bang:
+		break;
+	case EActiveType::Missed:
+		break;
+	case EActiveType::Stagecoach:
+		break;
+	case EActiveType::WellsFargoBank:
+		break;
+	case EActiveType::Beer:
+		break;
+	case EActiveType::GatlingGun:
+		break;
+	case EActiveType::Robbery:
+		break;
+	case EActiveType::CatBalou:
+		break;
+	case EActiveType::Saloon:
+		break;
+	case EActiveType::Duel:
+		break;
+	case EActiveType::GeneralStore:
+		break;
+	case EActiveType::Indians:
+		break;
+	case EActiveType::Jail:
+		break;
+	case EActiveType::Dynamite:
+		break;
+	}
+
+	switch (OutPassiveType)
+	{
+	case EPassiveType::None:
+		break;
+	case EPassiveType::Barrel:
+		break;
+	case EPassiveType::Scope:
+		break;
+	case EPassiveType::Mustang:
+		break;
+	case EPassiveType::Schofield:
+		break;
+	case EPassiveType::Volcanic:
+		break;
+	case EPassiveType::Remington:
+		break;
+	case EPassiveType::Carbine:
+		break;
+	case EPassiveType::Winchester:
+		break;
+	}
+	
 	if (ToUniqueID == 0) // 사용 대상이 없을때 (자기 자신한테 사용)
 	{
-		
-		
-		
 		
 	}
 
@@ -100,7 +171,6 @@ void ABangPlayerState::EndTurn(const int32 InPlayerUniqueID)
 	if (InPlayerUniqueID == 0) return;
 	Server_EndTurn(InPlayerUniqueID);
 }
-
 
 void ABangPlayerState::Server_PlayerDead_Implementation(const int32 FromUniqueID)
 {
@@ -173,8 +243,8 @@ FString ABangPlayerState::FPlayerInformationToString(const FPlayerInformation& I
 									 *Info.PlayerName,
 									 Info.CurrentHealth,
 									 Info.MaxHealth,
-									 Info.RangeToMe,
-									 Info.RangeFromMe);
+									 Info.Range,
+									 Info.CharacterRange);
 
 	FCardCollection CardCollection = GetCardListFromCardManager(Info);
 
