@@ -42,11 +42,11 @@ void ABangPlayerController::BeginPlay()
 		}
 	}
 	
-	FInputModeGameAndUI InputMode;
+	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
-	bShowMouseCursor = true;
+	bShowMouseCursor = true;*/
 }
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)

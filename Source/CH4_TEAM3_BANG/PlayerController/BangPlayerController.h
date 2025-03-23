@@ -159,8 +159,7 @@ private:
 
 	FTransform CachedBangCameraTransform;
 
-public:
-	void Client_SelectTarget();
+
 
 	///////////////////////////
 	//// 찬호 추가 
