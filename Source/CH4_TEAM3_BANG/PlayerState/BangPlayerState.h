@@ -24,6 +24,33 @@ public:
 	UFUNCTION()
 	void OnRep_PlayerInfo();
 
+	// 컨트롤러가 카드 가져올때 호출
+	UFUNCTION()
+	void GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
+
+	// 컨트롤러가 카드 사용할때 호출
+	UFUNCTION()
+	void UseCard(const int32 FromUniqueID, FSingleCard SingleCard, const int32 ToUniqueID);
+
+	// 컨트롤러가 전체 카드 사용할때 호출
+	UFUNCTION()
+	void UseCardToAll(const int32 FromUniqueID, FSingleCard SingleCard);
+
+	// 컨트롤러가 카드 버릴때 호출
+	UFUNCTION()
+	void RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard);
+
+	/////////////////////
+	/// 서버통신
+	/////////////////////
+	
+	UFUNCTION(Server, Reliable)
+	void Server_UseCard(
+		const int32 FromUniqueID,
+		const ESymbolType SymbolType,
+		const int32 SymbolNumber,
+		const EDeckType DeckType);
+	
 private:
 	// 카드매니저
 	UPROPERTY()

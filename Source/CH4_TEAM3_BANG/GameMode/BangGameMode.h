@@ -68,6 +68,7 @@ public:
 	/////////////////
 	/// 통신 로직
 	////////////////
+	
 	// 플레이어 삭제
 	UFUNCTION()
 	void ForceUpdate_RemovePlayer(const uint32& UniqueID);
@@ -77,17 +78,6 @@ public:
 	// 게임 중인 플레이어의 정보를 가져온다.
 	UFUNCTION()
 	void GetPlayerCollection(FPlayerCollection& PlayerCollection_) const;
-	// 단일 카드 사용 (Play Role)
-	UFUNCTION() // 실제 객체 주소가 넘어가는지 확인 필요
-	void UseCard(
-		const uint32 UniqueID, // 사용한 사람의 아이디
-		const FPlayerCardSymbol& Card, // 카드 정보
-		const EActiveType ActiveType, // 액티브 타입
-		const EPassiveType PassiveType, // 패시브 타입
-		const ECharacterType CharacterType, // 캐릭터 타입
-		const uint32 ToUniqueID, // 대상
-		const ECharacterType ToCharacterType // 대상 캐릭터 타입
-		) const;
 	// 심볼로 특정 카드 찾기 (Play Role)
 	UFUNCTION()
 	void GetCardBySymbol(const FPlayerCardSymbol& Card);
@@ -105,7 +95,7 @@ public:
 		const FCardCollection CardList);
 	// 카드 버리기
 	UFUNCTION()
-	void LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType) const;
+	void ForceUpdate_LooseCardFromHanded(const int32 FromUniqueID, const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType);
 	// 턴 종료
 	UFUNCTION()
 	void EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
