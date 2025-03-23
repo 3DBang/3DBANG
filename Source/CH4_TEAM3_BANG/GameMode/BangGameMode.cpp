@@ -520,6 +520,7 @@ void ABangGameMode::SetUserHP()
 	BangPlayerControllers[0]->SetInitializeHP(5);
 }
 
+
 void ABangGameMode::AdvancePlayerTurn()
 {
 	PlayerIndex++;
@@ -564,7 +565,6 @@ void ABangGameMode::SpawnPlayers()
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = BangPlayerControllers[i];
         SpawnParams.Instigator = BangPlayerControllers[i]->GetPawn();
-
         ABangCharacter* Player = GetWorld()->SpawnActor<ABangCharacter>(DefaultPawnClass, SpawnLocation, SpawnRotation, SpawnParams);
         if (Player)
         {
@@ -606,4 +606,48 @@ APlayerStart* ABangGameMode::ChooseStartLocation() const
 void ABangGameMode::SpawnPlayerBlue()
 {
     SpawnPlayers();
+}
+
+void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
+{
+	ControllerIDAtCameraMode = BangPlayerControllerID;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			bool bIsTarget = (PC->GetUniqueID() == BangPlayerControllerID);
+
+			PC->Client_SetInputEnabled(bIsTarget);
+			PC->Client_OpenCamera();
+			PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
+			/*if (PC->GetUniqueID() == BangPlayerControllerID)
+			{
+				PC->Client_SetInputEnabled(true);
+				PC->Client_OpenCamera();
+				PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
+			}
+			else
+			{
+				PC->Client_SetInputEnabled(false);
+				PC->Client_OpenCamera();
+			}*/
+
+		}
+	}
+}
+void ABangGameMode::CloseCamera()
+{
+	if (ControllerIDAtCameraMode == INDEX_NONE)
+	{
+		return;
+	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			PC->Client_CloseCamera();
+			PC->Client_SetInputEnabled(true);
+		}
+	}
+	ControllerIDAtCameraMode = INDEX_NONE;
 }
