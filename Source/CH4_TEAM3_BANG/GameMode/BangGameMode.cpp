@@ -1,14 +1,12 @@
 #include "BangGameMode.h"
 
 #include "Card/BangCardManager.h"
-#include "Card/CharacterCard/BangCharacterCard.h"
 #include "Card/JobCard/BangJobCard.h"
 
 #include "GameState/BangGameState.h"
 #include "PlayerState/BangPlayerState.h"
 #include "PlayerController/BangPlayerController.h"
 #include "../BangCharacter/BangCharacter.h"
-#include "Card/ActiveCard/BangActiveCard.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
@@ -29,7 +27,7 @@ void ABangGameMode::BeginPlay()
 	Super::BeginPlay();
 
 	// 카드매니저 가져오기
-	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()))
+	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()); CardManager)
 	{
 		FCardManagerInstance OutCardManager;
 		BangGameInstance->GetCardManager(OutCardManager);
@@ -196,7 +194,8 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartTest"));
-	
+
+	SpawnPlayers();
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
@@ -221,10 +220,17 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 		Players.Players[i].JobCardType = JobCards[i];
 		Players.Players[i].CharacterCardType = CardManager->GetCharacterCard();
 		Players.Players[i].MaxHealth = CardManager->GetHealthByCharacteType(CardManager->GetCharacterCard());
+
+		// 최초 카드 분배
+		int16 Health = Players.Players[i].MaxHealth;
+		FCardCollection Cards;
+		CardManager->HandCards(Health, Cards);
+		Players.Players[i].MyCards.AddCardCollectionToPlayerCards(Cards);
 		
 		if (JobCards[i] == EJobType::Officer)
 		{
-			CurrentPlayerTurn = Players.Players[i].PlayerName;
+			CurrentTurnPlayerUniqeID = Players.Players[i].PlayerUniqueID;
+			Players.Players[i].bIsMyTurn = true;
 			PlayerIndex = i;
 		}
 	}
@@ -237,7 +243,7 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 		UE_LOG(LogTemp, Warning, TEXT("CharacterCardType: %d"), Player.CharacterCardType);
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("CurrentPlayerTurn: %s"), *CurrentPlayerTurn);
+	UE_LOG(LogTemp, Warning, TEXT("CurrentPlayerTurn: %d"), CurrentTurnPlayerUniqeID);
 
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
@@ -254,6 +260,7 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 
 void ABangGameMode::ForceUpdate_LooseCardFromHanded(const int32 FromUniqueID, const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType)
 {
+	if (!CardManager) return;
 	FSingleCard SingleCard;
 	CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, DeckType, SingleCard);
 
@@ -290,15 +297,8 @@ void ABangGameMode::AdvanceGameTurn()
 		case ECharacterType::PedroRamirez:
 			{
 				CardManager->HandCards(2, DrawCards);
-				// PlayerState 한테 넘겨줌
-				FBangSinglePlayerState CurrentPlayerState;
-				GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
-				//CurrentPlayerState->
-
-				// 플레이어 컨트롤러한테 턴 시작 알림
-				FBangSinglePlayerController CurrentPlayerController;
-				GetPlayerControllerByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerController);
-				//CurrentPlayerController.Controller->Server_PlayerTurn();
+				
+				
 				break;
 			}
 		case ECharacterType::BlackJack:
@@ -309,30 +309,27 @@ void ABangGameMode::AdvanceGameTurn()
 				{
 					CardManager->HandCards(1, DrawCards);
 				}
-				// PlayerState한테 CardList 보내기
 				break;
 			}
 		case ECharacterType::KitCarlson:
 			{
 				// 카드 더미위에 3장을 보고 그중에서 두개를 가져가고 한장은 다시 뽑는 카드더미 위에 올려둔다.
 				CardManager->HandCards(3, DrawCards);
-				// PlayerState한테 3보낸다. 
 				break;
 			}
 		default:
 			{
 				CardManager->HandCards(2, DrawCards);
-				// PlayerState 플레이어 스테이트한테 카드 전달
-				FBangSinglePlayerState CurrentPlayerState;
-				GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
-				//CurrentPlayerState->AddCards(CardList);
 				break;
 			}
 		}
+
+		FBangSinglePlayerState CurrentPlayerState;
+		GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
+		CurrentPlayerState.State->PlayerInfo.GetPlayerInformation(CurrentTurnPlayerUniqeID)->MyCards.AddCardCollectionToPlayerCards(DrawCards);
+		CurrentPlayerState.State->ForceNetUpdate();
 		
-		// 플레이어 한테 응답 받고 아래 로직 실행
 		CurrentPlayerTurnState = EPlayerTurnState::UseCard;
-		AdvanceGameTurn();
 	}
 	else if (CurrentPlayerTurnState == EPlayerTurnState::UseCard)
 	{
@@ -392,15 +389,23 @@ void ABangGameMode::AdvanceGameTurn()
 	}
 }
 
-void ABangGameMode::EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter)
+void ABangGameMode::EndTurn(const uint32 UniqueID)
 {
-	CurrentPlayerTurnState = EPlayerTurnState::LooseCard;
-	AdvanceGameTurn();
+	if (UniqueID == CurrentTurnPlayerUniqeID)
+	{
+		if (CurrentPlayerTurnState == EPlayerTurnState::UseCard)
+		{
+			CurrentPlayerTurnState = EPlayerTurnState::LooseCard;
+			AdvanceGameTurn();
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::EndTurn] UniqueID: %d, CurrentPlayerTurn: %d"), UniqueID, CurrentPlayerTurnState);
 }
 
 void ABangGameMode::LooseSidKetchumCard(const FCardCollection CardList)
 {
-	if (CardList.CardList.Num() != 2) return;
+	if (CardList.CardList.Num() != 2 || !CardManager) return;
 
 	for (const FSingleCard CardType : CardList.CardList)
 	{
@@ -411,14 +416,18 @@ void ABangGameMode::LooseSidKetchumCard(const FCardCollection CardList)
 void ABangGameMode::PlayerDead(const uint32 UniqueID,
 		const ECharacterType PlayerCharacter,
 		const EJobType JobType,
-		const FCardCollection CardList)
+		FPlayerCardCollection CardList)
 {
+	if (!CardManager) return;
+
+	// 분기 처리시 return전에 모든작업 수행후 반환
 	// 플레이어중에 벌처셈 카드가 있으면 그상대에게 카드를 다 줘야한다.
 	for (FPlayerInformation Player : Players.Players)
 	{
 		if (Player.CharacterCardType == ECharacterType::VultureSam)
 		{
 			// 상대에게 카드 주기
+			
 		}
 		else
 		{
@@ -471,11 +480,21 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID,
 			break;
 		}
 	}
+
+	// 카드 제거
+	for (auto [SymbolType, SymbolNumber] : CardList.PlayerCards)
+	{
+		FSingleCard FoundCard;
+		CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, EDeckType::HandedCard, FoundCard);
+		// 카드 제거
+		CardManager->ReorderUsedCards(FoundCard);
+	}
 }
 
 // 심볼로 특정 카드 찾기 (Play Role)
 void ABangGameMode::GetCardBySymbol(const FPlayerCardSymbol& Card)
 {
+	if (!CardManager) return;
 	FSingleCard FoundCard;
 	CardManager->GetCardBySymbolAndNumber(Card.SymbolType, Card.SymbolNumber, EDeckType::AvailCards, FoundCard);
 	// 뽑은 후에 PS 전달
@@ -484,6 +503,8 @@ void ABangGameMode::GetCardBySymbol(const FPlayerCardSymbol& Card)
 // 카드 뽑아서 PS에 전달
 void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount)
 {
+	if (!CardManager) return;
+	
 	FBangSinglePlayerState PlayerState;
 	GetPlayerStatesByUniqueID(UniqueID, PlayerState);
 
@@ -523,8 +544,9 @@ void ABangGameMode::AdvancePlayerTurn()
 {
 	PlayerIndex++;
 	PlayerIndex = PlayerIndex % Players.Players.Num();
-	CurrentPlayerTurn = Players.Players[PlayerIndex].PlayerName;
+	CurrentTurnPlayerUniqeID = Players.Players[PlayerIndex].PlayerUniqueID;
 	CurrentPlayerTurnState = EPlayerTurnState::DrawCard;
+	
 	AdvanceGameTurn();
 }
 

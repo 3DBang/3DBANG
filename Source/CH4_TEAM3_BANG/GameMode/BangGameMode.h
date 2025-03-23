@@ -92,13 +92,13 @@ public:
 	void PlayerDead(const uint32 UniqueID,
 		const ECharacterType PlayerCharacter,
 		const EJobType JobType,
-		const FCardCollection CardList);
+		FPlayerCardCollection CardList);
 	// 카드 버리기
 	UFUNCTION()
 	void ForceUpdate_LooseCardFromHanded(const int32 FromUniqueID, const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType);
 	// 턴 종료
 	UFUNCTION()
-	void EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+	void EndTurn(const uint32 UniqueID);
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
@@ -134,7 +134,7 @@ private:
 	EGameState CurrentGameState;
 	// 현재 턴인 플레이어
 	UPROPERTY()
-	FString CurrentPlayerTurn;
+	uint32 CurrentTurnPlayerUniqeID;
 	// 현재 플레이어의 턴 상태
 	UPROPERTY()
 	EPlayerTurnState CurrentPlayerTurnState;
