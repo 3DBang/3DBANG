@@ -4,12 +4,11 @@
 #include "BangInGamePlayerListWidget.h"
 #include "UI/BangInGameChattingWidget.h"
 #include "Blueprint/UserWidget.h"
+#include "PlayerController/BangPlayerController.h"
 
 void ABangPlayerHUD::BeginPlay()
 {
 	Super::BeginPlay();
-
-	UE_LOG(LogTemp, Error, TEXT("BangPlayerHUD::BeginPlay"));
 
 	// 채팅 UI 노출
 	if (ChattingWidgetClass)
@@ -19,25 +18,11 @@ void ABangPlayerHUD::BeginPlay()
 		{
 			ChattingWidgetInstance->AddToViewport();
 		}
-		UE_LOG(LogTemp, Error, TEXT("ChattingWidgetClass"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("ChattingWidgetClass NULL"));
 	}
 
-	// 플레이어 목록 노출
-	if (PlayerListWidgetClass)
-	{
-		PlayerListWidgetInstance = CreateWidget<UBangInGamePlayerListWidget>(GetWorld(), PlayerListWidgetClass);
-		if (PlayerListWidgetInstance)
-		{
-			PlayerListWidgetInstance->AddToViewport();
+	if (APlayerController* PlayerController = GetOwningPlayerController()) {
+		if (ABangPlayerController* BangPlayerController = Cast<ABangPlayerController>(PlayerController)) {
+			BangPlayerController->NotifyHUDLoaded();
 		}
-		UE_LOG(LogTemp, Error, TEXT("PlayerListWidgetClass"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("PlayerListWidgetClass NULL"));
 	}
 }

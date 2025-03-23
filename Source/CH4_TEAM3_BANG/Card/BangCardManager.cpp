@@ -2,7 +2,24 @@
 
 #include "Card/BaseCard/BangCardBase.h"
 #include "BangCardDataAsset.h"
+#include "ActiveCard/BangActiveCard.h"
 #include "JobCard/BangJobCard.h"
+#include "PassiveCard/BangPassiveCard.h"
+
+UBangCardManager::UBangCardManager()
+{
+	static ConstructorHelpers::FObjectFinder<UBangCardDataAsset> CardDataAsset(TEXT("/Game/BANG/Cards/CardDataAsset.CardDataAsset"));
+
+	if (CardDataAsset.Succeeded())
+	{
+		CardData = CardDataAsset.Object;
+		UE_LOG(LogTemp, Warning, TEXT("CardData loaded successfully in constructor."));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to load CardData in constructor."));
+	}
+}
 
 // 최초 게임 시작시에 실행
 // GetAllCards()
@@ -100,7 +117,7 @@ void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, co
 }
 
 // 카드 심볼과 번호로 카드 찾기
-void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& FoundCard_) const
+void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& OutFoundCard) const
 {
 	if (!CardData) return;
 
@@ -110,7 +127,33 @@ void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType S
 
 		if (Card->SymbolType == SymbolType && Card->SymbolNumber == SymbolNumber)
 		{
-			FoundCard_.Card = Card;
+			OutFoundCard.Card = Card;
+			break;
+		}
+	}
+}
+
+// DataAsset에서 카드 타입 가져오기
+void UBangCardManager::GetCardTypeFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, EActiveType& OutActiveType, EPassiveType& OutPassiveType) const
+{
+	if (!CardData) return;
+
+	for (const TObjectPtr<UBangCardBase> Card : CardData->Cards)
+	{
+		if (!Card) return;
+
+		if (Card->SymbolType == SymbolType && Card->SymbolNumber == SymbolNumber)
+		{
+			if (const UBangActiveCard* ActiveCard = Cast<UBangActiveCard>(Card))
+			{
+				OutActiveType = ActiveCard->ActiveType;
+				OutPassiveType = EPassiveType::None;
+			}
+			else if (const UBangPassiveCard* PassiveCard = Cast<UBangPassiveCard>(Card))
+			{
+				OutPassiveType = PassiveCard->PassiveType;
+				OutActiveType = EActiveType::None;
+			}
 			break;
 		}
 	}
@@ -132,7 +175,7 @@ void UBangCardManager::ReorderUsedCards(const FSingleCard HandedCard)
 	}
 }
 
-// 건내준 카드를 다시 사용된 카드 덱에 넣는다
+// 건내준 카드를 다시 사용가능한 카드 덱에 넣는다
 void UBangCardManager::ReorderAvailCards(const FSingleCard HandedCard)
 {
 	if (HandedCards.CardList.Num() == 0) return;
@@ -158,7 +201,9 @@ void UBangCardManager::GetAllCards()
 	PassiveCards.CardList.Empty();
 	ActiveCards.CardList.Empty();
 	JobCards.CardList.Empty();
-	CardDeckByType.Empty();
+	UsedCards.CardList.Empty();
+	HandedCards.CardList.Empty();
+	AvailCards.CardList.Empty();
 
 	for (UBangCardBase* Card : CardData->Cards)
 	{
@@ -168,7 +213,6 @@ void UBangCardManager::GetAllCards()
 		SingleCard.Card = Card;
 		
 		AllCards.CardList.Add(SingleCard);
-		CardDeckByType.FindOrAdd(Card->CardType).CardList.Add(SingleCard);
 		switch (Card->CardType)
 		{
 			case ECardType::JobCard:
@@ -193,6 +237,28 @@ void UBangCardManager::GetAllCards()
 				}
 		}
 	}
+}
+
+// 캐릭터의 고유 채력 받아오기
+int16 UBangCardManager::GetHealthByCharacteType(const ECharacterType CharacterType)
+{
+	if (!CardData) return 0;
+
+	for (const TObjectPtr<UBangCardBase> Card : CardData->Cards)
+	{
+		if (!Card) return 0;
+
+		if (TObjectPtr<UBangCharacterCard> CharacterCard = Cast<UBangCharacterCard>(Card))
+		{
+			if (CharacterCard->CharacterType == CharacterType)
+			{
+				return CharacterCard->Health;
+				break;
+			}
+		}
+	}
+	
+	return 0;
 }
 
 // 인원에 맞는 직업카드 추출 로직

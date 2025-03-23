@@ -33,6 +33,30 @@ struct FPlayerCardCollection
 	{
 		return PlayerCards == Other.PlayerCards;
 	}
+	
+	//카드의 심볼과 번호정보로 카드 삭제
+	void RemoveCard(const ESymbolType SymbolType, const int32 SymbolNumber)
+	{
+		for (int16 i = 0; i < PlayerCards.Num(); i++)
+		{
+			if (PlayerCards[i].SymbolType == SymbolType && PlayerCards[i].SymbolNumber == SymbolNumber)
+			{
+				PlayerCards.RemoveAt(i);
+			}
+		}
+	}
+	
+	//카드의 심볼과 번호정보를 플레이어 카드 리스트 안에 넣는 함수
+	void AddCardCollectionToPlayerCards(FCardCollection& GivenCards)
+	{
+		for (const auto [Card] : GivenCards.CardList)
+		{
+			FPlayerCardSymbol SingleSymbol;
+			SingleSymbol.SymbolNumber = Card->SymbolNumber;
+			SingleSymbol.SymbolType = Card->SymbolType;
+			PlayerCards.Add(SingleSymbol);
+		}
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -42,27 +66,31 @@ struct FPlayerInformation
 
 	//플레이어 아이디
 	UPROPERTY()
-	uint32 PlayerUniqueID;
+	uint32 PlayerUniqueID = 0;
 
 	//플레이어 이름
 	UPROPERTY()
-	FString PlayerName;
+	FString PlayerName = "Default";
 
 	// 플레이어가 가지는 최대 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 MaxHealth;
+	int32 MaxHealth = 0;
 
 	// 플레이어 현재 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 CurrentHealth;
+	int32 CurrentHealth = 0;
 
-	// 나를 볼 때 사거리 (다른 플레이어 기준)
+	// 사거리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 RangeToMe;
+	int32 Range = 1;
 
-	// 내가 볼 때 사거리 (내 기준)
+	// 상대가 날 볼때 추가되는 사거리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 RangeFromMe;
+	int32 CharacterRange = 0;
+
+	// 내 턴인지 확인
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	bool bIsMyTurn = false;
 
 	//직업 타입
 	UPROPERTY()
@@ -80,21 +108,32 @@ struct FPlayerInformation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FPlayerCardCollection EquippedCards;
 
+	void GetAllCardList(FPlayerCardCollection& OutCardList_)
+	{
+		for (auto Card : MyCards.PlayerCards)
+		{
+			OutCardList_.PlayerCards.Add(Card);
+		}
+		
+		for (auto Card : EquippedCards.PlayerCards)
+		{
+			OutCardList_.PlayerCards.Add(Card);
+		}
+	}
+
 	bool operator==(const FPlayerInformation& Other) const
 	{
 		return PlayerUniqueID    == Other.PlayerUniqueID &&
 			   PlayerName        == Other.PlayerName &&
 			   MaxHealth         == Other.MaxHealth &&
 			   CurrentHealth     == Other.CurrentHealth &&
-			   RangeToMe         == Other.RangeToMe &&
-			   RangeFromMe       == Other.RangeFromMe &&
+			   Range			 == Other.Range &&
+			   	CharacterRange   == Other.CharacterRange &&
 			   JobCardType       == Other.JobCardType &&
 			   CharacterCardType == Other.CharacterCardType &&
 			   MyCards           == Other.MyCards &&
 			   EquippedCards     == Other.EquippedCards;
 	}
-
-	
 };
 
 USTRUCT(BlueprintType)
@@ -110,40 +149,66 @@ struct FPlayerCollection
 		return Players == Other.Players;
 	}
 
-	//플레이어 인덱스를 넣으면 플레이어의 위치를 반환하는 함수
-	int32 CalculateDistance(int16 PlayerIndexA, int16 PlayerIndexB)
+	// 허용 거리 확인
+	bool IsDistanceAble(const int32 FromUniqueID, const int32 ToUniqueID)
 	{
-		int TotalPlayers = this->Players.Num();
-		if (TotalPlayers == 0)
+		int32 FromIndex = INDEX_NONE;
+		int32 ToIndex = INDEX_NONE;
+
+		for (int32 i = 0; i < Players.Num(); ++i)
 		{
-			return -1;
+			if (Players[i].PlayerUniqueID == FromUniqueID)
+				FromIndex = i;
+			else if (Players[i].PlayerUniqueID == ToUniqueID)
+				ToIndex = i;
 		}
 
-		// 인덱스 간 차이 계산
-		int16 directDistance = abs(PlayerIndexA - PlayerIndexB);
-    
-		// 원형 배열에서는 양쪽으로 감싸는 거리가 있을 수 있음
-		int16 circularDistance = TotalPlayers - directDistance;
-    
-		// 두 값 중 작은 값이 실제 거리
-		return std::min(directDistance, circularDistance);
+		if (FromIndex == INDEX_NONE || ToIndex == INDEX_NONE)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[FPlayerCollection::IsDistanceAble] 플레이어 인덱스를 찾을 수 없습니다."));
+			return false;
+		}
+
+		const int32 DirectDistance = FMath::Abs(ToIndex - FromIndex);
+		const int32 ReverseDistance = Players.Num() - DirectDistance;
+		const int32 FinalDistance = FMath::Min(DirectDistance, ReverseDistance);
+
+		const int32 AttackerRange = Players[FromIndex].Range;
+		const int32 DefenderCamouflage = Players[ToIndex].CharacterRange;
+
+		const int32 EffectiveRange = AttackerRange - DefenderCamouflage;
+
+		return FinalDistance <= EffectiveRange;
 	}
 
 	//플레이어 아이디를 넣으면 플레이어 정보를 반환하는 함수
-	FPlayerInformation* GetPlayerInformation(uint32 InPlayerUniqueID, uint32& PlayerIndex)
+	FPlayerInformation* GetPlayerInformation(const uint32 InPlayerUniqueID)
 	{
 		for (int32 i = 0; i < Players.Num(); ++i)
 		{
 			if (Players[i].PlayerUniqueID == InPlayerUniqueID)
 			{
-				PlayerIndex = i;
 				return &Players[i];
 			}
 		}
-    
-		PlayerIndex = INDEX_NONE; // 찾지 못하면 인덱스를 -1로 설정합니다.
+
+		UE_LOG(LogTemp, Error, TEXT("[PlayerInformation::GetPlayerInformation] Player UniqueID not found"));
 		return nullptr;
 	}
 
+	// 특정 플레이어 삭제
+	void RemovePlayer(const uint32 InPlayerUniqueID)
+	{
+		for (int32 i = 0; i < Players.Num(); ++i)
+		{
+			if (Players[i].PlayerUniqueID == InPlayerUniqueID)
+			{
+				Players.RemoveAt(i);
+				UE_LOG(LogTemp, Warning, TEXT("[PlayerInformation::GetPlayerInformation] Removed Player with ID: %u"), InPlayerUniqueID);
+				return;
+			}
+		}
 
+		UE_LOG(LogTemp, Error, TEXT("[PlayerInformation::GetPlayerInformation] Player with ID: %u not found. Cannot remove."), InPlayerUniqueID);
+	}
 };

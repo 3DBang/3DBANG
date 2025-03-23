@@ -18,7 +18,8 @@ public class CH4_TEAM3_BANG : ModuleRules
 			"OnlineSubsystem",
 			"AdvancedSessions",
 			"AdvancedSteamSessions",
-			"OnlineSubsystemSteam"
+			"OnlineSubsystemSteam",
+			"HTTP"
 		});
 		
         PrivateIncludePaths.Add("CH4_TEAM3_BANG");

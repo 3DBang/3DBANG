@@ -56,4 +56,21 @@ public:
 protected:
 	/** 네트워크 복제 설정 */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	UPROPERTY(ReplicatedUsing = OnRep_Message)
+	FString Message;
+
+	UPROPERTY(Replicated)
+	FString FromPlayerNickname;
+
+	UPROPERTY(Replicated)
+	FString ToPlayerNickname;
+
+	UFUNCTION()
+	void OnRep_Message();
+
+	UFUNCTION()
+	void BroadcastChatMessage(const FString& NewMessage, const FString& SenderNickname, const FString& ReciverNickname);
+	
+	UFUNCTION()
+	void ReceiveMessage(const FString& ChatMessage, const FString& FromNickname, const FString& ReciverNickname);
 };

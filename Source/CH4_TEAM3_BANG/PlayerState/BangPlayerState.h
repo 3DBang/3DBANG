@@ -2,49 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Data/PlayerInformation.h"
+#include "Card/BangCardManager.h"
 #include "GameFramework/PlayerState.h"
 #include "BangPlayerState.generated.h"
-
-struct FCardCollection;
-class UBangJobCard;
-class UBangCharacterCard;
-class UBangCardBase;
-
-USTRUCT()
-struct FPlayerStat
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	int32 Value;
-
-	UPROPERTY()
-	float Health;
-
-	UPROPERTY() // UPROPERTY 가 붙어있으면 기본적으로해줌 
-	int32 Score;
-
-	// NetSerialize 함수: 읽기/쓰기를 동일 순서로 처리해야 합니다.
-	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
-	{
-		// Ar.IsLoading 클라에서 읽을때 else 쓸때
-		Ar << Value;
-		Ar << Health;
-		Ar << Score;
-		bOutSuccess = true;
-		return true;
-	}
-};
-
-template<>
-struct TStructOpsTypeTraits<FPlayerStat> : public TStructOpsTypeTraitsBase2<FPlayerStat>
-{
-	enum
-	{
-		WithNetSerializer = true,
-	};
-};
-
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerState : public APlayerState
@@ -56,70 +16,69 @@ public:
 
 	virtual void BeginPlay() override;
 
-	//블루프린트에서 플레이어 정보를 설정이 필요할때 부르는 이벤트
-	UFUNCTION(BlueprintImplementableEvent, Category = "Player State")
-	void InitPlayerInfo();
-	
-	UPROPERTY(Replicated)
-	FPlayerInformation PlayerInfo;
+	// PlayerState에서 사용하는 플레이어 정보 저장용
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerInfo)
+	FPlayerCollection PlayerInfo;
 
-	// FPlayerStat를 복제할 때 OnRep_MyStruct 함수 호출 (동기화)
-	UPROPERTY(ReplicatedUsing = OnRep_MyStruct)
-	FPlayerStat PlayerStat;
-
-	// ex) 클라이언트가 서버에 새로운 데이터를 전달하는 RPC 함수 
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_UpdateStruct(const FPlayerStat& NewStruct);
-	
-	// 복제 변수 업데이트 시 클라이언트에서 호출
-	/*
-	NetSerialize는 복제 시스템 내부에서 호출되어 데이터를 직렬화하는 역할을 합니다.
-	따라서 직접 호출하는 코드가 없더라도, 클라이언트에서 실제로 값이 제대로 업데이트되고 OnRep 함수가 호출된다면,
-	NetSerialize가 정상적으로 작동하고 있다는 간접 증거입니다.
-	 */
+	// 플레이어 Info가 서버에서 변경됐을떄 호출되는 함수
 	UFUNCTION()
-	void OnRep_MyStruct();
+	void OnRep_PlayerInfo();
 
-	// 복제 변수 등록
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	// 컨트롤러가 카드 조회 호출
+	UFUNCTION()
+	void GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
 
-	//카드를 넣어주는 함수
-	void AddDrawnCards(FCardCollection& DrawCards);
+	// 컨트롤러가 카드 사용할때 호출
+	UFUNCTION()
+	void UseCard(const int32 FromUniqueID, FSingleCard SingleCard, const int32 ToUniqueID);
 
-	//카드를 버리는 함수
+	// 컨트롤러가 전체 카드 사용할때 호출
+	UFUNCTION()
+	void UseCardToAll(const int32 FromUniqueID, FSingleCard SingleCard);
 
+	// 컨트롤러가 카드 버릴때 호출
+	UFUNCTION()
+	void RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard);
 
-	// 플레이어 컨트롤러에서 호출하는 함수
-	// 카드를 사용했을때 적과 나의 거리를 체크하는 함수
-	// @ 상대방의 정보 ex, 스테이트 or 플레이어 인포
-	// @ FPlayerCardSymbol _UseCard 사용한 카드
-	// @ FPlayerInformation 플레이어 위치정보
-	void Calculate_Distance(FPlayerCardSymbol _UseCard, uint32 _ToUniqueID, const EActiveType ActiveType, const EPassiveType PassiveType);
+	// 턴 종료
+	UFUNCTION()
+	void EndTurn(const int32 InPlayerUniqueID);
+
+	/////////////////////
+	/// 서버통신
+	/////////////////////
+	UFUNCTION(Server, Reliable)
+	void Server_EndTurn(const int32 InPlayerUniqueID);
 	
-	// 카드의 사용 조건이 맞을때 효과를 적용하는 함수
-	// 효과를 발생시킨 플레이어 , 사용한 카드
-	void TryApplyEffect(TObjectPtr<UBangCardBase> _UseCard, FPlayerCollection& _Collection);
+	UFUNCTION(Server, Reliable)
+	void Server_UseCard(
+		const int32 FromUniqueID,
+		const ESymbolType SymbolType,
+		const int32 SymbolNumber,
+		const EDeckType DeckType);
 
-	//플레이어가 드로우 할턴에 뭔가를 해야하는 자기 캐릭터가 있으면 그 캐릭터 일때 플레이어 컨트롤러로 보내줌
-	// 걔 UI 띄워라 
-    void OnCharacterDrawPhase();
-
-
-	//getJobType
-	EJobType GetJobType();
+	// 플레이어 사망 처리
+	UFUNCTION(Server, Reliable)
+	void Server_PlayerDead(const int32 FromUniqueID);
 	
-	//getCharacterType
-	ECharacterType GetCharacterType();
-	//GetCharacterType
+	// 플레이어 카드 뽑기
+	UFUNCTION(Server, Reliable)
+	void Server_DrawCard(const uint32 FromUniqueID, const uint16 CardCount);
+private:
+	// 카드매니저
+	UPROPERTY()
+	TObjectPtr<UBangCardManager> CardManager;
+	
+	// 심볼, 번호 정보로 카드리스트에서 카드를 찾아온다.
+	UFUNCTION()
+	FCardCollection GetCardListFromCardManager(const FPlayerInformation& Info) const;
 
-	////// 필요 유틸
-
-	// @ int16 현재 플레이어 인덱스
-	// @ int16 상대 플레이어 인덱스
-	// @ FPlayerCollection& _Collection
-	//_Collection에서 특정한 플레이어 인덱스를 가지고 와서 반환하는 함수
-
-	//_Collection 전체를 돌면서 모든 플레이어에게 특정 함수를 실행하는 함수 템플릿 함수로 만들어야 할듯?
+	// 디버그용
+	UFUNCTION()
+	FString FPlayerInformationToString(const FPlayerInformation& Info);
+	UFUNCTION()
+	FString FPlayerCollectionToString(const FPlayerCollection& Collection);
+	
 };
 
 
