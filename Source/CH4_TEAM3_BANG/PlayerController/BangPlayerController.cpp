@@ -10,7 +10,6 @@
 #include "Camera/CameraActor.h"
 #include "Materials/MaterialInterface.h"
 #include "Camera/PlayerCameraManager.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "GameState/BangGameState.h"
 #include "UI/BangInGameChattingWidget.h"
 #include "UI/BangPlayerHUD.h"
@@ -541,6 +540,48 @@ void ABangPlayerController::SendMessageToServer(FString Message)
 
 	// 전체챗팅
 	Server_SendMessage(Message, PlayerNickname, ToPlayerNickname);
+}
+
+// 플레이어에게 카드 선택권 요구 응답
+void ABangPlayerController::Server_RespondSelectCard_Implementation()
+{
+	FPlayerCardCollection PlayerCardCollection;
+	for (auto [Card] : SelectCardCollection.CardList)
+	{
+		FPlayerCardSymbol SingleCard;
+		SingleCard.SymbolNumber = Card->SymbolNumber;
+		SingleCard.SymbolType = Card->SymbolType;
+		PlayerCardCollection.PlayerCards.Add(SingleCard);
+	}
+	
+	SelectCardCollection.CardList.Empty();
+	
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+	
+	GameMode->RefundCards(PlayerCardCollection);
+}
+
+// 플레이어에게 카드 선택권 요구
+void ABangPlayerController::Client_RequestSelectCard_Implementation(const uint32& PlayerUniqueID, const FPlayerCardCollection DrawCards)
+{
+	if (DrawCards.PlayerCards.Num() == 0) return;
+
+	if (IsLocalController() && GetUniqueID() == PlayerUniqueID)
+	{
+		ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
+		BangPlayerState->GetCard(PlayerUniqueID, SelectCardCollection);
+		
+		// 플레이어에게 카드 선택권 요구
+		
+		
+		// 선택한 카드 배열에서 지우기
+		// SelectCardCollection
+	}
 }
 
 void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
