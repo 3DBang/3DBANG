@@ -108,4 +108,10 @@ public:
 
 public:
 	bool GetFirstPersonMode();
+
+	UFUNCTION()
+	void OnCursorBegin(UPrimitiveComponent* MouseComp);
+
+	UFUNCTION()
+	void OnCursorEnd(UPrimitiveComponent* MouseComp);
 };

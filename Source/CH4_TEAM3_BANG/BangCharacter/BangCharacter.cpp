@@ -14,6 +14,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerStart.h"
+#include "GameFramework/PlayerState.h"  
 
 // Sets default values
 ABangCharacter::ABangCharacter()
@@ -47,7 +48,14 @@ ABangCharacter::ABangCharacter()
 
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-
+	
+	if (UPrimitiveComponent* PrimComponent = Cast<UPrimitiveComponent>(GetRootComponent()))
+	{
+		PrimComponent->SetGenerateOverlapEvents(true);
+		PrimComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		PrimComponent->OnBeginCursorOver.AddDynamic(this, &ABangCharacter::OnCursorBegin);
+		PrimComponent->OnEndCursorOver.AddDynamic(this, &ABangCharacter::OnCursorEnd);
+	}
 
 }
 
@@ -375,5 +383,21 @@ const FTransform& ABangCharacter::GetInitialCameraTransform() const
 bool ABangCharacter::GetFirstPersonMode()
 {
 	return bFirstPersonMode;
+}
+
+void ABangCharacter::OnCursorBegin(UPrimitiveComponent* MouseComp)
+{
+	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
+	{
+		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), true);
+	}
+}
+
+void ABangCharacter::OnCursorEnd(UPrimitiveComponent* MouseComp)
+{
+	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
+	{
+		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), false);
+	}
 }
 

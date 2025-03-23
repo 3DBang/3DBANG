@@ -652,3 +652,31 @@ void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 		}
 	}
 }
+void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
+{
+	if (IsFirstCheck)
+	{
+		GetUserInformation();
+	}
+	if (UUserWidget** WidgetPtr = PlayerWidgets.Find(PlayerID))
+	{
+		(*WidgetPtr)->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+	}
+}
+void ABangPlayerController::GetUserInformation()
+{
+	for (APlayerState* PS : GetWorld()->GetGameState()->PlayerArray)
+	{
+		if (!PS)
+		{
+			continue;
+		}
+
+		uint32 ID = PS->GetPlayerId();
+		UUserWidget* Widget = CreateWidget<UUserWidget>(this, InteractionWidgetClass);
+		Widget->AddToViewport();
+		Widget->SetVisibility(ESlateVisibility::Hidden);
+
+		PlayerWidgets.Add(ID, Widget);
+	}
+}

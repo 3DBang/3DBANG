@@ -201,7 +201,17 @@ public:
 public:
 	UFUNCTION(Client, Reliable)
 	void Client_ToggleMappingContext();
+
+	void SetWidgetVisibility(uint32 PlayerID, bool bVisible);
+	//플레이어 스테이트에 유저에 대한 정보가 있는지 확인 
+	void GetUserInformation();
 private:
 	bool bIsCameraContextActive;
+	TMap<uint32, UUserWidget*> PlayerWidgets;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UUserWidget> InteractionWidgetClass;
+
+	bool IsFirstCheck = true;
 };
 
