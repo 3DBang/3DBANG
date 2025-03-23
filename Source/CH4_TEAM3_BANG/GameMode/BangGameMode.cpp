@@ -202,8 +202,8 @@ void ABangGameMode::StartTest()
 	PlayerA.PlayerName = TEXT("Alice");
 	PlayerA.MaxHealth = 4;
 	PlayerA.CurrentHealth = 3;
-	PlayerA.RangeToMe = 1;
-	PlayerA.RangeFromMe = 2;
+	PlayerA.Range = 1;
+	PlayerA.CharacterRange = 2;
 	PlayerA.bIsMyTurn = true;
 	PlayerA.JobCardType = EJobType::Officer;
 	PlayerA.CharacterCardType = ECharacterType::BartCassidy;
@@ -215,8 +215,8 @@ void ABangGameMode::StartTest()
 	PlayerB.PlayerName = TEXT("Bob");
 	PlayerB.MaxHealth = 5;
 	PlayerB.CurrentHealth = 5;
-	PlayerB.RangeToMe = 0;
-	PlayerB.RangeFromMe = 1;
+	PlayerB.Range = 0;
+	PlayerB.CharacterRange = 1;
 	PlayerB.bIsMyTurn = false;
 	PlayerB.JobCardType = EJobType::Outlaw;
 	PlayerB.CharacterCardType = ECharacterType::JesseJones;

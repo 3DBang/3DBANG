@@ -35,7 +35,7 @@ void ABangPlayerState::OnRep_PlayerInfo()
 		UE_LOG(LogTemp, Warning, TEXT("[OnRep] Player %d Info:"), i);
 		UE_LOG(LogTemp, Warning, TEXT("  Name: %s, ID: %d"), *Info.PlayerName, Info.PlayerUniqueID);
 		UE_LOG(LogTemp, Warning, TEXT("  HP: %d/%d"), Info.CurrentHealth, Info.MaxHealth);
-		UE_LOG(LogTemp, Warning, TEXT("  RangeToMe: %d, RangeFromMe: %d"), Info.RangeToMe, Info.RangeFromMe);
+		UE_LOG(LogTemp, Warning, TEXT("  RangeToMe: %d, RangeFromMe: %d"), Info.Range, Info.CharacterRange);
 		UE_LOG(LogTemp, Warning, TEXT("  IsMyTurn: %s"), Info.bIsMyTurn ? TEXT("true") : TEXT("false"));
 		UE_LOG(LogTemp, Warning, TEXT("  Job: %s, Character: %s"),
 			*UEnum::GetValueAsString(Info.JobCardType),
