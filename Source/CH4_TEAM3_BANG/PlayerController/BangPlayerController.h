@@ -67,6 +67,12 @@ public:
 ////클라이언트 관련 로직 작성란
 //////////////////////////
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	FString PlayerNickname;
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Init")
+	void Init();
+	
 	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
 	UFUNCTION(Client, Reliable)
 	void Client_SelectCard();

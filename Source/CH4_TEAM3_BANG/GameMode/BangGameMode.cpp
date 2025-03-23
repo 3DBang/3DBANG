@@ -107,8 +107,8 @@ void ABangGameMode::AddPlayer(const uint32& UniqueID)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
 
-	uint32 DummyIndex;
-	if (LobbyPlayers.GetPlayerInformation(UniqueID, DummyIndex) != nullptr)
+	
+	if (LobbyPlayers.GetPlayerInformation(UniqueID) != nullptr)
 	{
 		// 이미 존재하는 플레이어라면 추가하지 않음
 		UE_LOG(LogTemp, Warning, TEXT("Duplicate Player ID: %u - Not Adding"), UniqueID);
