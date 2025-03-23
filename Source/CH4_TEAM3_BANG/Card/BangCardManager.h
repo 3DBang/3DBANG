@@ -56,6 +56,8 @@ struct FCardCollection
 	{
 		return CardList == Other.CardList;
 	}
+
+	
 };
 
 // 덱 종류
@@ -73,6 +75,8 @@ class CH4_TEAM3_BANG_API UBangCardManager : public UObject
 	GENERATED_BODY()
 	
 public:
+	UBangCardManager();
+	
 	// 카드 데이터 애셋
 	// UPROPERTY 사용시에는
 	// 언리얼의 반사 시스템에 등록된 타입만 허용하기 떄문에 스마트 포인터 사용 불가
@@ -86,7 +90,7 @@ public:
 	// 게임 시작시 호출
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void PlayBeginByRole();
-
+	
 	// 모든 카드 섞기
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void ShuffleDeck();
@@ -110,6 +114,10 @@ public:
 	// 건내준 카드를 다시 사용할 카드 덱에 넣는다
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void ReorderAvailCards(const FSingleCard HandedCard);
+
+	// 캐릭터의 고유 채력 받아오기
+	UFUNCTION()
+	int16 GetHealthByCharacteType(const ECharacterType CharacterType);
 	
 	// 인원에 맞는 직업카드 추출 로직
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
@@ -121,7 +129,7 @@ public:
 
 	// DataAsset에서 카드 심볼과 번호로 카드 찾기 (서버에서 호출하면 안됨)
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
-	void GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& FoundCard_) const;
+	void GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& OutFoundCard) const;
 	
 	// 최상위 단일 케릭터 카드 추출
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
@@ -160,10 +168,6 @@ private:
 	// 사용가능 카드 덱
 	UPROPERTY()
 	FCardCollection AvailCards;
-
-	// 카드 타입별 저장
-	UPROPERTY()
-	TMap<ECardType, FCardCollection> CardDeckByType;
 
 	UFUNCTION()
 	void ShuffleCards(FCardCollection& Cards);

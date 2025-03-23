@@ -15,6 +15,16 @@ void UBangInGameChattingWidget::NativeConstruct()
 	{
 		ChatTextField->OnTextCommitted.AddDynamic(this, &UBangInGameChattingWidget::OnTextCommittedFunction);
 	}
+
+	if (IsValid(StartButton))
+	{
+		StartButton->OnClicked.AddDynamic(this, &UBangInGameChattingWidget::OnStartButtonClicked);
+	}
+	
+	if (IsValid(TestButton))
+	{
+		TestButton->OnClicked.AddDynamic(this, &UBangInGameChattingWidget::OnTestButtonClicked);
+	}
 }
 
 void UBangInGameChattingWidget::AddMessage(const FText& Message, const FSlateColor& Color)
@@ -32,20 +42,36 @@ void UBangInGameChattingWidget::AddMessage(const FText& Message, const FSlateCol
 	}
 }
 
+void UBangInGameChattingWidget::OnStartButtonClicked()
+{
+	if (const TObjectPtr<ABangPlayerController> OwningPlayerController = Cast<ABangPlayerController>(GetOwningPlayer()))
+	{
+		OwningPlayerController->StartButtonCLicked();
+	}
+}
+
+void UBangInGameChattingWidget::OnTestButtonClicked()
+{
+	if (const TObjectPtr<ABangPlayerController> OwningPlayerController = Cast<ABangPlayerController>(GetOwningPlayer()))
+	{
+		OwningPlayerController->TestButtonCLicked();
+	}
+}
+
 void UBangInGameChattingWidget::OnTextCommittedFunction(const FText& Text, const ETextCommit::Type CommitMethod)
 {
 	if (CommitMethod == ETextCommit::OnEnter)
 	{
 		if (Text.IsEmpty()) return;
 
-		const ABangPlayerController* Controller = Cast<ABangPlayerController>(GetOwningPlayer());
-		if (!Controller)
+		ABangPlayerController* BangPlayerController = Cast<ABangPlayerController>(GetOwningPlayer());
+		if (!BangPlayerController)
 		{
 			UE_LOG(LogTemp, Error, TEXT("PlayerController is NULL!"));
 			return;
 		}
 		
-		//Controller->SendMessageToServer(Text.ToString());
+		BangPlayerController->SendMessageToServer(Text.ToString());
 		ChatTextField->SetText(FText::FromString(""));
 	}
 }
