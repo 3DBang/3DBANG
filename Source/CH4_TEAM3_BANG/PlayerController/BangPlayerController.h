@@ -146,13 +146,16 @@ public:
 	void Client_CloseCamera();
 	void Client_CloseCamera_Implementation();
 
+	UFUNCTION(Client, Reliable)
+	void Client_SetOutline(bool bEnable, int32 StencilValue);
+	void Client_SetOutline_Implementation(bool bEnable, int32 StencilValue);
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
 private:
 	float CameraBlendElapsed = 0.f;
 	FTimerHandle CameraBlendHandle;
 
 	bool bIsCameraMode = false;
-
+	double CameraOpenBlendStartTime = 0.f;
 	FTimerHandle CameraOpenBlendTimerHandle;
 	//혹시 동작 제대로 안할까봐 OpenCamera,CloseCamera용 타이머핸들 2개만들게요
 	FTimerHandle CameraCloseBlendTimerHandle;

@@ -525,16 +525,22 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			if (PC->GetUniqueID() == BangPlayerControllerID)
+			bool bIsTarget = (PC->GetUniqueID() == BangPlayerControllerID);
+
+			PC->Client_SetInputEnabled(bIsTarget);
+			PC->Client_OpenCamera();
+			PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
+			/*if (PC->GetUniqueID() == BangPlayerControllerID)
 			{
 				PC->Client_SetInputEnabled(true);
 				PC->Client_OpenCamera();
+				PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
 			}
 			else
 			{
 				PC->Client_SetInputEnabled(false);
 				PC->Client_OpenCamera();
-			}
+			}*/
 
 		}
 	}

@@ -212,12 +212,9 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	{
 		return;
 	}
-	if (UMaterialInterface* OutlinePP = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_OutlinePP")))
-	{
-		PlayerCameraManager->GetCameraCachePOV().PostProcessSettings.AddBlendable(OutlinePP, 1.f);
-	}
+
 	
-	bIsCameraMode = true;
+	
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
 		UCameraComponent* StartCam = BangPlayer->FollowCamera;
@@ -234,26 +231,25 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		BangPlayer->FollowCamera->Deactivate();
 		BangPlayer->BangCamera->Deactivate();
 
-		constexpr float BlendTime = 5.f;
-		float Elapsed = 0.f;
-		//VTBlend_EaseInOut
-		SetViewTargetWithBlend(TempCam, BlendTime, EViewTargetBlendFunction::VTBlend_EaseInOut);
-
+		constexpr float BlendTime = 10.f;
+		CameraOpenBlendStartTime = FPlatformTime::Seconds();
+		SetViewTarget(TempCam);
 		
 		const FVector StartLocation = StartTransform.GetLocation();
-		const FVector EndLocation = EndCam->GetComponentLocation()+300.f;
+		const FVector EndLocation = EndCam->GetComponentLocation()+300.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
+		
 		//BangCamera의 위치를 한번 봐야할듯
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
 
 		GetWorldTimerManager().SetTimer(CameraOpenBlendTimerHandle, FTimerDelegate::CreateLambda(
-			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, Elapsed]() mutable
+			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation]() mutable
 			{
-				Elapsed += GetWorld()->GetDeltaSeconds();
+				//좋아..상대시간 굳 
+				float Elapsed = FPlatformTime::Seconds() - CameraOpenBlendStartTime;
 				float Alpha = FMath::Clamp(Elapsed / BlendTime, 0.f, 1.f);
 
 				FVector NewLoc = FMath::Lerp(StartLocation, EndLocation, Alpha);
 				TempCam->SetActorLocation(NewLoc);
-				//왜 시간이 엄청 지난 후에 여기에서 중단점이? -Fix
 				TempCam->SetActorRotation((FlagLocation - NewLoc).Rotation());
 				if (Alpha >= 1.f)
 				{
@@ -281,6 +277,8 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 				}
 			}), 0.01f, true);
 	}
+	bIsCameraMode = true;
+	CameraOpenBlendStartTime = 0.f; // 안전장치 
 }
 void ABangPlayerController::Client_SetInputEnabled_Implementation(bool IsAttacker)
 {
@@ -365,6 +363,7 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 		BangPlayer->BangCamera->Deactivate();
 
 		constexpr float BlendTime = 5.f;
+		CameraOpenBlendStartTime = FPlatformTime::Seconds();
 		float Elapsed = 0.f;
 		//VTBlend_EaseInOut
 		SetViewTargetWithBlend(TempCam, BlendTime, EViewTargetBlendFunction::VTBlend_EaseInOut);
@@ -379,7 +378,7 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 		GetWorldTimerManager().SetTimer(CameraCloseBlendTimerHandle, FTimerDelegate::CreateLambda(
 			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation,Elapsed]() mutable
 			{
-				Elapsed += GetWorld()->GetDeltaSeconds();
+				Elapsed += FPlatformTime::Seconds() - CameraOpenBlendStartTime;
 				float Alpha = FMath::Clamp(Elapsed / BlendTime, 0.f, 1.f);
 
 				FVector NewLoc = FMath::Lerp(StartLocation, EndLocation, Alpha);
@@ -439,4 +438,21 @@ UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const 
 		}
 	}
 	return nullptr;
+}
+void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32 StencilValue)
+{
+	if (!IsLocalController())
+		return;
+
+	APawn* MyPawn = GetPawn();
+	if (!MyPawn) return;
+
+	TArray<UMeshComponent*> Meshes;
+	MyPawn->GetComponents<UMeshComponent>(Meshes);
+
+	for (UMeshComponent* Mesh : Meshes)
+	{
+		Mesh->SetRenderCustomDepth(bEnable);
+		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+	}
 }
