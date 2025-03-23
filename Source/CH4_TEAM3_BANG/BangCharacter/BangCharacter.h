@@ -92,4 +92,16 @@ private:
 protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	APlayerStart* GetFlaggedActor();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	FTransform InitialBoomTransform;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	FTransform InitialCameraTransform;
+
+public:
+	const FTransform& GetInitialBoomTransform() const;
+
+	const FTransform& GetInitialCameraTransform() const;
+
 };

@@ -92,7 +92,14 @@ void ABangCharacter::BeginPlay()
 		BangCamera->SetWorldRotation(CameraRotation);
 
 	}
-
+	if (CameraBoom)
+	{
+		InitialBoomTransform = CameraBoom->GetRelativeTransform();
+	}
+	if (FollowCamera)
+	{
+		InitialCameraTransform = FollowCamera->GetRelativeTransform();
+	}
 
 }
 void ABangCharacter::Tick(float DeltaTime)
@@ -206,7 +213,47 @@ void ABangCharacter::Information(const FInputActionValue& Value)
 
 void ABangCharacter::Zoom(const FInputActionValue& Value)
 {
-	//CameraAction
+	float ZoomDelta = Value.Get<float>();
+
+	if (CameraBoom)
+	{
+		const float ZoomSpeed = 20.0f;
+		const float MinArmLength = 50.0f;  
+		const float MaxArmLength = 400.0f; 
+		const float FirstPersonThreshold = 150.0f; 
+
+		float NewArmLength = FMath::Clamp(CameraBoom->TargetArmLength - ZoomDelta * ZoomSpeed, MinArmLength, MaxArmLength);
+		CameraBoom->TargetArmLength = NewArmLength;
+
+		bool bFirstPersonMode = (NewArmLength <= FirstPersonThreshold);
+
+		if (bFirstPersonMode)
+		{
+			GetMesh()->SetVisibility(false);
+			
+			FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+			float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+			float CapsuleRadius = GetCapsuleComponent()->GetScaledCapsuleRadius();
+			FVector HeadOffset = FVector(CapsuleRadius+10.f, 0.f, CapsuleHalfHeight+10.f);
+			FVector HeadLocation = GetActorLocation() + GetActorRotation().RotateVector(HeadOffset);
+			FRotator CameraRotation = GetActorRotation();
+
+			FollowCamera->SetWorldLocation(HeadLocation);
+			FollowCamera->SetWorldRotation(CameraRotation);
+
+			FollowCamera->bUsePawnControlRotation = true;
+			CameraBoom->bUsePawnControlRotation = false;
+		}
+		else
+		{
+			GetMesh()->SetVisibility(true);
+			FollowCamera->AttachToComponent(CameraBoom, FAttachmentTransformRules::SnapToTargetIncludingScale);
+			FollowCamera->bUsePawnControlRotation = false;
+			CameraBoom->bUsePawnControlRotation = true;
+			//소켓써보려다가 개털려서 이렇게 할게요 회전값 안돼서 ㄷㄷ
+		}
+	}
 }
 
 void ABangCharacter::Click(const FInputActionValue& Value)
@@ -313,3 +360,15 @@ APlayerStart* ABangCharacter::GetFlaggedActor()
 	}
 	return nullptr;
 }
+
+
+const FTransform& ABangCharacter::GetInitialBoomTransform() const
+{
+	return InitialBoomTransform;
+}
+
+const FTransform& ABangCharacter::GetInitialCameraTransform() const
+{
+	return InitialCameraTransform;
+}
+

@@ -159,5 +159,14 @@ private:
 	FTimerHandle CameraOpenBlendTimerHandle;
 	//혹시 동작 제대로 안할까봐 OpenCamera,CloseCamera용 타이머핸들 2개만들게요
 	FTimerHandle CameraCloseBlendTimerHandle;
+
+	// 지목 모드 타이머핸들
+	FTimerHandle BangModeTimerHandle; 
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputMappingContext> CameraMappingContext = nullptr;
+private:
+
+	FTransform CachedBangCameraTransform;
 };
 
