@@ -250,10 +250,10 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 	AdvanceGameTurn();
 }
 
-void ABangGameMode::LooseCardFromHanded(const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType) const
+void ABangGameMode::ForceUpdate_LooseCardFromHanded(const int32 FromUniqueID, const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType)
 {
-	const FSingleCard SingleCard;
-	//CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, true, SingleCard);
+	FSingleCard SingleCard;
+	CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, DeckType, SingleCard);
 
 	switch (DeckType)
 	{
@@ -269,6 +269,11 @@ void ABangGameMode::LooseCardFromHanded(const ESymbolType SymbolType, const int3
 			break;
 		}
 	}
+
+	FBangSinglePlayerState PlayerState;
+	GetPlayerStatesByUniqueID(FromUniqueID, PlayerState);
+	PlayerState.State->PlayerInfo.GetPlayerInformation(FromUniqueID)->MyCards.RemoveCard(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber);
+	PlayerState.State->ForceNetUpdate();
 }
 
 void ABangGameMode::AdvanceGameTurn()
@@ -485,98 +490,6 @@ void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 Car
 
 	PlayerState.State->PlayerInfo.GetPlayerInformation(UniqueID)->MyCards.AddCardCollectionToPlayerCards(DrawCards);
 	PlayerState.State->ForceNetUpdate();
-}
-
-void ABangGameMode::UseCard(
-	const uint32 UniqueID,
-	const FPlayerCardSymbol& Card, 
-	const EActiveType ActiveType,
-	const EPassiveType PassiveType,
-	const ECharacterType CharacterType,
-	const uint32 ToUniqueID,
-	const ECharacterType ToCharacterType) const
-{
-	if (UniqueID == 0) return;
-	bool bIsAbleToUse = false;
-	// 플레이어가 사용하는 카드가 타당한지 검사 후 가능여부 리턴
-
-	switch (CharacterType)
-	{
-	case ECharacterType::None:
-		break;
-	case ECharacterType::PaulRegret:
-		break;
-	case ECharacterType::BartCassidy:
-		break;
-	case ECharacterType::CalamityJanet:
-		break;
-	case ECharacterType::Jourdonnais:
-		break;
-	case ECharacterType::PedroRamirez:
-		break;
-	case ECharacterType::BlackJack:
-		break;
-	case ECharacterType::JesseJones:
-		break;
-	case ECharacterType::SuzyLafayette:
-		break;
-	case ECharacterType::SidKetchum:
-		break;
-	case ECharacterType::LuckyDuke:
-		break;
-	case ECharacterType::SlabTheKiller:
-		break;
-	case ECharacterType::ElGringo:
-		break;
-	case ECharacterType::RoseDoolan:
-		break;
-	case ECharacterType::WillyTheKid:
-		break;
-	case ECharacterType::VultureSam:
-		break;
-	case ECharacterType::KitCarlson:
-		break;
-	}
-
-	switch (ActiveType)
-	{
-	case EActiveType::None:
-		break;
-	case EActiveType::Bang:
-		
-		break;
-	case EActiveType::Missed:
-		break;
-	case EActiveType::Stagecoach:
-		break;
-	case EActiveType::WellsFargoBank:
-		{
-			// 카드를 한장씩 각각 PS에 전달
-			break;
-		}
-	case EActiveType::Beer:
-		break;
-	case EActiveType::GatlingGun:
-		break;
-	case EActiveType::Robbery:
-		break;
-	case EActiveType::CatBalou:
-		break;
-	case EActiveType::Saloon:
-		break;
-	case EActiveType::Duel:
-		break;
-	case EActiveType::GeneralStore:
-		break;
-	case EActiveType::Indians:
-		break;
-	case EActiveType::Jail:
-		break;
-	case EActiveType::Dynamite:
-		break;
-	}
-
-	//CastingController->Server_UseCardReturn(bIsAbleToUse);
 }
 
 void ABangGameMode::UsePanicCard(const EActiveType ActiveType, const EPassiveType PassiveType)

@@ -33,7 +33,18 @@ struct FPlayerCardCollection
 	{
 		return PlayerCards == Other.PlayerCards;
 	}
-
+	//카드의 심볼과 번호정보로 카드 삭제
+	void RemoveCard(ESymbolType SymbolType, int32 SymbolNumber)
+	{
+		for (int16 i = 0; i < PlayerCards.Num(); i++)
+		{
+			if (PlayerCards[i].SymbolType == SymbolType && PlayerCards[i].SymbolNumber == SymbolNumber)
+			{
+				PlayerCards.RemoveAt(i);
+			}
+		}
+	}
+	
 	//카드의 심볼과 번호정보를 플레이어 카드 리스트 안에 넣는 함수
 	void AddCardCollectionToPlayerCards(FCardCollection& GivenCards)
 	{
