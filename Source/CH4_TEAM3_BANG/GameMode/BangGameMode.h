@@ -105,7 +105,7 @@ protected:
 	float Radius = 500.f;
 	
 	UPROPERTY()
-	TArray<ABangPlayerController*> BangPlayerControllers;
+	TArray<TObjectPtr<ABangPlayerController>> BangPlayerControllers;
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnPlayers();
@@ -156,7 +156,7 @@ private:
 	void AdvancePlayerTurn();
 	// 플레이어 자리 섞기
 	UFUNCTION()
-	void ShuffleSeats(FPlayerCollection& ToShufflePlayers) const;
+	void ShuffleSeats(FPlayerCollection& ToShufflePlayers);
     // UniqueID로 PlayerState 받아오기
 	UFUNCTION()
 	void GetPlayerStatesByUniqueID(const int32& UniqueID, FBangSinglePlayerState& PlayerState_);

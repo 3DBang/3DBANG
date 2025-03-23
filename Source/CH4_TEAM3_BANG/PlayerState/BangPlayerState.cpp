@@ -56,8 +56,7 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, FSingleCard SingleCard,
 		
 	}
 
-	// 서버에서 카드 지움
-	Server_UseCard(FromUniqueID, SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, EDeckType::HandedCard);
+	RestoreCard(FromUniqueID, SingleCard);
 }
 
 void ABangPlayerState::Server_UseCard_Implementation(const int32 FromUniqueID, const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType)
@@ -79,7 +78,8 @@ void ABangPlayerState::UseCardToAll(const int32 FromUniqueID, FSingleCard Single
 
 void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard)
 {
-	
+	// 서버에서 카드 지움
+	Server_UseCard(FromUniqueID, SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, EDeckType::HandedCard);
 }
 
 void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const

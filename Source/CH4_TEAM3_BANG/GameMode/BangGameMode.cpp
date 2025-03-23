@@ -49,9 +49,7 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 		BangPlayerControllers.Add(BangPlayerController);
 	}
 
-	const FString MapName = GetWorld()->GetMapName();
-	
-	if (MapName.Contains("StageMap"))
+	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap"))
 	{
 		for (const TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
 		{
@@ -176,9 +174,12 @@ void ABangGameMode::ArrangeSeats()
 	}
 	
 	ShuffleSeats(Players);
+
+	// 한점 기준으로 플레이어 나열 Players
+	SpawnPlayers();
 }
 
-void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
+void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 {
 	if (CurrentGameState == EGameState::GamePlaying || ToShufflePlayers.Players.Num() < 4 || ToShufflePlayers.Players.Num() > 7) return;
 
@@ -186,6 +187,7 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
 	for (int32 i = LastIndex; i > 0; --i)
 	{
 		const int32 RandomIndex = FMath::RandRange(0, i);
+		BangPlayerControllers.Swap(i, RandomIndex);
 		ToShufflePlayers.Players.Swap(i, RandomIndex);
 	}
 }
