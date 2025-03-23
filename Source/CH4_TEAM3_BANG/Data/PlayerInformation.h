@@ -33,6 +33,18 @@ struct FPlayerCardCollection
 	{
 		return PlayerCards == Other.PlayerCards;
 	}
+
+	//카드의 심볼과 번호정보를 플레이어 카드 리스트 안에 넣는 함수
+	void AddCardCollectionToPlayerCards(FCardCollection& GivenCards)
+	{
+		for (const auto [Card] : GivenCards.CardList)
+		{
+			FPlayerCardSymbol SingleSymbol;
+			SingleSymbol.SymbolNumber = Card->SymbolNumber;
+			SingleSymbol.SymbolType = Card->SymbolType;
+			PlayerCards.Add(SingleSymbol);
+		}
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -108,40 +120,18 @@ struct FPlayerCollection
 		return Players == Other.Players;
 	}
 
-	//플레이어 인덱스를 넣으면 플레이어의 위치를 반환하는 함수
-	int32 CalculateDistance(int16 PlayerIndexA, int16 PlayerIndexB)
-	{
-		int TotalPlayers = this->Players.Num();
-		if (TotalPlayers == 0)
-		{
-			return -1;
-		}
-
-		// 인덱스 간 차이 계산
-		int16 directDistance = abs(PlayerIndexA - PlayerIndexB);
-    
-		// 원형 배열에서는 양쪽으로 감싸는 거리가 있을 수 있음
-		int16 circularDistance = TotalPlayers - directDistance;
-    
-		// 두 값 중 작은 값이 실제 거리
-		return std::min(directDistance, circularDistance);
-	}
-
 	//플레이어 아이디를 넣으면 플레이어 정보를 반환하는 함수
-	FPlayerInformation* GetPlayerInformation(uint32 InPlayerUniqueID, uint32& PlayerIndex)
+	FPlayerInformation* GetPlayerInformation(const uint32 InPlayerUniqueID)
 	{
 		for (int32 i = 0; i < Players.Num(); ++i)
 		{
 			if (Players[i].PlayerUniqueID == InPlayerUniqueID)
 			{
-				PlayerIndex = i;
 				return &Players[i];
 			}
 		}
-    
-		PlayerIndex = INDEX_NONE; // 찾지 못하면 인덱스를 -1로 설정합니다.
+
+		UE_LOG(LogTemp, Error, TEXT("[PlayerInformation::GetPlayerInformation] Player UniqueID not found"));
 		return nullptr;
 	}
-
-
 };

@@ -26,7 +26,7 @@ enum class EPlayerTurnState : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FBangPlayerStateCollection
+struct FBangSinglePlayerState
 {
 	GENERATED_BODY()
 
@@ -35,7 +35,7 @@ struct FBangPlayerStateCollection
 };
 
 USTRUCT(BlueprintType)
-struct FBangPlayerControllerCollection
+struct FBangSinglePlayerController
 {
 	GENERATED_BODY()
 
@@ -69,6 +69,9 @@ public:
 	// 게임 시작
 	UFUNCTION()
 	void StartGame();
+	// 게임 시작
+	UFUNCTION()
+	void StartGame_Real();
 	// 게임 중인 플레이어의 정보를 가져온다.
 	UFUNCTION()
 	void GetPlayerCollection(FPlayerCollection& PlayerCollection_) const;
@@ -83,9 +86,12 @@ public:
 		const uint32 ToUniqueID, // 대상
 		const ECharacterType ToCharacterType // 대상 캐릭터 타입
 		) const;
-	// 카드 뽑기 (Play Role)
+	// 심볼로 특정 카드 찾기 (Play Role)
 	UFUNCTION()
-	void DrawCard(const FPlayerCardSymbol& Card);
+	void GetCardBySymbol(const FPlayerCardSymbol& Card);
+	// 카드 뽑아서 PS에 전달
+	UFUNCTION()
+	void DrawCard(const uint32 UniqueID, const uint16 CardCount);
 	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
 	UFUNCTION()
 	void LooseSidKetchumCard(const FCardCollection CardList);
@@ -105,7 +111,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;
 
-	// 원멍 : 플레이어 컨트롤러 임시저장 
+	// 원멍 : 플레이어 컨트롤러 임시저장
+	UPROPERTY()
 	TArray<ABangPlayerController*> BangPlayerControllers;
 
 	UFUNCTION(BlueprintCallable)
@@ -157,10 +164,10 @@ private:
 	void ShuffleSeats(FPlayerCollection& ToShufflePlayers) const;
     // UniqueID로 PlayerState 받아오기
 	UFUNCTION()
-	void GetPlayerStatesByUniqueID(const int32& UniqueID, FBangPlayerStateCollection& PlayerState_);
+	void GetPlayerStatesByUniqueID(const int32& UniqueID, FBangSinglePlayerState& PlayerState_);
 	// UniqueID로 PlayerController 받아오기
 	UFUNCTION()
-	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangPlayerControllerCollection& PlayerController_);
+	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSinglePlayerController& PlayerController_);
 
 	// 강탈카드사용 (Play Role)
 	UFUNCTION()
