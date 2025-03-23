@@ -121,5 +121,11 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_StartGame();
+
+	UFUNCTION()
+	void TestButtonCLicked();
+
+	UFUNCTION(Server, Reliable)
+	void Server_StartTest();
 };
 

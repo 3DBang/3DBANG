@@ -53,6 +53,11 @@ public:
 	
 	virtual void BeginPlay() override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
+
+	// 테스트용
+	UFUNCTION()
+	void StartTest();
 
 	/////////////////
 	/// UI 로직
@@ -62,13 +67,10 @@ public:
 
 	/////////////////
 	/// 통신 로직
-	/// /////////////
+	////////////////
 	// 플레이어 삭제
 	UFUNCTION()
 	void ForceUpdate_RemovePlayer(const uint32& UniqueID);
-	// 게임 시작
-	UFUNCTION()
-	void StartGame();
 	// 게임 시작
 	UFUNCTION()
 	void ForceUpdate_StartGame_Real();
@@ -149,10 +151,10 @@ private:
 
 	// 로비 플레이어 등록
 	UFUNCTION()
-	void AddPlayer(const uint32& UniqueID, const FString& PlayerNickName);
+	void AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName);
 	// 로비 플레이어 삭제
 	UFUNCTION()
-	void RemovePlayer(const uint32& UniqueID);
+	void RemoveLobbyPlayer(const uint32& UniqueID);
 	// 플레이어 자리 배치
 	UFUNCTION()
 	void ArrangeSeats();

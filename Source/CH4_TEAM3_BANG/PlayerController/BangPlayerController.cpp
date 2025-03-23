@@ -226,10 +226,27 @@ void ABangPlayerController::Server_StartGame_Implementation()
 		return;
 	}
 
-	GameMode->StartGame();
+	GameMode->ForceUpdate_StartGame_Real();
 }
 
 void ABangPlayerController::StartButtonCLicked()
 {
 	Server_StartGame();
+}
+
+void ABangPlayerController::Server_StartTest_Implementation()
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->StartTest();
+}
+
+void ABangPlayerController::TestButtonCLicked()
+{
+	Server_StartTest();
 }

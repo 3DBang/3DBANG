@@ -34,7 +34,7 @@ void ABangGameMode::BeginPlay()
 		FCardManagerInstance OutCardManager;
 		BangGameInstance->GetCardManager(OutCardManager);
 		CardManager = OutCardManager.CardManager;
-		UE_LOG(LogTemp, Warning, TEXT("BangGameMode::CardManager Loaded"));
+		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::BeginPlay] CardManager Loaded"));
 
 		// 카드 매니저 초기 셋팅 (GameMode에서만 진행)
 		CardManager->PlayBeginByRole();
@@ -56,7 +56,7 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 		for (const TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
 		{
 			BangPlayerController->Init();
-			AddPlayer(BangPlayerController->GetUniqueID(), BangPlayerController->PlayerNickname);
+			AddLobbyPlayer(BangPlayerController->GetUniqueID(), BangPlayerController->PlayerNickname);
 		}
 	}
 	
@@ -65,11 +65,19 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	//SpawnPlayers();
 }
 
-void ABangGameMode::UpdatePlayerHUD()
+void ABangGameMode::Logout(AController* Exiting)
 {
-	for (const TObjectPtr<ABangPlayerController> BangPlayerController: BangPlayerControllers)
+	Super::Logout(Exiting);
+
+	if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(Exiting))
 	{
-		BangPlayerController->Client_DisplayBangUI();
+		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::Logout] Player %s 로그아웃"), *BangPlayerController->PlayerNickname);
+
+		BangPlayerControllers.Remove(BangPlayerController);
+
+		const uint32 UniqueID = BangPlayerController->GetUniqueID();
+		LobbyPlayers.RemovePlayer(UniqueID);
+		ForceUpdate_RemovePlayer(UniqueID);
 	}
 }
 
@@ -104,25 +112,25 @@ void ABangGameMode::GetPlayerCollection(FPlayerCollection& PlayerCollection_) co
 	PlayerCollection_ = Players;
 }
 
-void ABangGameMode::AddPlayer(const uint32& UniqueID, const FString& PlayerNickName)
+void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
 
 	if (LobbyPlayers.GetPlayerInformation(UniqueID) != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Duplicate Player ID: %u - Not Adding"), UniqueID);
+		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::AddLobbyPlayer] Duplicate Player ID: %u - Not Adding"), UniqueID);
 		return;
 	}
 
 	FPlayerInformation PlayerInfo;
 	PlayerInfo.PlayerUniqueID = UniqueID;
 	PlayerInfo.PlayerName = PlayerNickName;
-	UE_LOG(LogTemp, Warning, TEXT("Player ID: %u"), UniqueID);
+	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::AddLobbyPlayer] Player ID: %u nickname: %s"), UniqueID, *PlayerNickName);
 	LobbyPlayers.Players.Add(PlayerInfo);
 }
 
 // 로비 플레이어 삭제
-void ABangGameMode::RemovePlayer(const uint32& UniqueID)
+void ABangGameMode::RemoveLobbyPlayer(const uint32& UniqueID)
 {
 	for (const FPlayerInformation Player : LobbyPlayers.Players)
 	{
@@ -158,6 +166,7 @@ void ABangGameMode::ForceUpdate_RemovePlayer(const uint32& UniqueID)
 	}
 }
 
+// 플레이어 자리 배치
 void ABangGameMode::ArrangeSeats()
 {
 	// 로비 플레이어 등록 후 자리 배치
@@ -180,10 +189,11 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
 		ToShufflePlayers.Players.Swap(i, RandomIndex);
 	}
 }
+
 // 테스트용으로 쓰는중
-void ABangGameMode::StartGame()
+void ABangGameMode::StartTest()
 {
-	UE_LOG(LogTemp, Warning, TEXT("StartGame"));
+	UE_LOG(LogTemp, Warning, TEXT("StartTest"));
 	
 }
 
@@ -577,6 +587,15 @@ void ABangGameMode::UsePanicCard(const EActiveType ActiveType, const EPassiveTyp
 void ABangGameMode::UseCatBalouCard(const EActiveType ActiveType, const EPassiveType PassiveType)
 {
 	
+}
+
+// 플레이어 HUD 노출
+void ABangGameMode::UpdatePlayerHUD()
+{
+	for (const TObjectPtr<ABangPlayerController> BangPlayerController: BangPlayerControllers)
+	{
+		BangPlayerController->Client_DisplayBangUI();
+	}
 }
 
 void ABangGameMode::SetUserHP()
