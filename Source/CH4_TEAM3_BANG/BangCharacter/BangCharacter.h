@@ -89,6 +89,8 @@ public:
 private:
 	int32 HP = 5;
 	FVector FlagLocation = FVector::Zero();
+	bool bFirstPersonMode = false;
+
 protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	APlayerStart* GetFlaggedActor();
@@ -104,4 +106,6 @@ public:
 
 	const FTransform& GetInitialCameraTransform() const;
 
+public:
+	bool GetFirstPersonMode();
 };

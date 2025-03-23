@@ -209,6 +209,11 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
+		if (BangPlayer->GetFirstPersonMode())
+		{
+			BangPlayer->GetMesh()->SetVisibility(true);
+		}
+
 		UCameraComponent* StartCam = BangPlayer->FollowCamera;
 		UCameraComponent* EndCam = BangPlayer->BangCamera;
 		if (!StartCam || !EndCam) return;
@@ -361,6 +366,7 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
+		
 		UCameraComponent* StartCam = BangPlayer->BangCamera; 
 		UCameraComponent* EndCam = BangPlayer->FollowCamera;
 		if (!StartCam || !EndCam) return;
@@ -411,7 +417,10 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 						BangPlayer->CameraBoom->SetRelativeTransform(BangPlayer->GetInitialBoomTransform());
 					}
 					BangPlayer->FollowCamera->SetRelativeTransform(BangPlayer->GetInitialCameraTransform());*/
-
+					if (BangPlayer->GetFirstPersonMode())
+					{
+						BangPlayer->GetMesh()->SetVisibility(false);
+					}
 					BangPlayer->FollowCamera->Activate();
 					SetViewTarget(BangPlayer);
 

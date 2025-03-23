@@ -225,7 +225,7 @@ void ABangCharacter::Zoom(const FInputActionValue& Value)
 		float NewArmLength = FMath::Clamp(CameraBoom->TargetArmLength - ZoomDelta * ZoomSpeed, MinArmLength, MaxArmLength);
 		CameraBoom->TargetArmLength = NewArmLength;
 
-		bool bFirstPersonMode = (NewArmLength <= FirstPersonThreshold);
+		bFirstPersonMode = (NewArmLength <= FirstPersonThreshold);
 
 		if (bFirstPersonMode)
 		{
@@ -370,5 +370,10 @@ const FTransform& ABangCharacter::GetInitialBoomTransform() const
 const FTransform& ABangCharacter::GetInitialCameraTransform() const
 {
 	return InitialCameraTransform;
+}
+
+bool ABangCharacter::GetFirstPersonMode()
+{
+	return bFirstPersonMode;
 }
 
