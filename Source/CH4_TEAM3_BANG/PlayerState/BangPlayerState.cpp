@@ -50,7 +50,7 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, FSingleCard SingleCard,
 
 	if (ToUniqueID == 0) // 사용 대상이 없을때 (자기 자신한테 사용)
 	{
-
+		
 		
 		
 		
@@ -119,7 +119,7 @@ void ABangPlayerState::Server_EndTurn_Implementation(const int32 InPlayerUniqueI
 	GameMode->EndTurn(InPlayerUniqueID);
 }
 
-void ABangPlayerState::Server_DrawCard_Implementation(const uint32 UniqueID, const uint16 CardCount)
+void ABangPlayerState::Server_DrawCard_Implementation(const uint32 FromUniqueID, const uint16 CardCount)
 {
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (!GameMode)
@@ -128,7 +128,7 @@ void ABangPlayerState::Server_DrawCard_Implementation(const uint32 UniqueID, con
 		return;
 	}
 	
-	GameMode->ForceUpdate_DrawCard(UniqueID, CardCount);
+	GameMode->ForceUpdate_DrawCard(FromUniqueID, CardCount);
 }
 
 void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const

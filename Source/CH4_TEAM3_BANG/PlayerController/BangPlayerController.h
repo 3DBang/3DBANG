@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "GameMode/BangGameModeBase.h"
 #include "BangPlayerController.generated.h"
 
 class UInputMappingContext;
@@ -127,5 +126,14 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_StartTest();
+	
+	UFUNCTION()
+	void SendMessageToServer(FString Message);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+	
+	UFUNCTION(Client, Reliable)
+	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 };
 

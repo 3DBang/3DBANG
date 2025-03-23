@@ -85,8 +85,6 @@ public:
 	UFUNCTION()
 	void ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount);
 	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
-	UFUNCTION()
-	void LooseSidKetchumCard(const FCardCollection CardList);
 	// 플레이어 사망
 	UFUNCTION()
 	void PlayerDead(const uint32 UniqueID,
@@ -163,13 +161,6 @@ private:
 	// UniqueID로 PlayerController 받아오기
 	UFUNCTION()
 	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSinglePlayerController& PlayerController_);
-
-	// 강탈카드사용 (Play Role)
-	UFUNCTION()
-	void UsePanicCard(const EActiveType ActiveType, const EPassiveType PassiveType);
-	// 캣벌로우사용 (Play Role)
-	UFUNCTION()
-	void UseCatBalouCard(const EActiveType ActiveType, const EPassiveType PassiveType);
 
 	UFUNCTION(BlueprintCallable)
 	void SetUserHP();
