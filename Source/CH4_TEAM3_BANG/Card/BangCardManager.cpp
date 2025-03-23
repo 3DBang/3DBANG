@@ -115,7 +115,7 @@ void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, co
 }
 
 // 카드 심볼과 번호로 카드 찾기
-void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& FoundCard_) const
+void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& OutFoundCard) const
 {
 	if (!CardData) return;
 
@@ -125,7 +125,7 @@ void UBangCardManager::GetCardBySymbolAndNumberFromDataAsset(const ESymbolType S
 
 		if (Card->SymbolType == SymbolType && Card->SymbolNumber == SymbolNumber)
 		{
-			FoundCard_.Card = Card;
+			OutFoundCard.Card = Card;
 			break;
 		}
 	}

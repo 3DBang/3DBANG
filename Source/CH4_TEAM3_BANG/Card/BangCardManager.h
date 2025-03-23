@@ -56,6 +56,8 @@ struct FCardCollection
 	{
 		return CardList == Other.CardList;
 	}
+
+	
 };
 
 // 덱 종류
@@ -127,7 +129,7 @@ public:
 
 	// DataAsset에서 카드 심볼과 번호로 카드 찾기 (서버에서 호출하면 안됨)
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
-	void GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& FoundCard_) const;
+	void GetCardBySymbolAndNumberFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& OutFoundCard) const;
 	
 	// 최상위 단일 케릭터 카드 추출
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
