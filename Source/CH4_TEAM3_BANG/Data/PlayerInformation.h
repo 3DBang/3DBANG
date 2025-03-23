@@ -108,6 +108,10 @@ struct FPlayerInformation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FPlayerCardCollection EquippedCards;
 
+	//선택받아야할 카드
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	FPlayerCardCollection SelectableCards;
+
 	void GetAllCardList(FPlayerCardCollection& OutCardList_)
 	{
 		for (auto Card : MyCards.PlayerCards)

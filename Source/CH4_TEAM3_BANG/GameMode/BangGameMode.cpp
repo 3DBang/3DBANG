@@ -370,7 +370,17 @@ void ABangGameMode::AdvanceGameTurn()
 			{
 				// 카드 더미위에 3장을 보고 그중에서 두개를 가져가고 한장은 다시 뽑는 카드더미 위에 올려둔다.
 				CardManager->HandCards(3, DrawCards);
-				break;
+
+				// PC에 카드 뭐 선택할껀지 요청 CurrentTurnPlayerUniqeID
+				FBangSinglePlayerController PlayerController;
+				GetPlayerControllerByUniqueID(CurrentTurnPlayerUniqeID, PlayerController);
+
+				FPlayerCardCollection PlayerCards;
+				PlayerCards.AddCardCollectionToPlayerCards(DrawCards);
+
+				PlayerController.Controller->Client_RequestSelectCard(CurrentTurnPlayerUniqeID, PlayerCards);
+				
+				return;
 			}
 		default:
 			{
@@ -440,7 +450,7 @@ void ABangGameMode::AdvanceGameTurn()
 	}
 	else if (CurrentPlayerTurnState == EPlayerTurnState::LooseCard)
 	{
-		AdvancePlayerTurn();
+		ForceUpdate_AdvancePlayerTurn();
 	}
 }
 
@@ -459,9 +469,9 @@ void ABangGameMode::EndTurn(const uint32 UniqueID)
 }
 
 void ABangGameMode::PlayerDead(const uint32 UniqueID,
-		const ECharacterType PlayerCharacter,
-		const EJobType JobType,
-		FPlayerCardCollection CardList)
+                               const ECharacterType PlayerCharacter,
+                               const EJobType JobType,
+                               FPlayerCardCollection CardList)
 {
 	if (!CardManager) return;
 
@@ -569,6 +579,18 @@ void ABangGameMode::UpdatePlayerHUD()
 	}
 }
 
+void ABangGameMode::RefundCards(const FPlayerCardCollection RefundCard)
+{
+	if (!CardManager) return;
+
+	for (auto [SymbolType, SymbolNumber] : RefundCard.PlayerCards)
+	{
+		FSingleCard SingleCard;
+		CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, EDeckType::HandedCard, SingleCard);
+		CardManager->ReorderAvailCards(SingleCard);
+	}
+}
+
 void ABangGameMode::SetUserHP()
 {
 	if (BangPlayerControllers.Num() == 0) return;
@@ -576,11 +598,18 @@ void ABangGameMode::SetUserHP()
 }
 
 
-void ABangGameMode::AdvancePlayerTurn()
+void ABangGameMode::ForceUpdate_AdvancePlayerTurn()
 {
 	PlayerIndex++;
 	PlayerIndex = PlayerIndex % Players.Players.Num();
 	CurrentTurnPlayerUniqeID = Players.Players[PlayerIndex].PlayerUniqueID;
+
+	FBangSinglePlayerState PlayerState;
+	GetPlayerStatesByUniqueID(CurrentTurnPlayerUniqeID, PlayerState);
+
+	PlayerState.State->PlayerInfo.GetPlayerInformation(CurrentTurnPlayerUniqeID)->bIsMyTurn = true;
+	PlayerState.State->ForceNetUpdate();
+	
 	CurrentPlayerTurnState = EPlayerTurnState::DrawCard;
 	
 	AdvanceGameTurn();
