@@ -404,11 +404,6 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 					{
 						BangPlayer->CameraBoom->SetRelativeTransform(BangPlayer->GetInitialBoomTransform());
 					}
-					BangPlayer->FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-					BangPlayer->FollowCamera->AttachToComponent(BangPlayer->CameraBoom,
-						FAttachmentTransformRules::SnapToTargetNotIncludingScale, USpringArmComponent::SocketName);
-
-
 					BangPlayer->FollowCamera->SetRelativeTransform(BangPlayer->GetInitialCameraTransform());*/
 
 					BangPlayer->FollowCamera->Activate();
