@@ -66,7 +66,6 @@ public:
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
-public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FString PlayerNickname;
 	

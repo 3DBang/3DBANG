@@ -55,8 +55,8 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		for (const TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
 		{
-			BangPlayerController.Init();
-			AddPlayer(BangPlayerController->GetUniqueID(), BangPlayerController->PlayerNickName);
+			BangPlayerController->Init();
+			AddPlayer(BangPlayerController->GetUniqueID(), BangPlayerController->PlayerNickname);
 		}
 	}
 	
@@ -184,7 +184,7 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers) const
 void ABangGameMode::StartGame()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartGame"));
-
+	
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
