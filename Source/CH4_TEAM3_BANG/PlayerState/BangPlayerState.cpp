@@ -8,7 +8,7 @@
 #include "Instance/BangGameInstance.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/BangPlayerHUD.h"
-#include "UI/CardList.h"
+#include "UI/Card/CardList.h"
 
 ABangPlayerState::ABangPlayerState()
 {
@@ -52,6 +52,8 @@ void ABangPlayerState::GainPlayerHealth(const uint32& TargetUniqueID, int32 Amou
 
 void ABangPlayerState::OnRep_PlayerInfo()
 {
+	
+	
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
 	const FString Message = FPlayerCollectionToString(PlayerInfo);
 	GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);

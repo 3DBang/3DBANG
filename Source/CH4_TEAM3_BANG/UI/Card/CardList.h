@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,9 +11,6 @@ class UHorizontalBox;
 class UScrollBox;
 class USizeBox;
 class UCanvasPanel;
-/**
- * 
- */
 
 // 카드 선택 이벤트를 위한 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardSelectedDelegate, FSingleCard, SelectedCard);

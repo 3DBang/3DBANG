@@ -6,17 +6,16 @@
 #include "BangCharacter/BangCharacter.h"
 #include "Card/BangCardManager.h"
 #include "Card/BaseCard/BangCardBase.h"
-#include "Instance/BangGameInstance.h"
 
-#include "CharacterUIActor/BangUIActor.h"
 #include "Camera/CameraComponent.h" 
 #include "Camera/CameraActor.h"
 #include "Materials/MaterialInterface.h"
 #include "Camera/PlayerCameraManager.h"
 #include "GameState/BangGameState.h"
-#include "UI/BangInGameChattingWidget.h"
 #include "UI/BangPlayerHUD.h"
-#include "UI/CardList.h"
+#include "UI/Card/CardList.h"
+#include "UI/CharacterUIActor/BangUIActor.h"
+#include "UI/Chat/BangInGameChattingWidget.h"
 
 ABangPlayerController::ABangPlayerController()
 {}
@@ -44,6 +43,10 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
+
+	// 플레이어 스테이트에 UniqueID등록
+	const TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(PlayerState);
+	BangPlayerState->SetUniqueIDFromController(GetUniqueID());
 	
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
@@ -392,7 +395,7 @@ void ABangPlayerController::MouseClicked()
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
 		
-		if(HitChar && HitChar != GetPawn())
+		if (HitChar && HitChar != GetPawn())
 		{
 
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))

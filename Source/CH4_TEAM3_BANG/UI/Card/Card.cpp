@@ -1,17 +1,13 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "UI/Card.h"
+#include "Card.h"
 
 #include "CardDescriptionWidget.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Card/BangCardManager.h"
-#include "Components/Border.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "TimerManager.h"
-
+#include "Components/Border.h"
 
 void UCard::NativeConstruct()
 {

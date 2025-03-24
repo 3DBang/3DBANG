@@ -37,6 +37,8 @@ void ABangGameMode::BeginPlay()
 		// 카드 매니저 초기 셋팅 (GameMode에서만 진행)
 		CardManager->PlayBeginByRole();
 	}
+
+	SpawnPlayers();
 }
 
 void ABangGameMode::PostLogin(APlayerController* NewPlayer)
