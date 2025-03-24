@@ -1,9 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Card/BangCardManager.h"
 #include "GameFramework/PlayerController.h"
 #include "BangPlayerController.generated.h"
 
+struct FPlayerCardCollection;
 class UInputMappingContext;
 class UInputAction;
 class ABangPlayerState;
@@ -101,34 +103,26 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
-
-
+	
 
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
-
-public:
-
 	void UpdatePlayerUI(FName& NewText);
 	void UpdatePlayerHP(int32 NewHP);
 	void SetInitializeHP(int32 NewHP);
 
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
-
-
-
+	
 	//id의 값을 PlayerState ->
 
 public:
 	void MouseClicked();
-public:
 	FName TestPlayerController;
 
 	UFUNCTION(Client, Reliable)
 	void Client_OpenCamera(); // 여기에 추가적으로 PlayerStateID 들어가야함 
-
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetInputEnabled(bool IsAttacker);
@@ -165,13 +159,18 @@ private:
 
 	FTransform CachedBangCameraTransform;
 
-
-
 	///////////////////////////
 	//// 찬호 추가 
 	//////////////////////////
-
 public:
+	// 현재 들고있는 카드 배열
+	UPROPERTY()
+	FCardCollection CurrentCardCollection;
+
+	UPROPERTY() // 유저가 카드고를수있는 카드컬렉션,
+	//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
+	FCardCollection SelectCardCollection;
+	
 	UFUNCTION(Client, Reliable)
 	void Client_DisplayBangUI();
 
@@ -201,5 +200,13 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+	
+	// 플레이어에게 카드 선택권 요구
+	UFUNCTION(Client, Reliable)
+	void Client_RequestSelectCard(const uint32& PlayerUniqueID, const FPlayerCardCollection DrawCards);
+	
+	// 플레이어에게 카드 선택권 요구 응답
+	UFUNCTION(Server, Reliable)
+	void Server_RespondSelectCard();
 };
 

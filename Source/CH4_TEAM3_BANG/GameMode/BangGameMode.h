@@ -68,6 +68,10 @@ public:
 	/////////////////
 	/// 통신 로직
 	////////////////
+
+	// 선택후 남은카드 덱에 돌려놓기
+	UFUNCTION()
+	void RefundCards(const FPlayerCardCollection RefundCard);
 	
 	// 플레이어 삭제
 	UFUNCTION()
@@ -151,7 +155,7 @@ private:
 	void AdvanceGameTurn();
 	// 플레이어 게임 실행 세부 턴
 	UFUNCTION()
-	void AdvancePlayerTurn();
+	void ForceUpdate_AdvancePlayerTurn();
 	// 플레이어 자리 섞기
 	UFUNCTION()
 	void ShuffleSeats(FPlayerCollection& ToShufflePlayers);

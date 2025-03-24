@@ -29,8 +29,9 @@ public:
 	void GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
 
 	// 컨트롤러가 카드 사용할때 호출
+	// PC -> PS
 	UFUNCTION()
-	void UseCard(const int32 FromUniqueID, FSingleCard SingleCard, const int32 ToUniqueID);
+	void UseCard(const int32 FromUniqueID, const FSingleCard& SingleCard, const int32 ToUniqueID);
 
 	// 컨트롤러가 전체 카드 사용할때 호출
 	UFUNCTION()
@@ -44,6 +45,12 @@ public:
 	UFUNCTION()
 	void EndTurn(const int32 InPlayerUniqueID);
 
+	// 카드사용에 대한 응답 (PS -> PS)
+	UFUNCTION()
+	void UseCardReturn(const int32& FromUniqueID, const FPlayerCardSymbol& SingleCard, const int32& ToUniqueID, const EActiveType& ActiveType, const EPassiveType& PassiveType);
+	
+	void FindTargetPlayerState(const uint32 TargetUniqueID, TObjectPtr<ABangPlayerState>& OutPlayerState) const;
+	
 	/////////////////////
 	/// 서버통신
 	/////////////////////

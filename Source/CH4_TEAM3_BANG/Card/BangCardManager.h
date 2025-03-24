@@ -56,8 +56,6 @@ struct FCardCollection
 	{
 		return CardList == Other.CardList;
 	}
-
-	
 };
 
 // 덱 종류
