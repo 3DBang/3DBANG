@@ -110,7 +110,7 @@ public:
 	void Client_UpdateCardList();
 	
 	UFUNCTION(Client, Reliable)
-	void Client_OnTurnStart();
+	void Client_OnTurnStart(const FCardCollection& DrawCards);
 	
 ///////////////////////////
 //// 원명 추가 

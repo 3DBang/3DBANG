@@ -1,18 +1,24 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
 #include "BangCharacter/BangCharacter.h"
 #include "PlayerController/BangPlayerController.h"
+#include "CharacterUIActor/BangUIActor.h"
+#include "CharacterUIActor/BangHPActor.h"
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "InputActionValue.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerStart.h"
-#include "UI/CharacterUIActor/BangHPActor.h"
-#include "UI/CharacterUIActor/BangUIActor.h"
 
+// Sets default values
 ABangCharacter::ABangCharacter()
 {
+	
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 	SetReplicateMovement(true);
@@ -45,6 +51,7 @@ ABangCharacter::ABangCharacter()
 
 }
 
+// Called when the game starts or when spawned
 void ABangCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -95,12 +102,10 @@ void ABangCharacter::BeginPlay()
 	}
 
 }
-
 void ABangCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
-
 void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);

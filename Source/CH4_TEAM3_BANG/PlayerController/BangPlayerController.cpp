@@ -6,16 +6,17 @@
 #include "BangCharacter/BangCharacter.h"
 #include "Card/BangCardManager.h"
 #include "Card/BaseCard/BangCardBase.h"
+#include "Instance/BangGameInstance.h"
 
+#include "CharacterUIActor/BangUIActor.h"
 #include "Camera/CameraComponent.h" 
 #include "Camera/CameraActor.h"
 #include "Materials/MaterialInterface.h"
 #include "Camera/PlayerCameraManager.h"
 #include "GameState/BangGameState.h"
+#include "UI/BangInGameChattingWidget.h"
 #include "UI/BangPlayerHUD.h"
-#include "UI/Card/CardList.h"
-#include "UI/CharacterUIActor/BangUIActor.h"
-#include "UI/Chat/BangInGameChattingWidget.h"
+#include "UI/CardList.h"
 
 ABangPlayerController::ABangPlayerController()
 {}
@@ -43,10 +44,6 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
-
-	// 플레이어 스테이트에 UniqueID등록
-	const TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(PlayerState);
-	BangPlayerState->SetUniqueIDFromController(GetUniqueID());
 	
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
@@ -68,7 +65,7 @@ void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator
 	}	
 }
 
-void ABangPlayerController::Client_OnTurnStart_Implementation()
+void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollection& DrawCards)
 {
 	bCanUseBang = true;
 	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: It's my turn! Controller Name: %s"), *GetName());
@@ -78,6 +75,29 @@ void ABangPlayerController::Client_OnTurnStart_Implementation()
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: PlayerState is null!"));
 		return;
 	}
+
+	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
+	{
+		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
+		{
+			for (const FSingleCard& Card : DrawCards.CardList)
+			{
+				CardListWidget->AddCard(Card); // 카드 위젯 추가
+			}
+
+			// 허드에 있는 카드 사용 버튼 활성화
+			// 턴종료 버튼 만들어서 활성화
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::StartTurn] CardListWidgetInstance 없음 HUD 있음"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::StartTurn] BangHUD 없음"));
+	}
+	
 }
 
 void ABangPlayerController::Client_UpdateCardList_Implementation()

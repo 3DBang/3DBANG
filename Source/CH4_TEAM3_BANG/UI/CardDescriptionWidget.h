@@ -1,3 +1,5 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -5,13 +7,17 @@
 #include "CardDescriptionWidget.generated.h"
 
 class UTextBlock;
-
+/**
+ * 
+ */
 UCLASS()
 class CH4_TEAM3_BANG_API UCardDescriptionWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
+
+	
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* TitleText;		//카드 제목을 설명할 텍스트 블록
 	
