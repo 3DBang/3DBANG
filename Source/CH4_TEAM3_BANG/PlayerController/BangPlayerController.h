@@ -91,8 +91,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
 
-	UFUNCTION(Client, Reliable)
-	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 MaxAllowedCardCount);
+	/*UFUNCTION(Client, Reliable)
+	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 MaxAllowedCardCount);*/
 
 	///////////////////////////
 	//// 원명 추가 

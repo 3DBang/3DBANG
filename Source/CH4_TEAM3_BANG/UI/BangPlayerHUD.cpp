@@ -1,8 +1,6 @@
 #include "BangPlayerHUD.h"
 
 #include "BangInGameChattingWidget.h"
-#include "BangInGamePlayerListWidget.h"
-#include "UI/BangInGameChattingWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "PlayerController/BangPlayerController.h"
 
