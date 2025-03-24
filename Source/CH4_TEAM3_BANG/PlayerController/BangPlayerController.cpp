@@ -176,26 +176,61 @@ void ABangPlayerController::MouseClicked()
 
 				}
 
-				/**Test*/
-				uint32 PlayerStateID = 0;
-				uint32 TestTemp = 0;
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					5.f,
-					FColor::Red,
-					TEXT("This is a debug message!")
-				);
-				if (OtherPlayer->GetPlayerState())
+				else
 				{
-					PlayerStateID = OtherPlayer->GetPlayerState()->GetPlayerId();
-					ABangPlayerState* PlayerBangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
-					if (PlayerBangState)
+
+					// === 위젯 생성 및 표시 ===
+					if (InteractionWidgetClass) // InteractionWidgetClass가 유효한지 확인
 					{
-						//Get Information for UI
-						//And Open UI
+						if (PlayerWidgets.Contains(OtherPlayer->GetPlayerState()->GetPlayerId()))
+						{
+							InteractionWidgetComponent = *PlayerWidgets.Find(OtherPlayer->GetPlayerState()->GetPlayerId());
+						}
+						else
+						{
+							InteractionWidgetComponent = NewObject<UWidgetComponent>(OtherPlayer);
+							InteractionWidgetComponent->SetupAttachment(OtherPlayer->GetRootComponent());
+							InteractionWidgetComponent->RegisterComponent();
+							InteractionWidgetComponent->SetWidgetClass(InteractionWidgetClass);
+							InteractionWidgetComponent->InitWidget();
+
+							InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+							InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200)); // 예시 크기
+							InteractionWidgetComponent->SetRelativeLocation(
+								FVector(0.f, 0.f, OtherPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f)
+							);
+							PlayerWidgets.Add(OtherPlayer->GetPlayerState()->GetPlayerId(), InteractionWidgetComponent); // 맵에 저장
+						//
+						}
+
+						// 2. 위젯 표시
+						if (InteractionWidgetComponent)
+						{
+							InteractionWidgetComponent->SetVisibility(true);
+							InteractionWidgetComponent->SetHiddenInGame(false);
+						}
+					}
+					/**Test*/
+					uint32 PlayerStateID = 0;
+					uint32 TestTemp = 0;
+					GEngine->AddOnScreenDebugMessage(
+						-1,
+						5.f,
+						FColor::Red,
+						TEXT("This is a debug message!")
+					);
+					if (OtherPlayer->GetPlayerState())
+					{
+						PlayerStateID = OtherPlayer->GetPlayerState()->GetPlayerId();
+						printf("");
+						ABangPlayerState* PlayerBangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
+						if (PlayerBangState)
+						{
+							//Get Information for UI
+							//And Open UI
+						}
 					}
 				}
-
 			}
 		}
 
