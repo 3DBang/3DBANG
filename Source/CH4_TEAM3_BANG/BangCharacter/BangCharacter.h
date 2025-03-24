@@ -12,6 +12,8 @@ class UCameraComponent;
 class ABangUIActor;
 class UTextRenderComponent;
 class ABangHPActor;
+class APlayerStart;
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMouseClicked);
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangCharacter : public ACharacter
@@ -50,13 +52,18 @@ public:
 	UFUNCTION()
 	void Click(const FInputActionValue& Value);
 
-private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	/*UPROPERTY(BlueprintAssignable)
+	FOnMouseClicked OnMouseClicked;*/
+
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	USpringArmComponent* CameraBoom;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	UCameraComponent* FollowCamera;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	UCameraComponent* BangCamera;
 public:
 	
 	//BluePrint에서 BP_xxx를 사용하기 위한 Subclass
@@ -78,10 +85,23 @@ public:
 public:
 	void UpdateHPActors(int32 NewHP);
 	void SetHP(int32 NewHP);
+	FVector GetFlagLocation() const;
 private:
 	int32 HP = 5;
-
+	FVector FlagLocation = FVector::Zero();
 protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	APlayerStart* GetFlaggedActor();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	FTransform InitialBoomTransform;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	FTransform InitialCameraTransform;
+
+public:
+	const FTransform& GetInitialBoomTransform() const;
+
+	const FTransform& GetInitialCameraTransform() const;
 
 };

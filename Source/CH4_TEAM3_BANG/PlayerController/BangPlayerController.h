@@ -1,10 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Card/BangCardManager.h"
 #include "GameFramework/PlayerController.h"
-#include "GameMode/BangGameModeBase.h"
 #include "BangPlayerController.generated.h"
 
+struct FPlayerCardCollection;
 class UInputMappingContext;
 class UInputAction;
 class ABangPlayerState;
@@ -12,6 +13,7 @@ class ABangCharacter;
 enum class EJobType : uint8;
 enum class ECharacterType : uint8;
 class ABangGameMode;
+class UCameraComponent;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
@@ -46,22 +48,25 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction = nullptr;
 	
-	UFUNCTION(Server, Reliable)
-	void Server_UseCardReturn(bool IsAble);
-
+	UPROPERTY()
+	TObjectPtr<UBangCardManager> CardManager;
 protected:
 	virtual void BeginPlay() override;
 ///////////////////////////
 ////서버 관련 로직 작성란
 //////////////////////////
-
+	
 public:
-//서버에 턴 종료 요청 
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseCard(const FSingleCard& SingleCard, int32 TargetID);
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseCardReturn(bool IsAble);
+
+
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
-
-	UFUNCTION(Server, Reliable)
-	void Server_UseCard(EActiveType SelectedCard, uint32 TargetPlayerID);
 
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
@@ -77,36 +82,84 @@ public:
 	void Client_SelectCard();
 	
 	UFUNCTION(Client, Reliable)
-	void Client_HandleCardSelection(EActiveType SelectedCard);
+	void Client_HandleCardSelection(const FSingleCard& SingleCard);
+
 
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
-
-
-	void Client_SetControllerRotation_Implementation(FRotator NewRotation);
-
-	//void OnPossess(APawn* InPawn) override;
+	
+	UFUNCTION(Client, Reliable)
+	void Client_SelectTarget();
+	
+	UFUNCTION(Client, Reliable)
+	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 MaxAllowedCardCount);
 
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
-public:
-	virtual void Tick(float DeltaTime) override;
-
 	void UpdatePlayerUI(FName& NewText);
 	void UpdatePlayerHP(int32 NewHP);
 	void SetInitializeHP(int32 NewHP);
+
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
+	
+	//id의 값을 PlayerState ->
+
+public:
+	void MouseClicked();
+	FName TestPlayerController;
 
 	UFUNCTION(Client, Reliable)
-	void Client_SelectTarget();
+	void Client_OpenCamera(); // 여기에 추가적으로 PlayerStateID 들어가야함 
+
+	UFUNCTION(Client, Reliable)
+	void Client_SetInputEnabled(bool IsAttacker);
+
+	UFUNCTION(BlueprintCallable,Server, Reliable)
+	void Server_OpenCamera();
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_CloseCamera();
+
+	UFUNCTION(Client, Reliable)
+	void Client_CloseCamera();
+
+	UFUNCTION(Client, Reliable)
+	void Client_SetOutline(bool bEnable, int32 StencilValue);
+
+	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
+private:
+	float CameraBlendElapsed = 0.f;
+	FTimerHandle CameraBlendHandle;
+
+	bool bIsCameraMode = false;
+	double CameraOpenBlendStartTime = 0.f;
+	FTimerHandle CameraOpenBlendTimerHandle;
+	//혹시 동작 제대로 안할까봐 OpenCamera,CloseCamera용 타이머핸들 2개만들게요
+	FTimerHandle CameraCloseBlendTimerHandle;
+
+	// 지목 모드 타이머핸들
+	FTimerHandle BangModeTimerHandle; 
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputMappingContext> CameraMappingContext = nullptr;
+private:
+
+	FTransform CachedBangCameraTransform;
 
 	///////////////////////////
 	//// 찬호 추가 
 	//////////////////////////
-
 public:
+	// 현재 들고있는 카드 배열
+	UPROPERTY()
+	FCardCollection CurrentCardCollection;
+
+	UPROPERTY() // 유저가 카드고를수있는 카드컬렉션,
+	//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
+	FCardCollection SelectCardCollection;
+	
 	UFUNCTION(Client, Reliable)
 	void Client_DisplayBangUI();
 
@@ -127,5 +180,22 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_StartTest();
+	
+	UFUNCTION()
+	void SendMessageToServer(FString Message);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+	
+	UFUNCTION(Client, Reliable)
+	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+	
+	// 플레이어에게 카드 선택권 요구
+	UFUNCTION(Client, Reliable)
+	void Client_RequestSelectCard(const uint32& PlayerUniqueID, const FPlayerCardCollection DrawCards);
+	
+	// 플레이어에게 카드 선택권 요구 응답
+	UFUNCTION(Server, Reliable)
+	void Server_RespondSelectCard();
 };
 

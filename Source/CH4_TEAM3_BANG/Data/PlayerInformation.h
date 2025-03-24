@@ -33,8 +33,9 @@ struct FPlayerCardCollection
 	{
 		return PlayerCards == Other.PlayerCards;
 	}
+	
 	//카드의 심볼과 번호정보로 카드 삭제
-	void RemoveCard(ESymbolType SymbolType, int32 SymbolNumber)
+	void RemoveCard(const ESymbolType SymbolType, const int32 SymbolNumber)
 	{
 		for (int16 i = 0; i < PlayerCards.Num(); i++)
 		{
@@ -65,27 +66,31 @@ struct FPlayerInformation
 
 	//플레이어 아이디
 	UPROPERTY()
-	uint32 PlayerUniqueID;
+	uint32 PlayerUniqueID = 0;
 
 	//플레이어 이름
 	UPROPERTY()
-	FString PlayerName;
+	FString PlayerName = "Default";
 
 	// 플레이어가 가지는 최대 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 MaxHealth;
+	int32 MaxHealth = 0;
 
 	// 플레이어 현재 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 CurrentHealth;
+	int32 CurrentHealth = 0;
 
-	// 나를 볼 때 사거리 (다른 플레이어 기준)
+	// 사거리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 RangeToMe;
+	int32 Range = 1;
 
-	// 내가 볼 때 사거리 (내 기준)
+	// 상대가 날 볼때 추가되는 사거리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 RangeFromMe;
+	int32 CharacterRange = 0;
+
+	// 내 턴인지 확인
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	bool bIsMyTurn = false;
 
 	//직업 타입
 	UPROPERTY()
@@ -103,14 +108,31 @@ struct FPlayerInformation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FPlayerCardCollection EquippedCards;
 
+	//선택받아야할 카드
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	FPlayerCardCollection SelectableCards;
+
+	void GetAllCardList(FPlayerCardCollection& OutCardList_)
+	{
+		for (auto Card : MyCards.PlayerCards)
+		{
+			OutCardList_.PlayerCards.Add(Card);
+		}
+		
+		for (auto Card : EquippedCards.PlayerCards)
+		{
+			OutCardList_.PlayerCards.Add(Card);
+		}
+	}
+
 	bool operator==(const FPlayerInformation& Other) const
 	{
 		return PlayerUniqueID    == Other.PlayerUniqueID &&
 			   PlayerName        == Other.PlayerName &&
 			   MaxHealth         == Other.MaxHealth &&
 			   CurrentHealth     == Other.CurrentHealth &&
-			   RangeToMe         == Other.RangeToMe &&
-			   RangeFromMe       == Other.RangeFromMe &&
+			   Range			 == Other.Range &&
+			   	CharacterRange   == Other.CharacterRange &&
 			   JobCardType       == Other.JobCardType &&
 			   CharacterCardType == Other.CharacterCardType &&
 			   MyCards           == Other.MyCards &&
@@ -129,6 +151,38 @@ struct FPlayerCollection
 	bool operator==(const FPlayerCollection& Other) const
 	{
 		return Players == Other.Players;
+	}
+
+	// 허용 거리 확인
+	bool IsDistanceAble(const int32 FromUniqueID, const int32 ToUniqueID)
+	{
+		int32 FromIndex = INDEX_NONE;
+		int32 ToIndex = INDEX_NONE;
+
+		for (int32 i = 0; i < Players.Num(); ++i)
+		{
+			if (Players[i].PlayerUniqueID == FromUniqueID)
+				FromIndex = i;
+			else if (Players[i].PlayerUniqueID == ToUniqueID)
+				ToIndex = i;
+		}
+
+		if (FromIndex == INDEX_NONE || ToIndex == INDEX_NONE)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[FPlayerCollection::IsDistanceAble] 플레이어 인덱스를 찾을 수 없습니다."));
+			return false;
+		}
+
+		const int32 DirectDistance = FMath::Abs(ToIndex - FromIndex);
+		const int32 ReverseDistance = Players.Num() - DirectDistance;
+		const int32 FinalDistance = FMath::Min(DirectDistance, ReverseDistance);
+
+		const int32 AttackerRange = Players[FromIndex].Range;
+		const int32 DefenderCamouflage = Players[ToIndex].CharacterRange;
+
+		const int32 EffectiveRange = AttackerRange - DefenderCamouflage;
+
+		return FinalDistance <= EffectiveRange;
 	}
 
 	//플레이어 아이디를 넣으면 플레이어 정보를 반환하는 함수

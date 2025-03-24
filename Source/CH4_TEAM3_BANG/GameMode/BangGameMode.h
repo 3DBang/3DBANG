@@ -68,6 +68,10 @@ public:
 	/////////////////
 	/// 통신 로직
 	////////////////
+
+	// 선택후 남은카드 덱에 돌려놓기
+	UFUNCTION()
+	void RefundCards(const FPlayerCardCollection RefundCard);
 	
 	// 플레이어 삭제
 	UFUNCTION()
@@ -85,27 +89,25 @@ public:
 	UFUNCTION()
 	void ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount);
 	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
-	UFUNCTION()
-	void LooseSidKetchumCard(const FCardCollection CardList);
 	// 플레이어 사망
 	UFUNCTION()
 	void PlayerDead(const uint32 UniqueID,
 		const ECharacterType PlayerCharacter,
 		const EJobType JobType,
-		const FCardCollection CardList);
+		FPlayerCardCollection CardList);
 	// 카드 버리기
 	UFUNCTION()
 	void ForceUpdate_LooseCardFromHanded(const int32 FromUniqueID, const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType);
 	// 턴 종료
 	UFUNCTION()
-	void EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+	void EndTurn(const uint32 UniqueID);
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;
 	
 	UPROPERTY()
-	TArray<ABangPlayerController*> BangPlayerControllers;
+	TArray<TObjectPtr<ABangPlayerController>> BangPlayerControllers;
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnPlayers();
@@ -134,7 +136,7 @@ private:
 	EGameState CurrentGameState;
 	// 현재 턴인 플레이어
 	UPROPERTY()
-	FString CurrentPlayerTurn;
+	uint32 CurrentTurnPlayerUniqeID;
 	// 현재 플레이어의 턴 상태
 	UPROPERTY()
 	EPlayerTurnState CurrentPlayerTurnState;
@@ -153,10 +155,10 @@ private:
 	void AdvanceGameTurn();
 	// 플레이어 게임 실행 세부 턴
 	UFUNCTION()
-	void AdvancePlayerTurn();
+	void ForceUpdate_AdvancePlayerTurn();
 	// 플레이어 자리 섞기
 	UFUNCTION()
-	void ShuffleSeats(FPlayerCollection& ToShufflePlayers) const;
+	void ShuffleSeats(FPlayerCollection& ToShufflePlayers);
     // UniqueID로 PlayerState 받아오기
 	UFUNCTION()
 	void GetPlayerStatesByUniqueID(const int32& UniqueID, FBangSinglePlayerState& PlayerState_);
@@ -164,13 +166,17 @@ private:
 	UFUNCTION()
 	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSinglePlayerController& PlayerController_);
 
-	// 강탈카드사용 (Play Role)
-	UFUNCTION()
-	void UsePanicCard(const EActiveType ActiveType, const EPassiveType PassiveType);
-	// 캣벌로우사용 (Play Role)
-	UFUNCTION()
-	void UseCatBalouCard(const EActiveType ActiveType, const EPassiveType PassiveType);
-
 	UFUNCTION(BlueprintCallable)
 	void SetUserHP();
+
+public:
+	UFUNCTION()
+	void OpenCamera(uint32 BangPlayerStateID);
+
+	UFUNCTION()
+	void CloseCamera();
+
+private:
+	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum
+	
 };
