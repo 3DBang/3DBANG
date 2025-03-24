@@ -2,7 +2,6 @@
 
 #include "Card/BaseCard/BangCardBase.h"
 #include "BangCardDataAsset.h"
-#include "HairStrandsInterface.h"
 #include "ActiveCard/BangActiveCard.h"
 #include "JobCard/BangJobCard.h"
 #include "PassiveCard/BangPassiveCard.h"

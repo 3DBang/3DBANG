@@ -106,8 +106,9 @@ public:
 		int32 RequiredSelectCount,
 		ECardSelectPurpose Purpose);
 
-	UFUNCTION(Client, Reliable)
-	void Client_UpdateCardList();
+	// 호출 시점을 위젯에서 카드 보일때
+	UFUNCTION()
+	void UpdateCardList();
 	
 	UFUNCTION(Client, Reliable)
 	void Client_OnTurnStart(const FCardCollection& DrawCards);
