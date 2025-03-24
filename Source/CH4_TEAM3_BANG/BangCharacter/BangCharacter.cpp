@@ -389,6 +389,14 @@ void ABangCharacter::OnCursorBegin(UPrimitiveComponent* MouseComp)
 {
 	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
 	{
+		int32 PlayerID = GetPlayerState()->GetPlayerId();
+		FString Msg = FString::Printf(TEXT("Touch Start — PlayerState ID: %d"), PlayerID);
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.f,
+			FColor::Red,
+			Msg
+		);
 		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), true);
 	}
 }
@@ -397,6 +405,14 @@ void ABangCharacter::OnCursorEnd(UPrimitiveComponent* MouseComp)
 {
 	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
 	{
+		int32 PlayerID = GetPlayerState()->GetPlayerId();
+		FString Msg = FString::Printf(TEXT("Touch End — PlayerState ID: %d"), PlayerID);
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.f,
+			FColor::Red,
+			Msg
+		);
 		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), false);
 	}
 }

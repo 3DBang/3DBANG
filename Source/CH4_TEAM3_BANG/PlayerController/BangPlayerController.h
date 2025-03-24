@@ -12,6 +12,7 @@ enum class EJobType : uint8;
 enum class ECharacterType : uint8;
 class ABangGameMode;
 class UCameraComponent;
+class UWidgetComponent;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
@@ -204,14 +205,20 @@ public:
 
 	void SetWidgetVisibility(uint32 PlayerID, bool bVisible);
 	//플레이어 스테이트에 유저에 대한 정보가 있는지 확인 
-	void GetUserInformation();
+	void GetUserInformationUI(uint32 BangPlayerStateID);
+
+	void GetPlayerStateAtBegin();
 private:
 	bool bIsCameraContextActive;
-	TMap<uint32, UUserWidget*> PlayerWidgets;
 
-	UPROPERTY(EditDefaultsOnly)
+	TMap<uint32,UWidgetComponent*> PlayerWidgets;
+	bool IsFirstCheck = true;
+
+protected:
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UUserWidget> InteractionWidgetClass;
 
-	bool IsFirstCheck = true;
+	
+
 };
 

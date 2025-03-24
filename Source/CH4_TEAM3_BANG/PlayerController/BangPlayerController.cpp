@@ -4,7 +4,6 @@
 #include "GameMode/BangGameMode.h"
 #include "PlayerState/BangPlayerState.h"
 #include "BangCharacter/BangCharacter.h"
-
 #include "CharacterUIActor/BangUIActor.h"
 #include "Camera/CameraComponent.h" 
 #include "Camera/CameraActor.h"
@@ -14,6 +13,8 @@
 #include "GameState/BangGameState.h"
 #include "UI/BangInGameChattingWidget.h"
 #include "UI/BangPlayerHUD.h"
+#include "Components/WidgetComponent.h"
+#include "Components/CapsuleComponent.h"
 
 ABangPlayerController::ABangPlayerController()
 {}
@@ -41,7 +42,8 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
-	
+	GetPlayerStateAtBegin();
+
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	InputMode.SetHideCursorDuringCapture(false);
@@ -654,16 +656,23 @@ void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 }
 void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 {
-	if (IsFirstCheck)
+	/*if (IsFirstCheck)
 	{
-		GetUserInformation();
-	}
-	if (UUserWidget** WidgetPtr = PlayerWidgets.Find(PlayerID))
+		GetPlayerStateAtBegin();
+	}*///만일 아래의 로직이 정상작동하지 않으면 이걸로 업데이트하자 
+
+	if (UWidgetComponent** CompPtr = PlayerWidgets.Find(PlayerID))
 	{
-		(*WidgetPtr)->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		UUserWidget* BangUserWidget = Cast<UUserWidget>((*CompPtr)->GetUserWidgetObject());
+		BangUserWidget->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 }
-void ABangPlayerController::GetUserInformation()
+void ABangPlayerController::GetUserInformationUI(uint32 BangPlayerStateID)
+{
+	
+}
+
+void ABangPlayerController::GetPlayerStateAtBegin()
 {
 	for (APlayerState* PS : GetWorld()->GetGameState()->PlayerArray)
 	{
@@ -671,12 +680,24 @@ void ABangPlayerController::GetUserInformation()
 		{
 			continue;
 		}
-
+		ABangCharacter* BangPlayer = Cast<ABangCharacter>(PS->GetPawn());
+		if (!BangPlayer)
+		{
+			continue;
+		}
 		uint32 ID = PS->GetPlayerId();
 		UUserWidget* Widget = CreateWidget<UUserWidget>(this, InteractionWidgetClass);
-		Widget->AddToViewport();
 		Widget->SetVisibility(ESlateVisibility::Hidden);
-
-		PlayerWidgets.Add(ID, Widget);
+		
+		UWidgetComponent* Comp = NewObject<UWidgetComponent>(BangPlayer);
+		Comp->SetupAttachment(BangPlayer->GetRootComponent());
+		Comp->RegisterComponent();
+		Comp->SetWidget(Widget);
+		Comp->SetWidgetSpace(EWidgetSpace::Screen);
+		Comp->SetDrawSize(FVector2D(1000, 500));
+		Comp->SetRelativeLocation(FVector(0, 0, BangPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 20.f));
+		Comp->SetVisibility(false);
+		Widget->AddToViewport();
+		PlayerWidgets.Add(ID, Comp);
 	}
 }
