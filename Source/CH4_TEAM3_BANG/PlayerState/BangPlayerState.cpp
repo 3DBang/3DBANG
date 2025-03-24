@@ -7,8 +7,6 @@
 #include "GameState/BangGameState.h"
 #include "Instance/BangGameInstance.h"
 #include "Net/UnrealNetwork.h"
-#include "UI/BangPlayerHUD.h"
-#include "UI/CardList.h"
 
 ABangPlayerState::ABangPlayerState()
 {

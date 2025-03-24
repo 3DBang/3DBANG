@@ -5,7 +5,6 @@
 #include "Components/CanvasPanel.h"
 #include "Components/ScrollBox.h"
 #include "Components/SizeBox.h"
-#include "Components/SizeBoxSlot.h"
 #include "Components/TextBlock.h"
 
 class USizeBoxSlot;
@@ -56,7 +55,6 @@ void UCardList::SelectCard(UCard* CardWidget)
 	{
 		SelectedCardSlot->InitializeWithCard(SelectedCard);
 	}
-	
 }
 
 UCard* UCardList::AddCard(FSingleCard CardData)
@@ -81,7 +79,6 @@ UCard* UCardList::AddCard(FSingleCard CardData)
 	ScrollBox->AddChild(NewCardWidget);
     
 	return NewCardWidget;
-
 }
 
 void UCardList::OnUseInputButtonClicked()
@@ -170,6 +167,7 @@ void UCardList::NativeConstruct()
 		UE_LOG(LogTemp, Error, TEXT(" UCardList::NativeConstruct : 위젯 바인딩 실패"));
 		return;
 	}
+	
 	bIsHidden = false;
 	
 	UseInputButton->OnClicked.AddDynamic(this, &UCardList::OnUseInputButtonClicked);
@@ -185,6 +183,4 @@ void UCardList::NativeConstruct()
 			ExistingCard->OnCardClicked.AddDynamic(this, &UCardList::SelectCard);
 		}
 	}
-
-	
 }
