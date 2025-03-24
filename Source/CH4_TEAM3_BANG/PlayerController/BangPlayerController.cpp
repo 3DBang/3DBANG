@@ -57,6 +57,32 @@ void ABangPlayerController::BeginPlay()
 	CardManager = OutCardManager.CardManager;
 }
 
+void ABangPlayerController::StartMyTurn()
+{
+	// 1. 초기화: 이전 선택, 타겟, UI 등 초기 상태 리셋
+	//ResetTurnState();
+
+	// 2. 감옥 체크
+	//if (IsInJail())
+	//{
+	//	HandleJailCheck();
+	//	return; // 실패 시 턴 강제 종료
+	//}
+
+	// 3. 다이너마이트 체크 (선택 사항: 감옥보다 먼저할지 나중할지 게임 규칙에 따라)
+	//if (HasDynamite())
+	//{
+	//	HandleDynamiteCheck();
+		// 다이너마이트 폭발 시 턴 종료 가능
+	//}
+
+	// 4. 카드 드로우
+	//RequestDrawCards();
+
+	// 5. UI 열기: 보유 카드 보여주고 선택 대기
+	//Client_SelectCard(); // 또는 StartActionPhase()
+}
+
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 {
 	
@@ -178,7 +204,7 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	if (CardCount > CurrentHealth)
 	{
 		// 클라이언트에 카드 버리기 UI 요청
-		Client_RequestDiscardCards(CurrentCardCollection, CardCount-CurrentHealth);
+		Client_RequestCardSelection(CurrentCardCollection, CardCount-CurrentHealth, ECardSelectPurpose::DiscardCard);
 		return;
 	}
 
@@ -186,24 +212,6 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	//PS->Server_EndTurn(UniqueID, MyInfo->CharacterCardType);
 }
 
-void ABangPlayerController::Client_RequestDiscardCards_Implementation(const FCardCollection& MyCards, int32 DiscardCount)
-{
-	// TODO: UI로 카드 보여주고 DiscardCount 이하만 선택하게 제한
-	// 테스트용
-	TArray<FSingleCard> ToDiscard;
-
-	for (int32 i = 0; i < DiscardCount && i < MyCards.CardList.Num(); ++i)
-	{
-		FSingleCard DiscardedCard;
-		DiscardedCard.Card = MyCards.CardList[i].Card;
-		ToDiscard.Add(DiscardedCard);
-	}
-
-	if (ToDiscard.Num() != DiscardCount)return;
-
-	//카드 제거 요청
-	//Server_DiscardSelectedCards(ToDiscard);
-}
 
 void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	const FCardCollection& CardsToChooseFrom,
@@ -211,25 +219,49 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	ECardSelectPurpose Purpose)
 {
 	//ShowCardSelectUI(CardsToChooseFrom, RequiredSelectCount, Purpose);
-
-	// TODO: UI 띄우기
-	// 카드 리스트: CardsToChooseFrom
-	// 선택 수 제한: RequiredSelectCount
-	// 선택 목적: Discard / Draft / Ability 등
 }
 
 void ABangPlayerController::OnCardSelectionComplete(
 	const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
 	const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
 	int32 RequiredSelectCount,                      // 선택해야 할 개수
-	ECardSelectPurpose Purpose                      // 선택 목적
-) 
+	ECardSelectPurpose Purpose)                     // 선택 목적
 {
+	if (SelectedCards.Num() != RequiredSelectCount)return;
+
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	//if (!PS || !PS->CardManager)return;
+
+	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(GetUniqueID());
+	if (!MyInfo)
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerInfo를 찾을 수 없음"));
+		return;
+	}
+
+	//UBangCardManager* CM = PS->CardManager;
+
 	switch (Purpose)
 	{
-	case ECardSelectPurpose::DiscardByOverdraw:
-		//카드 버린카드더미에 넣기 제거
+	case ECardSelectPurpose::UseCard:
+		//카드 사용하기
 		break;
+
+	case ECardSelectPurpose::DiscardCard:
+	{
+		for (const FSingleCard& Card : SelectedCards)
+		{
+			//보유 카드에서 제거
+			MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
+
+			//버린 카드 덱에 추가
+			//PS->CardManager->ReorderUsedCards(Card);
+		}
+
+		// 턴 종료 호출
+		// PS->Server_EndTurn();
+		break;
+	}
 
 	case ECardSelectPurpose::GeneralStoreDraft:
 		//잡화점

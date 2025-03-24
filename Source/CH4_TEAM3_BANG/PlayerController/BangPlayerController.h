@@ -55,6 +55,8 @@ protected:
 //////////////////////////
 	
 public:
+	void StartMyTurn();
+
 	UPROPERTY()
 	TObjectPtr<class ABangPlayerState> BangMyPlayerState;
 
@@ -100,9 +102,6 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
-	
-	UFUNCTION(Client, Reliable)
-	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 DiscardCount);
 
 	UFUNCTION(Client, Reliable)
 	void Client_RequestCardSelection(const FCardCollection& CardsToChooseFrom,
