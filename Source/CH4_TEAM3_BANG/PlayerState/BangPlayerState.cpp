@@ -8,7 +8,7 @@
 #include "Instance/BangGameInstance.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/BangPlayerHUD.h"
-#include "UI/Card/CardList.h"
+#include "UI/CardList.h"
 
 ABangPlayerState::ABangPlayerState()
 {
@@ -52,8 +52,6 @@ void ABangPlayerState::GainPlayerHealth(const uint32& TargetUniqueID, int32 Amou
 
 void ABangPlayerState::OnRep_PlayerInfo()
 {
-	
-	
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
 	const FString Message = FPlayerCollectionToString(PlayerInfo);
 	GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
@@ -551,26 +549,7 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 		// 현재 플레이어 턴이면
 		if (PlayerController->GetUniqueID() == InPlayerUniqueID)
 		{
-			PlayerController->Client_OnTurnStart();
-			
-			if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(PlayerController->GetHUD())) // HUD 캐스팅 및 유효성 검사
-			{
-				if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
-				{
-					for (const FSingleCard& Card : DrawCards.CardList)
-					{
-						CardListWidget->AddCard(Card); // 카드 위젯 추가
-					}
-				}
-				else
-				{
-					UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::StartTurn] CardListWidgetInstance 없음 HUD 있음"));
-				}
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::StartTurn] BangHUD 없음"));
-			}
+			PlayerController->Client_OnTurnStart(DrawCards);
 		}
 	}
 }

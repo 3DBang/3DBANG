@@ -1,3 +1,5 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -5,12 +7,16 @@
 #include "Card/BangCardManager.h"
 #include "CardList.generated.h"
 
+class UTextBlock;
 class UButton;
 class UCard;
 class UHorizontalBox;
 class UScrollBox;
 class USizeBox;
 class UCanvasPanel;
+/**
+ * 
+ */
 
 // 카드 선택 이벤트를 위한 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardSelectedDelegate, FSingleCard, SelectedCard);
@@ -29,9 +35,26 @@ public:
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
 	UScrollBox* ScrollBox;
 
+	//카드 사용버튼 텍스트 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
-	UButton* UseCardButton;
+	UTextBlock* UseInputButtonText;
+	
+	// 카드 사용 버튼
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
+	UButton* UseInputButton;
 
+	//카드 사용버튼 텍스트 
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
+	UTextBlock* HiddenCardListButtonText;
+	
+	// 카드 숨기기 버튼
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
+	UButton* HiddenCardListButton;
+
+	//턴 종료 버튼
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
+	UButton* TurnEndButton;
+	
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
 	UCard* SelectedCardSlot;
 	
@@ -48,15 +71,26 @@ public:
     
 	UPROPERTY(BlueprintAssignable, Category = "CardList")
 	FOnCardSelectedDelegate OnCardSelected;
-    
+
+	UPROPERTY(BlueprintReadOnly, Category = "CardList")
+	bool bIsHidden;
+	
 	// 카드를 선택하는 함수
 	UFUNCTION(BlueprintCallable, Category = "CardList")
 	void SelectCard(UCard* CardWidget);
 	
-	// UseCardButton 클릭 이벤트에 바인딩될 함수
+	// UseInputButton 클릭 이벤트에 바인딩될 함수
 	UFUNCTION()
-	void OnUseCardButtonClicked();
+	void OnUseInputButtonClicked();
 
+	// HiddenCardListButton 클릭 이벤트에 바인딩될 함수
+	UFUNCTION()
+	void OnHiddenCardListButtonClicked();
+
+	// TurnEndButton 클릭 이벤트에 바인딩될 함수
+	UFUNCTION()
+	void OnTurnEndButtonClicked();
+	
 	UFUNCTION(BlueprintCallable, Category = "CardList")
 	void ClearCards();
 
