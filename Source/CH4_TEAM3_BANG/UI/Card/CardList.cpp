@@ -94,12 +94,12 @@ void UCardList::OnHiddenCardListButtonClicked()
 	if(bIsHidden)
 	{
 		ScrollBox->SetVisibility(ESlateVisibility::Hidden);
-		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 숨기기")));
+		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 보이기")));
 	}
 	else
 	{
 		ScrollBox->SetVisibility(ESlateVisibility::Visible);
-		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 보이기")));
+		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 숨기기")));
 	}
 }
 
@@ -168,11 +168,16 @@ void UCardList::NativeConstruct()
 		return;
 	}
 	
-	bIsHidden = false;
+	bIsHidden = true;
+	ScrollBox->SetVisibility(ESlateVisibility::Hidden);
+	HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 보이기")));
+	UseInputButton->SetVisibility(ESlateVisibility::Hidden);
+	TurnEndButton->SetVisibility(ESlateVisibility::Hidden);
 	
 	UseInputButton->OnClicked.AddDynamic(this, &UCardList::OnUseInputButtonClicked);
 	HiddenCardListButton->OnClicked.AddDynamic(this, &UCardList::OnHiddenCardListButtonClicked);
 	TurnEndButton->OnClicked.AddDynamic(this, &UCardList::OnTurnEndButtonClicked);
+
 	
 	for (int32 i = 0; i < ScrollBox->GetChildrenCount(); i++)
 	{

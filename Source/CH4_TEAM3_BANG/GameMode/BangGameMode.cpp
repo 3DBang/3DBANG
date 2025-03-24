@@ -27,7 +27,7 @@ void ABangGameMode::BeginPlay()
 	Super::BeginPlay();
 
 	// 카드매니저 가져오기
-	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()); CardManager)
+	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()))
 	{
 		FCardManagerInstance OutCardManager;
 		BangGameInstance->GetCardManager(OutCardManager);
@@ -193,52 +193,102 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 // 테스트용으로 쓰는중
 void ABangGameMode::StartTest()
 {
-	UE_LOG(LogTemp, Warning, TEXT("StartTest"));
-	Players.Players.Empty();
+    UE_LOG(LogTemp, Warning, TEXT("Start Test"));
+    Players.Players.Empty();
 
-	// 호스트 설정
-	FPlayerInformation PlayerA;
-	PlayerA.PlayerUniqueID = 100;
-	PlayerA.PlayerName = TEXT("Alice");
-	PlayerA.MaxHealth = 4;
-	PlayerA.CurrentHealth = 3;
-	PlayerA.Range = 1;
-	PlayerA.CharacterRange = 2;
-	PlayerA.bIsMyTurn = true;
-	PlayerA.JobCardType = EJobType::Officer;
-	PlayerA.CharacterCardType = ECharacterType::BartCassidy;
-	Players.Players.Add(PlayerA);
+    for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
+    {
+       if (BPC && BPC->PlayerState)
+       {
+          FPlayerInformation Player;
+          Player.PlayerUniqueID = BPC->GetUniqueID();
 
-	// 게스트 설정
-	FPlayerInformation PlayerB;
-	PlayerB.PlayerUniqueID = 200;
-	PlayerB.PlayerName = TEXT("Bob");
-	PlayerB.MaxHealth = 5;
-	PlayerB.CurrentHealth = 5;
-	PlayerB.Range = 0;
-	PlayerB.CharacterRange = 1;
-	PlayerB.bIsMyTurn = false;
-	PlayerB.JobCardType = EJobType::Outlaw;
-	PlayerB.CharacterCardType = ECharacterType::JesseJones;
-	Players.Players.Add(PlayerB);
+          // 호스트 판별 조건 (서버 + 로컬)
+          if (BPC->HasAuthority() && BPC->IsLocalController())
+          {
+             FString PlayerName = FString::Printf(TEXT("Host[%d]"), Player.PlayerUniqueID);
+             Player.PlayerName = PlayerName;
+             Player.JobCardType = EJobType::Officer;
+             Player.CharacterCardType = ECharacterType::BartCassidy;
+          }
+          else
+          {
+             FString PlayerName = FString::Printf(TEXT("Guest[%d]"), Player.PlayerUniqueID);
+             Player.PlayerName = PlayerName;
+             Player.JobCardType = EJobType::SubOfficer;
+             Player.CharacterCardType = ECharacterType::CalamityJanet;
+          }
 
-	UE_LOG(LogTemp, Warning, TEXT("Players created: %d"), Players.Players.Num());
+          Player.MaxHealth = 4;
+          Player.CurrentHealth = 4;
+          Player.Range = 1;
+          Player.CharacterRange = 0;
+          Player.bIsMyTurn = false;
 
-	// 동기화
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		const TObjectPtr<ABangPlayerController> PC = Cast<ABangPlayerController>(It->Get());
-		const TObjectPtr<ABangPlayerState> PS = PC->GetPlayerState<ABangPlayerState>();
+          Players.Players.Add(Player);
+       }
+    }
+    
+    UE_LOG(LogTemp, Warning, TEXT("Players created: %d"), Players.Players.Num());
 
-		if (!PS)
-		{
-			UE_LOG(LogTemp, Error, TEXT("PlayerState not found for controller: %s"), *PC->GetName());
-			continue;
-		}
+    TArray<EJobType> JobCards;
+    JobCards.Add(EJobType::Officer);
+    JobCards.Add(EJobType::SubOfficer);
 
-		PS->PlayerInfo = Players;
-		PS->ForceNetUpdate();
-	}
+    FCardCollection CharacterCards;
+    for (int16 i = 0; i < Players.Players.Num(); i++)
+    {
+       Players.Players[i].JobCardType = JobCards[i];
+       Players.Players[i].CharacterCardType = CardManager->GetCharacterCard();
+       if (Players.Players[i].CharacterCardType == ECharacterType::RoseDoolan)
+       {
+          Players.Players[i].Range++;
+       }
+       else if (Players.Players[i].CharacterCardType == ECharacterType::PaulRegret)
+       {
+          Players.Players[i].CharacterRange++;
+       }
+       Players.Players[i].MaxHealth = CardManager->GetHealthByCharacteType(CardManager->GetCharacterCard());
+
+       // 최초 카드 분배
+       int16 Health = Players.Players[i].MaxHealth;
+       FCardCollection Cards;
+       CardManager->HandCards(Health, Cards);
+       Players.Players[i].MyCards.AddCardCollectionToPlayerCards(Cards);
+       
+       if (JobCards[i] == EJobType::Officer)
+       {
+          CurrentTurnPlayerUniqeID = Players.Players[i].PlayerUniqueID;
+          Players.Players[i].bIsMyTurn = true;
+          PlayerIndex = i;
+       }
+    }
+
+    for (FPlayerInformation Player : Players.Players)
+    {
+       UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s"), *Player.PlayerName);
+       UE_LOG(LogTemp, Warning, TEXT("JobCardType: %d"), Player.JobCardType);
+       UE_LOG(LogTemp, Warning, TEXT("MaxHealth: %d"), Player.MaxHealth);
+       UE_LOG(LogTemp, Warning, TEXT("CharacterCardType: %d"), Player.CharacterCardType);
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("CurrentPlayerTurn: %d"), CurrentTurnPlayerUniqeID);
+
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+       const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
+       const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
+
+       // 최초 등록 동기화
+       BangPlayerState->PlayerInfo = Players;
+       BangPlayerState->ForceNetUpdate();
+
+       //플레이어 카드리스트 초기화
+       CastingController->Client_UpdateCardList(); 
+       UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *CastingController->GetName());
+    }
+
+    AdvanceGameTurn();
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
