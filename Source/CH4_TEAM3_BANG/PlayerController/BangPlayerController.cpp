@@ -99,7 +99,7 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 	
 }
 
-void ABangPlayerController::Client_UpdateCardList_Implementation()
+void ABangPlayerController::UpdateCardList()
 {
 	UE_LOG(LogTemp, Log, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] UI 카드리스트 업데이트"));
 
@@ -112,6 +112,7 @@ void ABangPlayerController::Client_UpdateCardList_Implementation()
 
 	FCardCollection MyCardCollection;
 	BangPlayerState->GetCard(GetUniqueID(), MyCardCollection); // PS에서 카드 정보 가져오기
+	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] Player ID: %d"), GetUniqueID());
 
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
 	{
