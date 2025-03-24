@@ -1,8 +1,8 @@
 #include "BangPlayerHUD.h"
 
-#include "BangInGameChattingWidget.h"
-#include "CardList.h"
 #include "Blueprint/UserWidget.h"
+#include "Card/CardList.h"
+#include "Chat/BangInGameChattingWidget.h"
 #include "PlayerController/BangPlayerController.h"
 
 void ABangPlayerHUD::BeginPlay()

@@ -1,15 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "UI/CardList.h"
+#include "CardList.h"
 
 #include "Card.h"
 #include "Components/Button.h"
 #include "Components/CanvasPanel.h"
-#include "Components/CanvasPanelSlot.h"
 #include "Components/ScrollBox.h"
-#include "Components/SizeBox.h"
-#include "Components/SizeBoxSlot.h"
 
 class USizeBoxSlot;
 class UCanvasPanelSlot;
