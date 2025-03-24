@@ -56,6 +56,11 @@ protected:
 ////서버 관련 로직 작성란
 //////////////////////////
 public:
+	void StartMyTurn();
+	
+	UPROPERTY()
+	bool bCanUseBang;
+
 	UPROPERTY()
 	TObjectPtr<class ABangPlayerState> BangMyPlayerState;
 
@@ -64,8 +69,7 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCardReturn(bool IsAble);
-
-
+	
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn();
 
@@ -78,6 +82,13 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Init")
 	void Init();
 	
+	UFUNCTION()
+	void OnCardSelectionComplete(
+		const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
+		const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
+		int32 RequiredSelectCount,                      // 선택해야 할 개수
+		ECardSelectPurpose Purpose                      // 선택 목적
+	);
 	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
 	UFUNCTION(Client, Reliable)
 	void Client_SelectCard();
@@ -90,17 +101,26 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
+
+	UFUNCTION(Client, Reliable)
+
+	void Client_RequestCardSelection(const FCardCollection& CardsToChooseFrom,
+		int32 RequiredSelectCount,
+		ECardSelectPurpose Purpose);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateCardList();
 	
 	UFUNCTION(Client, Reliable)
-	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 MaxAllowedCardCount);
-
+	void Client_OnTurnStart();
+	
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
 	void UpdatePlayerUI(FName& NewText);
 	void UpdatePlayerHP(int32 NewHP);
 	void SetInitializeHP(int32 NewHP);
-
+	
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
 	
@@ -199,5 +219,9 @@ public:
 	// 플레이어에게 카드 선택권 요구 응답
 	UFUNCTION(Server, Reliable)
 	void Server_RespondSelectCard();
+
+	
 };
+
+
 
