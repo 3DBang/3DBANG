@@ -54,27 +54,12 @@ void ABangPlayerController::BeginPlay()
 void ABangPlayerController::StartMyTurn()
 {
 	// 1. 초기화: 이전 선택, 타겟, UI 등 초기 상태 리셋
-	//ResetTurnState();
-
+	bCanUseBang = true;
 	// 2. 감옥 체크
-	//if (IsInJail())
-	//{
-	//	HandleJailCheck();
-	//	return; // 실패 시 턴 강제 종료
-	//}
-
 	// 3. 다이너마이트 체크 (선택 사항: 감옥보다 먼저할지 나중할지 게임 규칙에 따라)
-	//if (HasDynamite())
-	//{
-	//	HandleDynamiteCheck();
-		// 다이너마이트 폭발 시 턴 종료 가능
-	//}
 
-	// 4. 카드 드로우
-	//RequestDrawCards();
 
-	// 5. UI 열기: 보유 카드 보여주고 선택 대기
-	//Client_SelectCard(); // 또는 StartActionPhase()
+
 }
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
@@ -158,6 +143,10 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		UE_LOG(LogTemp, Warning, TEXT("Missed card cannot be used on your own turn"));
 		return;
 	}
+	if (OutActiveType == EActiveType::Bang)
+	{
+		if (!bCanUseBang)return;
+	}
 	bool bNeedsTarget = (OutActiveType == EActiveType::Bang ||
 		OutActiveType == EActiveType::Robbery ||
 		OutActiveType == EActiveType::CatBalou ||
@@ -214,8 +203,33 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	int32 RequiredSelectCount,
 	ECardSelectPurpose Purpose)
 {
+	switch (Purpose)
+	{
+	case ECardSelectPurpose::UseCard:
+		//카드 사용하기
+		break;
+
+	case ECardSelectPurpose::DiscardCard:
+	{
+		break;
+	}
+
+	case ECardSelectPurpose::GeneralStoreDraft:
+		//잡화점
+		break;
+
+	case ECardSelectPurpose::SelectFromDrawnCards:
+		//키트 칼슨
+		//ShowCardSelectUI(CardsToChooseFrom, RequiredSelectCount, Purpose);
+		//OnCardSelectionComplete(\보유카드목록\, 플레이어가 선택한거UI에서 선택값, const 3, ECardSelectPurpose::SelectFromDrawnCards:)
+		break;
+
+	default:
+		break;
+	}
 	//ShowCardSelectUI(CardsToChooseFrom, RequiredSelectCount, Purpose);
 }
+
 
 void ABangPlayerController::OnCardSelectionComplete(
 	const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록

@@ -57,6 +57,9 @@ protected:
 //////////////////////////
 public:
 	void StartMyTurn();
+	
+	UPROPERTY()
+	bool bCanUseBang;
 
 	UPROPERTY()
 	TObjectPtr<class ABangPlayerState> BangMyPlayerState;
