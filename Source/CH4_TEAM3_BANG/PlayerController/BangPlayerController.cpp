@@ -62,11 +62,6 @@ void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 	
 }
 
-void ABangPlayerController::Server_EndTurn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter)
-{
-	
-}
-
 void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator NewRotation)
 {
 	if (IsLocalController())
@@ -163,6 +158,53 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		Server_UseCard(SingleCard, TargetPlayerID);
 	}
 }
+
+void ABangPlayerController::Server_EndTurn_Implementation()
+{
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	if (!PS)return;
+
+	const uint32 UniqueID = GetUniqueID();
+	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(UniqueID);
+	if (!MyInfo)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[Controller] PlayerInfo not found for ID: %d"), UniqueID);
+		return;
+	}
+
+	const int32 CurrentHealth = MyInfo->CurrentHealth;
+	const int32 CardCount = MyInfo->MyCards.PlayerCards.Num();
+
+	if (CardCount > CurrentHealth)
+	{
+		// 클라이언트에 카드 버리기 UI 요청
+		Client_RequestDiscardCards(CurrentCardCollection, CardCount-CurrentHealth);
+		return;
+	}
+
+	// 턴 종료 요청
+	//PS->Server_EndTurn(UniqueID, MyInfo->CharacterCardType);
+}
+
+void ABangPlayerController::Client_RequestDiscardCards_Implementation(const FCardCollection& MyCards, int32 DiscardCount)
+{
+	// TODO: UI로 카드 보여주고 DiscardCount 이하만 선택하게 제한
+	// 테스트용
+	TArray<FSingleCard> ToDiscard;
+
+	for (int32 i = 0; i < DiscardCount && i < MyCards.CardList.Num(); ++i)
+	{
+		FSingleCard DiscardedCard;
+		DiscardedCard.Card = MyCards.CardList[i].Card;
+		ToDiscard.Add(DiscardedCard);
+	}
+
+	if (ToDiscard.Num() != DiscardCount)return;
+
+	//카드 제거 요청
+	//Server_DiscardSelectedCards(ToDiscard);
+}
+
 
 ///////////////////////////
 //// 원명 추가 

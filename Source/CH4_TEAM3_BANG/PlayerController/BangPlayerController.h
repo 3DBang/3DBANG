@@ -59,6 +59,11 @@ protected:
 ////서버 관련 로직 작성란
 //////////////////////////
 public:
+	UPROPERTY()
+	TObjectPtr<class ABangPlayerState> BangMyPlayerState;
+
+	UPROPERTY()
+	TObjectPtr<UBangCardManager> CardManager;
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(const FSingleCard& SingleCard, int32 TargetID);
@@ -68,7 +73,7 @@ public:
 
 
 	UFUNCTION(Server, Reliable)
-	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+	void Server_EndTurn();
 
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
@@ -92,8 +97,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
 	
-	//UFUNCTION(Client, Reliable)
-	//void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 MaxAllowedCardCount);
+	UFUNCTION(Client, Reliable)
+	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 MaxAllowedCardCount);
 
 ///////////////////////////
 //// 원명 추가 
