@@ -1,6 +1,7 @@
 #include "BangPlayerHUD.h"
 
 #include "BangInGameChattingWidget.h"
+#include "CardList.h"
 #include "Blueprint/UserWidget.h"
 #include "PlayerController/BangPlayerController.h"
 
@@ -18,6 +19,15 @@ void ABangPlayerHUD::BeginPlay()
 		}
 	}
 
+	if (CardListWidgetClass)
+	{
+		CardListWidgetInstance = CreateWidget<UCardList>(GetWorld(), CardListWidgetClass);
+		if (CardListWidgetInstance)
+		{
+			CardListWidgetInstance->AddToViewport();
+		}
+	}
+	
 	if (APlayerController* PlayerController = GetOwningPlayerController()) {
 		if (ABangPlayerController* BangPlayerController = Cast<ABangPlayerController>(PlayerController)) {
 			BangPlayerController->NotifyHUDLoaded();
