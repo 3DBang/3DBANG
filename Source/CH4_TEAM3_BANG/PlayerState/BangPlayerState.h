@@ -48,8 +48,9 @@ public:
 	// 카드사용에 대한 응답 (PS -> PS)
 	UFUNCTION()
 	void UseCardReturn(const int32& FromUniqueID, const FPlayerCardSymbol& SingleCard, const int32& ToUniqueID, const EActiveType& ActiveType, const EPassiveType& PassiveType);
-	
-	void FindTargetPlayerState(const uint32 TargetUniqueID, TObjectPtr<ABangPlayerState>& OutPlayerState) const;
+
+	UFUNCTION()
+	void FindTargetPlayerState(const uint32 TargetUniqueID, FBangSinglePlayerState& OutPlayerState) const;
 	
 	/////////////////////
 	/// 서버통신

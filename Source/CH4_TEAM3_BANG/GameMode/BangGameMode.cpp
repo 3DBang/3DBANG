@@ -243,8 +243,6 @@ void ABangGameMode::StartTest()
 	}
 }
 
-
-
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
 void ABangGameMode::ForceUpdate_StartGame_Real()
 {

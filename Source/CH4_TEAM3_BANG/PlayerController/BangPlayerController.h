@@ -2,18 +2,19 @@
 
 #include "CoreMinimal.h"
 #include "Card/BangCardManager.h"
+#include "Data/PlayerInformation.h"
 #include "GameFramework/PlayerController.h"
 #include "BangPlayerController.generated.h"
 
-struct FPlayerCardCollection;
 class UInputMappingContext;
 class UInputAction;
 class ABangPlayerState;
 class ABangCharacter;
-enum class EJobType : uint8;
-enum class ECharacterType : uint8;
 class ABangGameMode;
 class UCameraComponent;
+
+enum class EJobType : uint8;
+enum class ECharacterType : uint8;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
@@ -50,12 +51,13 @@ public:
 	
 	UPROPERTY()
 	TObjectPtr<UBangCardManager> CardManager;
+	
 protected:
 	virtual void BeginPlay() override;
+	
 ///////////////////////////
 ////서버 관련 로직 작성란
 //////////////////////////
-	
 public:
 
 	UFUNCTION(Server, Reliable)
@@ -84,15 +86,14 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_HandleCardSelection(const FSingleCard& SingleCard);
 
-
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
 	
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
 	
-	UFUNCTION(Client, Reliable)
-	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 MaxAllowedCardCount);
+	//UFUNCTION(Client, Reliable)
+	//void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 MaxAllowedCardCount);
 
 ///////////////////////////
 //// 원명 추가 
@@ -129,6 +130,7 @@ public:
 	void Client_SetOutline(bool bEnable, int32 StencilValue);
 
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
+	
 private:
 	float CameraBlendElapsed = 0.f;
 	FTimerHandle CameraBlendHandle;
@@ -140,12 +142,13 @@ private:
 	FTimerHandle CameraCloseBlendTimerHandle;
 
 	// 지목 모드 타이머핸들
-	FTimerHandle BangModeTimerHandle; 
+	FTimerHandle BangModeTimerHandle;
+	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputMappingContext> CameraMappingContext = nullptr;
+	
 private:
-
 	FTransform CachedBangCameraTransform;
 
 	///////////////////////////

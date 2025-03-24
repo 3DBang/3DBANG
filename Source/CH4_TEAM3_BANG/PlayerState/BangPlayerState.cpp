@@ -83,9 +83,9 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
 			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
 
-			TObjectPtr<ABangPlayerState> OutPlayerState;
+			FBangSinglePlayerState OutPlayerState;
 			FindTargetPlayerState(ToUniqueID, OutPlayerState);
-			OutPlayerState->UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
+			OutPlayerState.State->UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
 			break;
 		}
 	case EActiveType::Missed:
@@ -216,7 +216,7 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 	}
 }
 
-void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, TObjectPtr<ABangPlayerState>& OutPlayerState) const
+void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, FBangSinglePlayerState& OutPlayerState) const
 {
 	const TObjectPtr<UWorld> World = GetWorld();
 	if (!World) return;
@@ -229,7 +229,7 @@ void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, TObjec
 			{
 				if (OtherPlayerState != this && OtherPlayerState->GetPlayerController()->GetUniqueID() == TargetUniqueID)
 				{
-					OutPlayerState = OtherPlayerState;
+					OutPlayerState.State = OtherPlayerState;
 					return;
 				}
 			}

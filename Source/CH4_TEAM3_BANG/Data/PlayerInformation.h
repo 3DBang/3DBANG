@@ -4,6 +4,33 @@
 #include "Card/BangCardManager.h"
 #include "PlayerInformation.generated.h"
 
+class ABangPlayerState;
+class ABangPlayerController;
+
+/////////////////////////////////////////////
+/// 플레이어 컨트롤러 & 플레이어 스테이트 구조체
+/////////////////////////////////////////////
+USTRUCT(BlueprintType)
+struct FBangSinglePlayerState
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<ABangPlayerState> State;
+};
+
+USTRUCT(BlueprintType)
+struct FBangSinglePlayerController
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<ABangPlayerController> Controller;
+};
+
+//////////////////////////////
+/// 플레이어 카드 심볼 (통신용)
+//////////////////////////////
 USTRUCT(BlueprintType)
 struct FPlayerCardSymbol
 {
@@ -59,6 +86,9 @@ struct FPlayerCardCollection
 	}
 };
 
+//////////////////////////////
+/// 플레이어 정보 (통신용)
+//////////////////////////////
 USTRUCT(BlueprintType)
 struct FPlayerInformation
 {

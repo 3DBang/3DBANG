@@ -25,24 +25,6 @@ enum class EPlayerTurnState : uint8
 	LooseCard UMETA(DisplayName = "LooseCard")
 };
 
-USTRUCT(BlueprintType)
-struct FBangSinglePlayerState
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TObjectPtr<ABangPlayerState> State;
-};
-
-USTRUCT(BlueprintType)
-struct FBangSinglePlayerController
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TObjectPtr<ABangPlayerController> Controller;
-};
-
 UCLASS()
 class CH4_TEAM3_BANG_API ABangGameMode : public AGameMode
 {
