@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/WidgetComponent.h"
 #include "InputActionValue.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -15,6 +16,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerStart.h"
 #include "GameFramework/PlayerState.h"  
+#include "PlayerState/BangPlayerState.h"
 
 // Sets default values
 ABangCharacter::ABangCharacter()
@@ -49,6 +51,15 @@ ABangCharacter::ABangCharacter()
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
+
+	/*InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("InteractionWidget"));
+	InteractionWidgetComponent->SetupAttachment(RootComponent);
+	InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+	InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200));
+	InteractionWidgetComponent->SetRelativeLocation(FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight()  + 50.f));
+	InteractionWidgetComponent->SetVisibility(false);
+	InteractionWidgetComponent->SetHiddenInGame(true);*/
+
 	if (UPrimitiveComponent* PrimComponent = Cast<UPrimitiveComponent>(GetRootComponent()))
 	{
 		PrimComponent->SetGenerateOverlapEvents(true);
@@ -56,6 +67,14 @@ ABangCharacter::ABangCharacter()
 		PrimComponent->OnBeginCursorOver.AddDynamic(this, &ABangCharacter::OnCursorBegin);
 		PrimComponent->OnEndCursorOver.AddDynamic(this, &ABangCharacter::OnCursorEnd);
 	}
+	/*if (UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(GetMesh()))
+	{
+		MeshComp->SetGenerateOverlapEvents(true);
+		MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		MeshComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		MeshComp->OnBeginCursorOver.AddDynamic(this, &ABangCharacter::OnCursorBegin);
+		MeshComp->OnEndCursorOver.AddDynamic(this, &ABangCharacter::OnCursorEnd);
+	}*/
 
 }
 
@@ -108,7 +127,23 @@ void ABangCharacter::BeginPlay()
 	{
 		InitialCameraTransform = FollowCamera->GetRelativeTransform();
 	}
+	
 
+	//if (IsLocallyControlled())
+	//{
+	//	InteractionWidgetComponent = NewObject<UWidgetComponent>(this, UWidgetComponent::StaticClass(), TEXT("InteractionWidget"));
+	//	InteractionWidgetComponent->RegisterComponent();
+	//	InteractionWidgetComponent->SetupAttachment(RootComponent);
+	//	InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+	//	InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200));
+	//	InteractionWidgetComponent->SetRelativeLocation(FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f));
+	//	InteractionWidgetComponent->SetVisibility(false);
+	//	InteractionWidgetComponent->SetHiddenInGame(true);
+	//	if (InteractionWidgetClass)
+	//	{
+	//		InteractionWidgetComponent->SetWidgetClass(InteractionWidgetClass);
+	//	}
+	//}
 }
 void ABangCharacter::Tick(float DeltaTime)
 {
@@ -387,17 +422,18 @@ bool ABangCharacter::GetFirstPersonMode()
 
 void ABangCharacter::OnCursorBegin(UPrimitiveComponent* MouseComp)
 {
+	
 	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
 	{
-		int32 PlayerID = GetPlayerState()->GetPlayerId();
-		FString Msg = FString::Printf(TEXT("Touch Start — PlayerState ID: %d"), PlayerID);
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.f,
-			FColor::Red,
-			Msg
-		);
-		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), true);
+		/*if (auto* PlayC = Cast<ABangPlayerController>(GetController()))
+			PC->SetWidgetVisibility(this, false);*/
+			/*if (PC->IsLocalController())
+			{
+				SetWidgetVisible(false);
+			}*/
+		//uint32 
+		UE_LOG(LogTemp, Error, TEXT("Player State Active"));
+		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), false);
 	}
 }
 
@@ -405,15 +441,16 @@ void ABangCharacter::OnCursorEnd(UPrimitiveComponent* MouseComp)
 {
 	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
 	{
-		int32 PlayerID = GetPlayerState()->GetPlayerId();
-		FString Msg = FString::Printf(TEXT("Touch End — PlayerState ID: %d"), PlayerID);
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.f,
-			FColor::Red,
-			Msg
-		);
+		/*if (auto* PlayC = Cast<ABangPlayerController>(GetController()))
+			PC->SetWidgetVisibility(this, false);*/
+		/*if (PC->IsLocalController())
+		{
+			SetWidgetVisible(false);
+		}*/
 		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), false);
 	}
 }
-
+void ABangCharacter::SetWidgetVisible(bool bVisible)
+{
+	//InteractionWidgetComponent->SetVisibility(bVisible);
+}

@@ -14,7 +14,9 @@
 #include "UI/BangInGameChattingWidget.h"
 #include "UI/BangPlayerHUD.h"
 #include "Components/WidgetComponent.h"
+#include "EngineUtils.h"
 #include "Components/CapsuleComponent.h"
+
 
 ABangPlayerController::ABangPlayerController()
 {}
@@ -42,8 +44,10 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
-	GetPlayerStateAtBegin();
-
+	if (IsLocalController())
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
+	}
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	InputMode.SetHideCursorDuringCapture(false);
@@ -191,6 +195,7 @@ void ABangPlayerController::MouseClicked()
 						//And Open UI
 					}
 				}
+
 			}
 		}
 
@@ -200,6 +205,27 @@ void ABangPlayerController::MouseClicked()
 		//CloseHuD 
 	}
 	CurrentMouseCursor = EMouseCursor::Default;
+
+	///////Test
+	/*AActor* HitActor = HitResult.GetActor();
+	if (HitActor)
+	{
+		ABangCharacter* HitPawn = Cast<ABangCharacter>(HitActor);
+		if (HitPawn)
+		{
+			ABangPlayerController* HitController = Cast<ABangPlayerController>(HitPawn->GetController());
+			if (HitController)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Controller IS valid ,"));
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Controller IS NULL"));
+			}
+		}
+	}*/
+
+	//////TestEnd
 }
 
 void ABangPlayerController::Client_OpenCamera_Implementation()
@@ -654,17 +680,36 @@ void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 		}
 	}
 }
+
+//void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 {
-	/*if (IsFirstCheck)
-	{
-		GetPlayerStateAtBegin();
-	}*///만일 아래의 로직이 정상작동하지 않으면 이걸로 업데이트하자 
+	//if (!IsLocalController()) return;
 
+	//InteractionWidgetComponent->SetHiddenInGame(!bVisible);
+	//InteractionWidgetComponent->SetVisibility(bVisible);
+	/*if (UWidgetComponent** CompPtr = PlayerWidgets.Find(PlayerID))
+	{
+		(*CompPtr)->SetVisibility(bVisible);
+	}*/
+
+	if (!IsLocalController() || ControllerPlayerStateID == PlayerID)
+		return;
+	
 	if (UWidgetComponent** CompPtr = PlayerWidgets.Find(PlayerID))
 	{
-		UUserWidget* BangUserWidget = Cast<UUserWidget>((*CompPtr)->GetUserWidgetObject());
-		BangUserWidget->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.f,
+			FColor::Red,
+			TEXT(" 위젯 찾았습니다  ")
+		);
+		UWidgetComponent* Comp = *CompPtr;
+		Comp->SetVisibility(bVisible);
+		Comp->SetHiddenInGame(!bVisible);
+		//UUserWidget* BangUserWidget = Cast<UUserWidget>((*CompPtr)->GetUserWidgetObject());
+		//BangUserWidget->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		//BangUserWidget->SetHiddenInGame(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 }
 void ABangPlayerController::GetUserInformationUI(uint32 BangPlayerStateID)
@@ -674,30 +719,85 @@ void ABangPlayerController::GetUserInformationUI(uint32 BangPlayerStateID)
 
 void ABangPlayerController::GetPlayerStateAtBegin()
 {
-	for (APlayerState* PS : GetWorld()->GetGameState()->PlayerArray)
+	UE_LOG(LogTemp, Error, TEXT("GetBegin시작"));
+	if (!IsLocalController())
 	{
-		if (!PS)
-		{
-			continue;
-		}
-		ABangCharacter* BangPlayer = Cast<ABangCharacter>(PS->GetPawn());
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			10.f,
+			FColor::Red,
+			TEXT("Local에서 걸림 ")
+		);
+		UE_LOG(LogTemp, Error, TEXT("로컬에서 걸림요 "));
+		return;
+	}
+	UE_LOG(LogTemp, Error, TEXT("스테이트 시작"));
+	if (ABangPlayerState* MyPS = GetPlayerState<ABangPlayerState>())
+	{
+		ControllerPlayerStateID = MyPS->GetPlayerId();
+		FString Msg = FString::Printf(TEXT("Local Controller PlayerStateID = %d"), ControllerPlayerStateID);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, Msg); 
+		UE_LOG(LogTemp, Error, TEXT("스테이트 있습니다"));
+	}
+	UE_LOG(LogTemp, Error, TEXT("플레이어 스테이트 액터 이터레이터 시작  "));
+
+	for (TActorIterator<ABangCharacter> It(GetWorld()); It; ++It)
+	{
+		UE_LOG(LogTemp, Error, TEXT("플레이어 스테이트 액터 이터레이터 시작 내부 "));
+		ABangCharacter* BangPlayer = *It;
 		if (!BangPlayer)
 		{
-			continue;
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				10.f,
+				FColor::Red,
+				TEXT("No Player")
+			);
+			UE_LOG(LogTemp, Error, TEXT("플레이어 없습니다 "));
 		}
-		uint32 ID = PS->GetPlayerId();
-		UUserWidget* Widget = CreateWidget<UUserWidget>(this, InteractionWidgetClass);
-		Widget->SetVisibility(ESlateVisibility::Hidden);
-		
-		UWidgetComponent* Comp = NewObject<UWidgetComponent>(BangPlayer);
-		Comp->SetupAttachment(BangPlayer->GetRootComponent());
-		Comp->RegisterComponent();
-		Comp->SetWidget(Widget);
-		Comp->SetWidgetSpace(EWidgetSpace::Screen);
-		Comp->SetDrawSize(FVector2D(1000, 500));
-		Comp->SetRelativeLocation(FVector(0, 0, BangPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 20.f));
-		Comp->SetVisibility(false);
-		Widget->AddToViewport();
-		PlayerWidgets.Add(ID, Comp);
+		if (APlayerState* PS = BangPlayer->GetPlayerState())
+		{
+			uint32 ID = PS->GetPlayerId();
+
+			//UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer, UWidgetComponent::StaticClass(), TEXT("InteractionWidget"));
+			UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
+			WidgetComp->SetupAttachment(BangPlayer->GetRootComponent());
+			WidgetComp->RegisterComponent();
+
+			WidgetComp->SetWidgetClass(InteractionWidgetClass);
+			WidgetComp->InitWidget();
+
+			WidgetComp->SetWidgetSpace(EWidgetSpace::World);
+			WidgetComp->SetDrawSize(FVector2D(400, 200));
+			WidgetComp->SetRelativeLocation(
+				FVector(0.f, 0.f, BangPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f)
+			);
+
+			WidgetComp->SetVisibility(false);
+			WidgetComp->SetHiddenInGame(true);
+			WidgetComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			WidgetComp->SetGenerateOverlapEvents(false);
+			WidgetComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+			PlayerWidgets.Add(ID, WidgetComp);
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, TEXT("위젯 저장 완료"));
+			UE_LOG(LogTemp, Error, TEXT("위젯 저장 완료"));
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				10.f,
+				FColor::Red,
+				TEXT("No Player State")
+			);
+		}
 	}
+	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
+}
+
+void ABangPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
 }
