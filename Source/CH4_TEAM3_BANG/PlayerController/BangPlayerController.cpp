@@ -52,6 +52,17 @@ void ABangPlayerController::BeginPlay()
 	bShowMouseCursor = true;*/
 }
 
+void ABangPlayerController::StartMyTurn()
+{
+	// 1. 초기화: 이전 선택, 타겟, UI 등 초기 상태 리셋
+	bCanUseBang = true;
+	// 2. 감옥 체크
+	// 3. 다이너마이트 체크 (선택 사항: 감옥보다 먼저할지 나중할지 게임 규칙에 따라)
+
+
+
+}
+
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 {
 	
@@ -189,6 +200,10 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		UE_LOG(LogTemp, Warning, TEXT("Missed card cannot be used on your own turn"));
 		return;
 	}
+	if (OutActiveType == EActiveType::Bang)
+	{
+		if (!bCanUseBang)return;
+	}
 	bool bNeedsTarget = (OutActiveType == EActiveType::Bang ||
 		OutActiveType == EActiveType::Robbery ||
 		OutActiveType == EActiveType::CatBalou ||
@@ -231,7 +246,7 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	if (CardCount > CurrentHealth)
 	{
 		// 클라이언트에 카드 버리기 UI 요청
-		Client_RequestDiscardCards(CurrentCardCollection, CardCount-CurrentHealth);
+		Client_RequestCardSelection(CurrentCardCollection, CardCount-CurrentHealth, ECardSelectPurpose::DiscardCard);
 		return;
 	}
 
@@ -239,23 +254,93 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	//PS->Server_EndTurn(UniqueID, MyInfo->CharacterCardType);
 }
 
-void ABangPlayerController::Client_RequestDiscardCards_Implementation(const FCardCollection& MyCards, int32 DiscardCount)
-{
-	// TODO: UI로 카드 보여주고 DiscardCount 이하만 선택하게 제한
-	// 테스트용
-	TArray<FSingleCard> ToDiscard;
 
-	for (int32 i = 0; i < DiscardCount && i < MyCards.CardList.Num(); ++i)
+void ABangPlayerController::Client_RequestCardSelection_Implementation(
+	const FCardCollection& CardsToChooseFrom,
+	int32 RequiredSelectCount,
+	ECardSelectPurpose Purpose)
+{
+	switch (Purpose)
 	{
-		FSingleCard DiscardedCard;
-		DiscardedCard.Card = MyCards.CardList[i].Card;
-		ToDiscard.Add(DiscardedCard);
+	case ECardSelectPurpose::UseCard:
+		//카드 사용하기
+		break;
+
+	case ECardSelectPurpose::DiscardCard:
+	{
+		break;
 	}
 
-	if (ToDiscard.Num() != DiscardCount)return;
+	case ECardSelectPurpose::GeneralStoreDraft:
+		//잡화점
+		break;
 
-	//카드 제거 요청
-	//Server_DiscardSelectedCards(ToDiscard);
+	case ECardSelectPurpose::SelectFromDrawnCards:
+		//키트 칼슨
+		//ShowCardSelectUI(CardsToChooseFrom, RequiredSelectCount, Purpose);
+		//OnCardSelectionComplete(\보유카드목록\, 플레이어가 선택한거UI에서 선택값, const 3, ECardSelectPurpose::SelectFromDrawnCards:)
+		break;
+
+	default:
+		break;
+	}
+	//ShowCardSelectUI(CardsToChooseFrom, RequiredSelectCount, Purpose);
+}
+
+
+void ABangPlayerController::OnCardSelectionComplete(
+	const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
+	const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
+	int32 RequiredSelectCount,                      // 선택해야 할 개수
+	ECardSelectPurpose Purpose)                     // 선택 목적
+{
+	if (SelectedCards.Num() != RequiredSelectCount)return;
+
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	//if (!PS || !PS->CardManager)return;
+
+	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(GetUniqueID());
+	if (!MyInfo)
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerInfo를 찾을 수 없음"));
+		return;
+	}
+
+	//UBangCardManager* CM = PS->CardManager;
+
+	switch (Purpose)
+	{
+	case ECardSelectPurpose::UseCard:
+		//카드 사용하기
+		break;
+
+	case ECardSelectPurpose::DiscardCard:
+	{
+		for (const FSingleCard& Card : SelectedCards)
+		{
+			//보유 카드에서 제거
+			MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
+
+			//버린 카드 덱에 추가
+			//PS->CardManager->ReorderUsedCards(Card);
+		}
+
+		// 턴 종료 호출
+		// PS->Server_EndTurn();
+		break;
+	}
+
+	case ECardSelectPurpose::GeneralStoreDraft:
+		//잡화점
+		break;
+
+	case ECardSelectPurpose::StealFromOpponent:
+		//키트 칼슨
+		break;
+
+	default:
+		break;
+	}
 }
 
 
