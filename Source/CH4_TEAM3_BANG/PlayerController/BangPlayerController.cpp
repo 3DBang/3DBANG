@@ -6,7 +6,6 @@
 #include "BangCharacter/BangCharacter.h"
 #include "Card/BangCardManager.h"
 #include "Card/BaseCard/BangCardBase.h"
-#include "Instance/BangGameInstance.h"
 
 #include "CharacterUIActor/BangUIActor.h"
 #include "Camera/CameraComponent.h" 
@@ -14,9 +13,9 @@
 #include "Materials/MaterialInterface.h"
 #include "Camera/PlayerCameraManager.h"
 #include "GameState/BangGameState.h"
-#include "UI/BangInGameChattingWidget.h"
 #include "UI/BangPlayerHUD.h"
-#include "UI/CardList.h"
+#include "UI/Card/CardList.h"
+#include "UI/Chat/BangInGameChattingWidget.h"
 
 ABangPlayerController::ABangPlayerController()
 {}
