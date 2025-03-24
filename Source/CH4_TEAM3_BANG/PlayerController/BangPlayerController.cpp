@@ -205,6 +205,45 @@ void ABangPlayerController::Client_RequestDiscardCards_Implementation(const FCar
 	//Server_DiscardSelectedCards(ToDiscard);
 }
 
+void ABangPlayerController::Client_RequestCardSelection_Implementation(
+	const FCardCollection& CardsToChooseFrom,
+	int32 RequiredSelectCount,
+	ECardSelectPurpose Purpose)
+{
+	//ShowCardSelectUI(CardsToChooseFrom, RequiredSelectCount, Purpose);
+
+	// TODO: UI 띄우기
+	// 카드 리스트: CardsToChooseFrom
+	// 선택 수 제한: RequiredSelectCount
+	// 선택 목적: Discard / Draft / Ability 등
+}
+
+void ABangPlayerController::OnCardSelectionComplete(
+	const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
+	const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
+	int32 RequiredSelectCount,                      // 선택해야 할 개수
+	ECardSelectPurpose Purpose                      // 선택 목적
+) 
+{
+	switch (Purpose)
+	{
+	case ECardSelectPurpose::DiscardByOverdraw:
+		//카드 버린카드더미에 넣기 제거
+		break;
+
+	case ECardSelectPurpose::GeneralStoreDraft:
+		//잡화점
+		break;
+
+	case ECardSelectPurpose::StealFromOpponent:
+		//키트 칼슨
+		break;
+
+	default:
+		break;
+	}
+}
+
 
 ///////////////////////////
 //// 원명 추가 

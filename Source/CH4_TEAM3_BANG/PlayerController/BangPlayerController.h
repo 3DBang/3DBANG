@@ -80,6 +80,13 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Init")
 	void Init();
 	
+	UFUNCTION()
+	void OnCardSelectionComplete(
+		const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
+		const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
+		int32 RequiredSelectCount,                      // 선택해야 할 개수
+		ECardSelectPurpose Purpose                      // 선택 목적
+	);
 	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
 	UFUNCTION(Client, Reliable)
 	void Client_SelectCard();
@@ -96,6 +103,11 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 DiscardCount);
+
+	UFUNCTION(Client, Reliable)
+	void Client_RequestCardSelection(const FCardCollection& CardsToChooseFrom,
+		int32 RequiredSelectCount,
+		ECardSelectPurpose Purpose);
 
 ///////////////////////////
 //// 원명 추가 

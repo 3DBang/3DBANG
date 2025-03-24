@@ -90,3 +90,11 @@ enum class ECharacterType : uint8
 	KitCarlson UMETA(DisplayName = "Kit Carlson")		 // 키트 칼슨
 };
 
+UENUM(BlueprintType)
+enum class ECardSelectPurpose : uint8
+{
+	DiscardByOverdraw     UMETA(DisplayName = "Discard by Overdraw"),      // 카드 수 > 체력
+	SelectFromDrawnCards  UMETA(DisplayName = "Select from Drawn Cards"),  // 키트 칼슨 능력으로 선택
+	GeneralStoreDraft     UMETA(DisplayName = "General Store Draft"),      // 잡화점처럼 순서대로 선택
+	StealFromOpponent     UMETA(DisplayName = "Steal from Opponent"),      // 강탈
+};
