@@ -44,6 +44,10 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
+
+	// 플레이어 스테이트에 UniqueID등록
+	const TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(PlayerState);
+	BangPlayerState->SetUniqueIDFromController(GetUniqueID());
 	
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
@@ -355,7 +359,7 @@ void ABangPlayerController::MouseClicked()
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
 		
-		if(HitChar && HitChar != GetPawn())
+		if (HitChar && HitChar != GetPawn())
 		{
 
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
