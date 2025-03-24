@@ -219,7 +219,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_RespondSelectCard();
 
-	
+protected:
+	UFUNCTION()
+	void PlayerInfoUpdatedEvent();
 };
 
 
