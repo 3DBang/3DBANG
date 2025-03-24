@@ -62,6 +62,8 @@ public:
 	UFUNCTION()
 	void OnUseCardButtonClicked();
 
+	UFUNCTION(BlueprintCallable, Category = "CardList")
+	void ClearCards();
 
 	//컨트롤러에서 쓰는 함수
 	// 카드를 추가하는 함수

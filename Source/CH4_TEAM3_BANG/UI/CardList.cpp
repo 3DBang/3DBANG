@@ -93,6 +93,23 @@ void UCardList::OnUseCardButtonClicked()
 	RemoveSelectedCard();
 }
 
+void UCardList::ClearCards()
+{
+	if (!ScrollBox) return;
+
+	ScrollBox->ClearChildren(); // ScrollBox의 모든 자식 위젯(카드) 제거
+
+	// 선택된 카드 정보 초기화 (선택 해제)
+	SelectedCardWidget = nullptr;
+	SelectedCard = FSingleCard();
+
+	// SelectedCardSlot 초기화 (빈 카드 정보 표시)
+	if (SelectedCardSlot)
+	{
+		SelectedCardSlot->InitializeWithCard(FSingleCard()); // 빈 FSingleCard로 초기화
+	}
+}
+
 void UCardList::RemoveSelectedCard()
 {
 	if (SelectedCardWidget)
@@ -101,10 +118,6 @@ void UCardList::RemoveSelectedCard()
 
 
 		// 컨트롤러에서 카드를 사용할때 호출될 함수
-
-			
-
-
 
 		//
 

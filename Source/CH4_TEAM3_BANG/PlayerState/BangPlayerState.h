@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerState.h"
 #include "BangPlayerState.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTurnStartDelegate);
+
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerState : public APlayerState
 {
@@ -41,6 +43,11 @@ public:
 	UFUNCTION()
 	void RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard);
 
+	
+	// 턴 시작
+	UFUNCTION()
+	void StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards);
+	
 	// 턴 종료
 	UFUNCTION()
 	void EndTurn(const int32 InPlayerUniqueID);

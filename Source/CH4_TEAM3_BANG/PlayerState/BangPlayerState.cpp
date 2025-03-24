@@ -3,8 +3,11 @@
 #include "Card/BangCardManager.h"
 #include "Card/BaseCard/BangCardBase.h"
 #include "GameMode/BangGameMode.h"
+#include "GameState/BangGameState.h"
 #include "Instance/BangGameInstance.h"
 #include "Net/UnrealNetwork.h"
+#include "UI/BangPlayerHUD.h"
+#include "UI/CardList.h"
 
 ABangPlayerState::ABangPlayerState()
 {
@@ -260,6 +263,70 @@ void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleC
 	Server_UseCard(FromUniqueID, SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, EDeckType::HandedCard);
 }
 
+ 
+void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards)
+{
+	const TObjectPtr<UWorld> World = GetWorld();
+	if (!World || InPlayerUniqueID == 0)
+	{
+		return;
+	}
+	
+	// 플레이어 턴으로 변경 및 인포에 카드 추가
+	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
+	PlayerInformation->bIsMyTurn = true;
+	PlayerInformation->MyCards.AddCardCollectionToPlayerCards(DrawCards);
+	ForceNetUpdate();
+	
+	// 플레이어들을 순회
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+	{
+		//모든 플레이어의 컨트롤러를 순환
+		ABangPlayerController* PlayerController = Cast<ABangPlayerController>(It->Get());
+
+		//플레이어 컨트롤러의 스테이트
+		ABangPlayerState* OtherPlayerState = PlayerController->GetPlayerState<ABangPlayerState>();
+
+		//게임 스테이트
+		ABangGameState* GameState = Cast<ABangGameState>(World->GetGameState());
+		if (!PlayerController || !OtherPlayerState || !GameState)
+		{
+			return;
+		}
+
+		//전체에게 메세지 뿌리기
+		FString ChatMessage = FString::Printf(TEXT("플레이어 %s의 차례!"), *PlayerInformation->PlayerName);  
+		FString FromNickname = TEXT("Server"); 
+		FString ReciverNickname = TEXT("All"); 
+		GameState->ReceiveMessage(ChatMessage, FromNickname, ReciverNickname);
+		
+		// 현재 플레이어 턴이면
+		if (PlayerController->GetUniqueID() == InPlayerUniqueID)
+		{
+			PlayerController->Client_OnTurnStart();
+			
+			if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(PlayerController->GetHUD())) // HUD 캐스팅 및 유효성 검사
+			{
+				if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
+				{
+					for (const FSingleCard& Card : DrawCards.CardList)
+					{
+						CardListWidget->AddCard(Card); // 카드 위젯 추가
+					}
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::StartTurn] CardListWidgetInstance 없음 HUD 있음"));
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::StartTurn] BangHUD 없음"));
+			}
+		}
+	}
+}
+
 // 턴 종료 모든 처리 끝나면 호출
 void ABangPlayerState::EndTurn(const int32 InPlayerUniqueID)
 {
@@ -341,7 +408,7 @@ FString ABangPlayerState::FPlayerInformationToString(const FPlayerInformation& I
 									 Info.MaxHealth,
 									 Info.Range,
 									 Info.CharacterRange);
-
+	
 	FCardCollection CardCollection = GetCardListFromCardManager(Info);
 
 	for (FSingleCard CardList : CardCollection.CardList)
