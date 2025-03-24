@@ -76,7 +76,7 @@ void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator
 	}	
 }
 
-void ABangPlayerController::Client_OnTurnStart_Implementation()
+void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollection& DrawCards)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: It's my turn! Controller Name: %s"), *GetName());
 	ABangPlayerState* BangPlayerState= GetPlayerState<ABangPlayerState>();
@@ -86,7 +86,28 @@ void ABangPlayerController::Client_OnTurnStart_Implementation()
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: PlayerState is null!"));
 		return;
 	}
-	
+
+	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
+	{
+		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
+		{
+			for (const FSingleCard& Card : DrawCards.CardList)
+			{
+				CardListWidget->AddCard(Card); // 카드 위젯 추가
+			}
+
+			// 허드에 있는 카드 사용 버튼 활성화
+			// 턴종료 버튼 만들어서 활성화
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::StartTurn] CardListWidgetInstance 없음 HUD 있음"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::StartTurn] BangHUD 없음"));
+	}
 	
 }
 

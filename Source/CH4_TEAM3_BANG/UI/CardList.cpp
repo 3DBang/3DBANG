@@ -10,6 +10,7 @@
 #include "Components/ScrollBox.h"
 #include "Components/SizeBox.h"
 #include "Components/SizeBoxSlot.h"
+#include "Components/TextBlock.h"
 
 class USizeBoxSlot;
 class UCanvasPanelSlot;
@@ -87,10 +88,31 @@ UCard* UCardList::AddCard(FSingleCard CardData)
 
 }
 
-void UCardList::OnUseCardButtonClicked()
+void UCardList::OnUseInputButtonClicked()
 {
-	UE_LOG(LogTemp, Log, TEXT("[UCardList::OnUseCardButtonClicked] Use Card Button 클릭!"));
+	UE_LOG(LogTemp, Log, TEXT("[UCardList::OnUseInputButtonClicked] Use Card Button 클릭!"));
 	RemoveSelectedCard();
+}
+
+void UCardList::OnHiddenCardListButtonClicked()
+{
+	UE_LOG(LogTemp, Log, TEXT("[UCardList::OnHiddenCardListButtonClicked] Hidden CardList Button 클릭!"));
+	bIsHidden = !bIsHidden;
+	if(bIsHidden)
+	{
+		ScrollBox->SetVisibility(ESlateVisibility::Hidden);
+		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 숨기기")));
+	}
+	else
+	{
+		ScrollBox->SetVisibility(ESlateVisibility::Visible);
+		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 보이기")));
+	}
+}
+
+void UCardList::OnTurnEndButtonClicked()
+{
+	UE_LOG(LogTemp, Log, TEXT("[UCardList::OnTurnEndButtonClicked] Turn End Button 클릭!"));
 }
 
 void UCardList::ClearCards()
@@ -152,8 +174,11 @@ void UCardList::NativeConstruct()
 		UE_LOG(LogTemp, Error, TEXT(" UCardList::NativeConstruct : 위젯 바인딩 실패"));
 		return;
 	}
-
-	UseCardButton->OnClicked.AddDynamic(this, &UCardList::OnUseCardButtonClicked);
+	bIsHidden = false;
+	
+	UseInputButton->OnClicked.AddDynamic(this, &UCardList::OnUseInputButtonClicked);
+	HiddenCardListButton->OnClicked.AddDynamic(this, &UCardList::OnHiddenCardListButtonClicked);
+	TurnEndButton->OnClicked.AddDynamic(this, &UCardList::OnTurnEndButtonClicked);
 	
 	for (int32 i = 0; i < ScrollBox->GetChildrenCount(); i++)
 	{
