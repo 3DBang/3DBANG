@@ -4,6 +4,7 @@
 #include "GameFramework/HUD.h"
 #include "BangPlayerHUD.generated.h"
 
+class UCardList;
 class UBangInGamePlayerListWidget;
 class UBangInGameChattingWidget;
 
@@ -18,7 +19,12 @@ public:
 	UPROPERTY()
 	TObjectPtr<UBangInGameChattingWidget> ChattingWidgetInstance;
 
+	UPROPERTY()
+	TObjectPtr<UCardList> CardListWidgetInstance;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UBangInGameChattingWidget> ChattingWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UCardList> CardListWidgetClass;
 };
