@@ -101,11 +101,11 @@ void ABangGameMode::GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSi
 	}
 }
 
-void ABangGameMode::GetPlayerCollection(FPlayerCollection& PlayerCollection_) const
+void ABangGameMode::GetPlayerCollection(FPlayerCollection& OutPlayerCollection) const
 {
 	if (Players.Players.Num() == 0) return;
 
-	PlayerCollection_ = Players;
+	OutPlayerCollection = Players;
 }
 
 void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName)
@@ -524,6 +524,8 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID,
 		break;
 	}
 
+	// Message:: 사망처리 알림
+
 	// 플레이어 제거
 	for (uint16 i = 0; i < Players.Players.Num(); i++)
 	{
@@ -568,6 +570,29 @@ void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 Car
 	PlayerState.State->ForceNetUpdate();
 }
 
+void ABangGameMode::DrawCard(const uint16 CardCount)
+{
+	if (!CardManager) return;
+
+	FCardCollection DrawCards;
+	CardManager->HandCards(CardCount, DrawCards);
+
+	FBangSinglePlayerState PlayerState;
+	GetPlayerStatesByUniqueID(CurrentTurnPlayerUniqeID, PlayerState);
+
+	for (FPlayerInformation Player : PlayerState.State->PlayerInfo.Players)
+	{
+		for (auto [Card] : DrawCards.CardList)
+		{
+			FPlayerCardSymbol PlayerCard;
+			PlayerCard.SymbolNumber = Card->SymbolNumber;
+			PlayerCard.SymbolType = Card->SymbolType;
+			Player.SelectableCards.PlayerCards.Add(PlayerCard);
+		}
+	}
+	PlayerState.State->ForceNetUpdate();
+}
+
 // 플레이어 HUD 노출
 void ABangGameMode::UpdatePlayerHUD()
 {
@@ -577,7 +602,7 @@ void ABangGameMode::UpdatePlayerHUD()
 	}
 }
 
-void ABangGameMode::RefundCards(const FPlayerCardCollection RefundCard)
+void ABangGameMode::RefundCards(const FPlayerCardCollection& RefundCard)
 {
 	if (!CardManager) return;
 
@@ -586,6 +611,33 @@ void ABangGameMode::RefundCards(const FPlayerCardCollection RefundCard)
 		FSingleCard SingleCard;
 		CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, EDeckType::HandedCard, SingleCard);
 		CardManager->ReorderAvailCards(SingleCard);
+	}
+}
+
+void ABangGameMode::CheckCardSymbol(const uint32& UniqueID, const uint16& CardCount)
+{
+	if (!CardManager) return;
+
+	FCardCollection OutCards;
+	CardManager->CheckCardSymbolFromAvailCards(CardCount, OutCards);
+
+	FPlayerCardCollection PlayerCardCollection;
+
+	for (FSingleCard CardList : OutCards.CardList)
+	{
+		FPlayerCardSymbol SinglePlayerCard;
+		SinglePlayerCard.SymbolNumber = CardList.Card->SymbolNumber;
+		SinglePlayerCard.SymbolType = CardList.Card->SymbolType;
+
+		PlayerCardCollection.PlayerCards.Add(SinglePlayerCard);
+	}
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
+		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
+
+		BangPlayerState->Client_CheckCardSymbolReturn(UniqueID, PlayerCardCollection);
 	}
 }
 

@@ -49,12 +49,6 @@ void ABangPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	bShowMouseCursor = true;*/
-
-	//카드매니저 초기화
-	UBangGameInstance* BangGameInstance = GetGameInstance<UBangGameInstance>();
-	FCardManagerInstance OutCardManager;
-	BangGameInstance->GetCardManager(OutCardManager);
-	CardManager = OutCardManager.CardManager;
 }
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
@@ -123,13 +117,15 @@ void ABangPlayerController::Client_SelectCard_Implementation()
 void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSingleCard& SingleCard)
 {
     uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
-	if (!CardManager || !SingleCard.Card)return;
-
+	if (!SingleCard.Card)return;
 
 	EActiveType OutActiveType;
 	EPassiveType OutPassiveType;
 
-	CardManager->GetCardTypeFromDataAsset(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, OutActiveType, OutPassiveType);
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	if (!PS) return;
+
+	PS->GetCardType(GetUniqueID(), SingleCard, OutActiveType, OutPassiveType);
 
 	if (OutActiveType == EActiveType::Missed)
 	{

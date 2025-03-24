@@ -49,9 +49,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction = nullptr;
 	
-	UPROPERTY()
-	TObjectPtr<UBangCardManager> CardManager;
-	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -61,9 +58,6 @@ protected:
 public:
 	UPROPERTY()
 	TObjectPtr<class ABangPlayerState> BangMyPlayerState;
-
-	UPROPERTY()
-	TObjectPtr<UBangCardManager> CardManager;
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(const FSingleCard& SingleCard, int32 TargetID);

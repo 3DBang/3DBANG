@@ -110,13 +110,17 @@ struct FPlayerInformation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	int32 CurrentHealth = 0;
 
+	// 총 사거리
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	int32 GunRange = 0;
+
 	// 사거리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	int32 Range = 1;
 
 	// 상대가 날 볼때 추가되는 사거리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	int32 CharacterRange = 0;
+	int32 CharacterRange = 0; // 말, 캐릭터 특성
 
 	// 내 턴인지 확인
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
@@ -181,6 +185,39 @@ struct FPlayerCollection
 	bool operator==(const FPlayerCollection& Other) const
 	{
 		return Players == Other.Players;
+	}
+
+	// 총기 허용 거리 확인
+	bool IsBangDistanceAble(const int32 FromUniqueID, const int32 ToUniqueID)
+	{
+		int32 FromIndex = INDEX_NONE;
+		int32 ToIndex = INDEX_NONE;
+
+		for (int32 i = 0; i < Players.Num(); ++i)
+		{
+			if (Players[i].PlayerUniqueID == FromUniqueID)
+				FromIndex = i;
+			else if (Players[i].PlayerUniqueID == ToUniqueID)
+				ToIndex = i;
+		}
+
+		if (FromIndex == INDEX_NONE || ToIndex == INDEX_NONE)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[FPlayerCollection::IsDistanceAble] 플레이어 인덱스를 찾을 수 없습니다."));
+			return false;
+		}
+
+		const int32 DirectDistance = FMath::Abs(ToIndex - FromIndex);
+		const int32 ReverseDistance = Players.Num() - DirectDistance;
+		const int32 FinalDistance = FMath::Min(DirectDistance, ReverseDistance);
+
+		const int32 AttackerRange = Players[FromIndex].Range;
+		const int32 DefenderCamouflage = Players[ToIndex].CharacterRange;
+		const int32 GunRange = Players[FromIndex].GunRange;
+
+		const int32 EffectiveRange = AttackerRange + GunRange - DefenderCamouflage;
+
+		return FinalDistance <= EffectiveRange;
 	}
 
 	// 허용 거리 확인
