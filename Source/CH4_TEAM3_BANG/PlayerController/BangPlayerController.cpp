@@ -63,10 +63,7 @@ void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 
 }
 
-void ABangPlayerController::Server_EndTurn_Implementation(const uint32 UniqueID, ECharacterType PlayerCharacter)
-{
 
-}
 
 void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator NewRotation)
 {
@@ -728,5 +725,24 @@ void ABangPlayerController::Server_StartTest_Implementation()
 void ABangPlayerController::TestButtonCLicked()
 {
 	Server_StartTest();
+	Server_RequestPlayerListBroadcast(); 
+}
 
+void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArray<FPlayerInformation>& PlayerList)
+{
+	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		if (UBangInGameChattingWidget* ChatWidget = HUD->ChattingWidgetInstance)
+		{
+			ChatWidget->UpdatePlayerList(PlayerList);
+		}
+	}
+}
+
+void ABangPlayerController::Server_RequestPlayerListBroadcast_Implementation()
+{
+	if (ABangGameState* GS = GetWorld()->GetGameState<ABangGameState>())
+	{
+		GS->BroadcastPlayerListToClients();
+	}
 }

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Card/BangCardManager.h"
+
 #include "GameFramework/PlayerController.h"
 #include "BangPlayerController.generated.h"
 
@@ -50,6 +51,8 @@ public:
 
 	UPROPERTY()
 	TObjectPtr<UBangCardManager> CardManager;
+
+
 protected:
 	virtual void BeginPlay() override;
 	///////////////////////////
@@ -60,8 +63,8 @@ public:
 	UPROPERTY()
 	TObjectPtr<class ABangPlayerState> BangMyPlayerState;
 
-	UPROPERTY()
-	TObjectPtr<UBangCardManager> CardManager;
+	/*UPROPERTY()
+	TObjectPtr<UBangCardManager> CardManager;*/
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(const FSingleCard& SingleCard, int32 TargetID);
@@ -72,6 +75,9 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn();
+
+	UFUNCTION(Server, Reliable)
+	void Server_RequestPlayerListBroadcast();
 
 	///////////////////////////
 	////클라이언트 관련 로직 작성란
@@ -98,6 +104,9 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 DiscardCount);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdatePlayerListUI(const TArray<FPlayerInformation>& PlayerList);
 
 	///////////////////////////
 	//// 원명 추가 

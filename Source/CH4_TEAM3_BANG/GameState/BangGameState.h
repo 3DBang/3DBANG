@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "Data/PlayerInformation.h" 
+
 #include "BangGameState.generated.h"
 
 class UBangCardManager;
@@ -23,6 +25,15 @@ public:
 	UPROPERTY(Replicated)
 	FString ToPlayerNickname;
 
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerList)
+	TArray<FPlayerInformation> PlayerList;
+
+	UFUNCTION()
+	void OnRep_PlayerList();
+
+	void BroadcastPlayerListToClients();
+
+	
 	UFUNCTION()
 	void OnRep_Message();
 
