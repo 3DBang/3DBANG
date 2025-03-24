@@ -52,17 +52,6 @@ void ABangPlayerController::BeginPlay()
 	bShowMouseCursor = true;*/
 }
 
-void ABangPlayerController::StartMyTurn()
-{
-	// 1. 초기화: 이전 선택, 타겟, UI 등 초기 상태 리셋
-	bCanUseBang = true;
-	// 2. 감옥 체크
-	// 3. 다이너마이트 체크 (선택 사항: 감옥보다 먼저할지 나중할지 게임 규칙에 따라)
-
-
-
-}
-
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 {
 	
@@ -78,16 +67,14 @@ void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator
 
 void ABangPlayerController::Client_OnTurnStart_Implementation()
 {
+	bCanUseBang = true;
 	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: It's my turn! Controller Name: %s"), *GetName());
 	ABangPlayerState* BangPlayerState= GetPlayerState<ABangPlayerState>();
-
 	if (!PlayerState)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: PlayerState is null!"));
 		return;
 	}
-	
-	
 }
 
 void ABangPlayerController::Client_UpdateCardList_Implementation()
@@ -193,6 +180,9 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS) return;
 
+	FPlayerInformation* Info = PS->PlayerInfo.GetPlayerInformation(GetUniqueID());
+	if (!Info) return;
+
 	PS->GetCardType(GetUniqueID(), SingleCard, OutActiveType, OutPassiveType);
 
 	if (OutActiveType == EActiveType::Missed)
@@ -203,6 +193,15 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	if (OutActiveType == EActiveType::Bang)
 	{
 		if (!bCanUseBang)return;
+		if (Info->CharacterCardType == ECharacterType::WillyTheKid)
+		{
+			Client_SelectTarget();
+		}
+		else
+		{
+			bCanUseBang = false;
+			Client_SelectTarget();
+		}
 	}
 	bool bNeedsTarget = (OutActiveType == EActiveType::Bang ||
 		OutActiveType == EActiveType::Robbery ||
@@ -213,7 +212,6 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	if (bNeedsTarget)
 	{
 		Client_SelectTarget(); // 나중에 실제 대상 선택 구현 예정
-		TargetPlayerID = 57; // 테스트용 임시 값
 
 		if (TargetPlayerID == 0)
 		{
@@ -263,29 +261,48 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
-		//카드 사용하기
+		// 내 턴에서 카드 사용 (자유롭게 선택)
 		break;
 
 	case ECardSelectPurpose::DiscardCard:
-	{
+		// 보유 카드 수 > 체력, 초과분 만큼 버려야 함
 		break;
-	}
 
 	case ECardSelectPurpose::GeneralStoreDraft:
-		//잡화점
+		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
 		break;
 
-	case ECardSelectPurpose::SelectFromDrawnCards:
-		//키트 칼슨
-		//ShowCardSelectUI(CardsToChooseFrom, RequiredSelectCount, Purpose);
-		//OnCardSelectionComplete(\보유카드목록\, 플레이어가 선택한거UI에서 선택값, const 3, ECardSelectPurpose::SelectFromDrawnCards:)
+	case ECardSelectPurpose::KitCarlsonDrawCard:
+		// 키트 칼슨 능력 – 카드 3장 중 2장 선택
+		//MyInfo.SelectableCards 를 화면에 띄워야하고 뽑아야되는 카드 수는 2
+		break;
+
+	case ECardSelectPurpose::StealFromOpponent:
+		// 상대의 보유 카드 중 1장을 선택 (정보가 안 보일 수 있음)
+		//MyInfo.SelectableCards = Target.MyCard 를 화면에 뒷면으로 띄워야하고 뽑아야되는 카드 수는 1
+		break;
+
+	case ECardSelectPurpose::RespondToDuel:
+		// 결투 중 뱅 카드 선택
+		// 보유 카드 띄우기 1장 선택(뱅만)
+		break;
+
+	case ECardSelectPurpose::RespondToIndians:
+		// 인디언 카드 대응 – 뱅 카드 선택
+		// 보유 카드 중 1장 선택(뱅만)
+		break;
+
+	case ECardSelectPurpose::RespondToAttack:
+		// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
+		// 보유카드 중 1장 선택(Missed)만
 		break;
 
 	default:
+		UE_LOG(LogTemp, Warning, TEXT("Unknown Card Select Purpose"));
 		break;
 	}
-	//ShowCardSelectUI(CardsToChooseFrom, RequiredSelectCount, Purpose);
 }
+
 
 
 void ABangPlayerController::OnCardSelectionComplete(
@@ -294,48 +311,68 @@ void ABangPlayerController::OnCardSelectionComplete(
 	int32 RequiredSelectCount,                      // 선택해야 할 개수
 	ECardSelectPurpose Purpose)                     // 선택 목적
 {
-	if (SelectedCards.Num() != RequiredSelectCount)return;
 
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	//if (!PS || !PS->CardManager)return;
 
 	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(GetUniqueID());
-	if (!MyInfo)
-	{
-		UE_LOG(LogTemp, Error, TEXT("PlayerInfo를 찾을 수 없음"));
-		return;
-	}
+	if (!MyInfo)return;
 
-	//UBangCardManager* CM = PS->CardManager;
+	bool bAllowEmptySelection = (
+		Purpose == ECardSelectPurpose::RespondToDuel ||
+		Purpose == ECardSelectPurpose::RespondToIndians ||
+		Purpose == ECardSelectPurpose::RespondToAttack
+		);
+
+	if (!bAllowEmptySelection && SelectedCards.Num() != RequiredSelectCount)return;
+
 
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
+	{
 		//카드 사용하기
+		Client_HandleCardSelection(SelectedCards[0]);
 		break;
-
+	}
 	case ECardSelectPurpose::DiscardCard:
 	{
 		for (const FSingleCard& Card : SelectedCards)
 		{
-			//보유 카드에서 제거
+			//보유 카드에서 제거 후 버린카드덱에 추가
 			MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
-
-			//버린 카드 덱에 추가
-			//PS->CardManager->ReorderUsedCards(Card);
+			PS->RestoreCard(GetUniqueID(), Card);
 		}
 
 		// 턴 종료 호출
-		// PS->Server_EndTurn();
+		PS->Server_EndTurn(GetUniqueID());
 		break;
 	}
 
 	case ECardSelectPurpose::GeneralStoreDraft:
-		//잡화점
+		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
+		//MyInfo.SelectableCards 삭제 선택한 카드 보유카드에 추가.
+		break;
+
+	case ECardSelectPurpose::KitCarlsonDrawCard:
+		// 키트 칼슨 능력 – 카드 3장 중 2장 선택
+		// 안뽑은 1장을 뽑을카드더미에 올리기
 		break;
 
 	case ECardSelectPurpose::StealFromOpponent:
-		//키트 칼슨
+		// 상대의 보유 카드 중 1장을 선택 (정보가 안 보일 수 있음)
+		break;
+
+	case ECardSelectPurpose::RespondToDuel:
+		// 결투 중 뱅 카드 선택
+		break;
+
+	case ECardSelectPurpose::RespondToIndians:
+		// 인디언 카드 대응 – 뱅 카드 선택
+		break;
+
+	case ECardSelectPurpose::RespondToAttack:
+		// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
 		break;
 
 	default:
