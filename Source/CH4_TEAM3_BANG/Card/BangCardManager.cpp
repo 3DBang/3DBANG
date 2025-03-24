@@ -2,6 +2,7 @@
 
 #include "Card/BaseCard/BangCardBase.h"
 #include "BangCardDataAsset.h"
+#include "HairStrandsInterface.h"
 #include "ActiveCard/BangActiveCard.h"
 #include "JobCard/BangJobCard.h"
 #include "PassiveCard/BangPassiveCard.h"
@@ -188,6 +189,19 @@ void UBangCardManager::ReorderAvailCards(const FSingleCard HandedCard)
 			AvailCards.CardList.Add(HandedCard);
 			break;
 		}
+	}
+}
+
+void UBangCardManager::CheckCardSymbolFromAvailCards(const int32 CardCounts, FCardCollection& OutCards)
+{
+	if (AvailCards.CardList.Num() <= CardCounts || AvailCards.CardList.Num() == 0)
+	{
+		ReorderCards();
+	}
+
+	for (int16 i = 0; i < CardCounts; i++)
+	{
+		OutCards.CardList.Add(AvailCards.CardList[i]);
 	}
 }
 

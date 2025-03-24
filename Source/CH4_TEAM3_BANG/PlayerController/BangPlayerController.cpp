@@ -49,12 +49,6 @@ void ABangPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	bShowMouseCursor = true;*/
-
-	//카드매니저 초기화
-	UBangGameInstance* BangGameInstance = GetGameInstance<UBangGameInstance>();
-	FCardManagerInstance OutCardManager;
-	BangGameInstance->GetCardManager(OutCardManager);
-	CardManager = OutCardManager.CardManager;
 }
 
 void ABangPlayerController::StartMyTurn()
@@ -149,13 +143,15 @@ void ABangPlayerController::Client_SelectCard_Implementation()
 void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSingleCard& SingleCard)
 {
     uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
-	if (!CardManager || !SingleCard.Card)return;
-
+	if (!SingleCard.Card)return;
 
 	EActiveType OutActiveType;
 	EPassiveType OutPassiveType;
 
-	CardManager->GetCardTypeFromDataAsset(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, OutActiveType, OutPassiveType);
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	if (!PS) return;
+
+	PS->GetCardType(GetUniqueID(), SingleCard, OutActiveType, OutPassiveType);
 
 	if (OutActiveType == EActiveType::Missed)
 	{
@@ -280,8 +276,6 @@ void ABangPlayerController::OnCardSelectionComplete(
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
-
-
 void ABangPlayerController::MouseClicked()
 {
 	FHitResult HitResult;
@@ -407,6 +401,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	}
 	
 }
+
 void ABangPlayerController::Client_SetInputEnabled_Implementation(bool IsAttacker)
 {
 	if (!IsLocalController())
@@ -484,8 +479,8 @@ void ABangPlayerController::Server_CloseCamera_Implementation()
 	{
 		GM->CloseCamera();
 	}
-
 }
+
 void ABangPlayerController::Client_CloseCamera_Implementation()
 {
 	if (!IsLocalController())
@@ -585,7 +580,6 @@ void ABangPlayerController::Server_UseCard_Implementation(const FSingleCard& Sin
 	PS->UseCard(FromID, SingleCard, TargetID);
 }
 
-
 UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const FName& Tag)
 {
 	TArray<UCameraComponent*> BangCameras;
@@ -599,6 +593,7 @@ UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const 
 	}
 	return nullptr;
 }
+
 void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32 StencilValue)
 {
 	if (!IsLocalController())
@@ -617,6 +612,7 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
 	}
 }
+
 ///////////////////////////
 //// 찬호 추가 
 //////////////////////////
@@ -638,7 +634,7 @@ void ABangPlayerController::NotifyHUDLoaded()
 	{
 		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 		{
-			//BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
+			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }
