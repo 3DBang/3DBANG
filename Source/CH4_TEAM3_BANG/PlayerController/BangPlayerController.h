@@ -51,6 +51,7 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnRep_PlayerState() override; // PS가 다 생성되고 난 뒤에 호출
 	
 ///////////////////////////
 ////서버 관련 로직 작성란
@@ -219,7 +220,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_RespondSelectCard();
 
-protected:
 	UFUNCTION()
 	void PlayerInfoUpdatedEvent();
 };

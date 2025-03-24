@@ -43,15 +43,24 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
-
-	TObjectPtr<ABangPlayerState> PlayerState = Cast<ABangPlayerState>(PlayerState);
-	PlayerState->FOnPlayerInfoUpdated.AddDynamic(this, &ABangPlayerController::PlayerInfoUpdatedEvent);
 	
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	bShowMouseCursor = true;*/
+}
+
+void ABangPlayerController::OnRep_PlayerState()
+{
+	if (const TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(PlayerState))
+	{
+		BangPlayerState->FOnPlayerInfoUpdated.AddDynamic(this, &ABangPlayerController::PlayerInfoUpdatedEvent);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ABangPlayerController::BeginPlay() PlayerState NULL"));
+	}
 }
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
@@ -927,6 +936,6 @@ void ABangPlayerController::Server_StartTest_Implementation()
 
 void ABangPlayerController::TestButtonCLicked()
 {
+	UE_LOG(LogTemp, Error, TEXT("TestButtonCLicked"));
 	Server_StartTest();
-
 }
