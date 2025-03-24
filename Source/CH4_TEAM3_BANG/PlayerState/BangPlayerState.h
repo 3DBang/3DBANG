@@ -10,7 +10,7 @@ UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerState : public APlayerState
 {
 	GENERATED_BODY()
-	
+
 public:
 	ABangPlayerState();
 
@@ -48,15 +48,15 @@ public:
 	// 카드사용에 대한 응답 (PS -> PS)
 	UFUNCTION()
 	void UseCardReturn(const int32& FromUniqueID, const FPlayerCardSymbol& SingleCard, const int32& ToUniqueID, const EActiveType& ActiveType, const EPassiveType& PassiveType);
-	
+
 	void FindTargetPlayerState(const uint32 TargetUniqueID, TObjectPtr<ABangPlayerState>& OutPlayerState) const;
-	
+
 	/////////////////////
 	/// 서버통신
 	/////////////////////
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn(const int32 InPlayerUniqueID);
-	
+
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(
 		const int32 FromUniqueID,
@@ -67,7 +67,7 @@ public:
 	// 플레이어 사망 처리
 	UFUNCTION(Server, Reliable)
 	void Server_PlayerDead(const int32 FromUniqueID);
-	
+
 	// 플레이어 카드 뽑기
 	UFUNCTION(Server, Reliable)
 	void Server_DrawCard(const uint32 FromUniqueID, const uint16 CardCount);
@@ -75,7 +75,7 @@ private:
 	// 카드매니저
 	UPROPERTY()
 	TObjectPtr<UBangCardManager> CardManager;
-	
+
 	// 심볼, 번호 정보로 카드리스트에서 카드를 찾아온다.
 	UFUNCTION()
 	FCardCollection GetCardListFromCardManager(const FPlayerInformation& Info) const;
@@ -85,7 +85,5 @@ private:
 	FString FPlayerInformationToString(const FPlayerInformation& Info);
 	UFUNCTION()
 	FString FPlayerCollectionToString(const FPlayerCollection& Collection);
-	
+
 };
-
-

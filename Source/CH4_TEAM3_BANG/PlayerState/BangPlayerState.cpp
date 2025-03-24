@@ -6,9 +6,7 @@
 #include "Instance/BangGameInstance.h"
 #include "Net/UnrealNetwork.h"
 
-static int32 GlobalPlayerCounter = 1;
-
-ABangPlayerState::ABangPlayerState(): PlayerStat()
+ABangPlayerState::ABangPlayerState()
 {
 	bReplicates = true;
 }
@@ -17,8 +15,6 @@ void ABangPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority())
-	
 	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()))
 	{
 		FCardManagerInstance OutCardManager;
@@ -28,8 +24,6 @@ void ABangPlayerState::BeginPlay()
 	}
 }
 
-
-void ABangPlayerState::Server_UpdateStruct_Implementation(const FPlayerStat& NewStruct)
 void ABangPlayerState::OnRep_PlayerInfo()
 {
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
@@ -84,21 +78,21 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 	case EActiveType::None:
 		break;
 	case EActiveType::Bang:
-		{
-			FPlayerCardSymbol SingleSymbolCard;
-			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
-			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
+	{
+		FPlayerCardSymbol SingleSymbolCard;
+		SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
+		SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
 
-			TObjectPtr<ABangPlayerState> OutPlayerState;
-			FindTargetPlayerState(ToUniqueID, OutPlayerState);
-			OutPlayerState->UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
-			break;
-		}
+		TObjectPtr<ABangPlayerState> OutPlayerState;
+		FindTargetPlayerState(ToUniqueID, OutPlayerState);
+		OutPlayerState->UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
+		break;
+	}
 	case EActiveType::Missed:
-		{
-			
-			break;
-		}
+	{
+
+		break;
+	}
 	case EActiveType::Stagecoach:
 		break;
 	case EActiveType::WellsFargoBank:
@@ -146,10 +140,10 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 	case EPassiveType::Winchester:
 		break;
 	}
-	
+
 	if (ToUniqueID == 0) // 사용 대상이 없을때 (자기 자신한테 사용)
 	{
-		
+
 	}
 
 	RestoreCard(FromUniqueID, SingleCard);
@@ -159,19 +153,19 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCardSymbol& SingleCard, const int32& ToUniqueID, const EActiveType& ActiveType, const EPassiveType& PassiveType)
 {
 	if (!CardManager) return;
-	
+
 	switch (ActiveType)
 	{
 	case EActiveType::None:
 		break;
 	case EActiveType::Bang:
+	{
+		FPlayerCollection PlayerCollection;
+		if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::SlabTheKiller)
 		{
-			FPlayerCollection PlayerCollection;
-			if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::SlabTheKiller)
-			{
-				// 빗나감 두개 써야 막아지도록 PC에서 설정	
-			}
+			// 빗나감 두개 써야 막아지도록 PC에서 설정	
 		}
+	}
 	case EActiveType::Missed:
 		break;
 	case EActiveType::Stagecoach:
@@ -257,7 +251,7 @@ void ABangPlayerState::Server_UseCard_Implementation(const int32 FromUniqueID, c
 
 void ABangPlayerState::UseCardToAll(const int32 FromUniqueID, FSingleCard SingleCard)
 {
-	
+
 }
 
 void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard)
@@ -287,7 +281,7 @@ void ABangPlayerState::Server_PlayerDead_Implementation(const int32 FromUniqueID
 	const EJobType JobType = PlayerInfo.GetPlayerInformation(FromUniqueID)->JobCardType;
 	FPlayerCardCollection CardList;
 	PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
-	
+
 	GameMode->PlayerDead(FromUniqueID, PlayerCharacter, JobType, CardList);
 }
 
@@ -311,7 +305,7 @@ void ABangPlayerState::Server_DrawCard_Implementation(const uint32 FromUniqueID,
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
 		return;
 	}
-	
+
 	GameMode->ForceUpdate_DrawCard(FromUniqueID, CardCount);
 }
 
@@ -326,14 +320,14 @@ void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& O
 FCardCollection ABangPlayerState::GetCardListFromCardManager(const FPlayerInformation& Info) const
 {
 	FCardCollection CardCollection;
-	
+
 	for (auto [SymbolType, SymbolNumber] : Info.MyCards.PlayerCards)
 	{
 		FSingleCard OutFoundCard;
-		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber,OutFoundCard);
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
 		CardCollection.CardList.Add(OutFoundCard);
 	}
-	
+
 	return CardCollection;
 }
 
@@ -341,12 +335,12 @@ FCardCollection ABangPlayerState::GetCardListFromCardManager(const FPlayerInform
 FString ABangPlayerState::FPlayerInformationToString(const FPlayerInformation& Info)
 {
 	FString String = FString::Printf(TEXT("ID: %u, Name: %s, HP: %d/%d, RangeToMe: %d, RangeFromMe: %d"),
-									 Info.PlayerUniqueID,
-									 *Info.PlayerName,
-									 Info.CurrentHealth,
-									 Info.MaxHealth,
-									 Info.Range,
-									 Info.CharacterRange);
+		Info.PlayerUniqueID,
+		*Info.PlayerName,
+		Info.CurrentHealth,
+		Info.MaxHealth,
+		Info.Range,
+		Info.CharacterRange);
 
 	FCardCollection CardCollection = GetCardListFromCardManager(Info);
 
@@ -354,7 +348,7 @@ FString ABangPlayerState::FPlayerInformationToString(const FPlayerInformation& I
 	{
 		String += FString::Printf(TEXT(" Card: %s"), *CardList.Card->CardName.ToString());
 	}
-	
+
 	return String;
 }
 
@@ -367,4 +361,3 @@ FString ABangPlayerState::FPlayerCollectionToString(const FPlayerCollection& Col
 	}
 	return Output;
 }
-

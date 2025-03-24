@@ -20,7 +20,7 @@ void UBangInGameChattingWidget::NativeConstruct()
 	{
 		StartButton->OnClicked.AddDynamic(this, &UBangInGameChattingWidget::OnStartButtonClicked);
 	}
-	
+
 	if (IsValid(TestButton))
 	{
 		TestButton->OnClicked.AddDynamic(this, &UBangInGameChattingWidget::OnTestButtonClicked);
@@ -64,8 +64,6 @@ void UBangInGameChattingWidget::OnTextCommittedFunction(const FText& Text, const
 	{
 		if (Text.IsEmpty()) return;
 
-		ABangPlayerController* Controller = Cast<ABangPlayerController>(GetOwningPlayer());
-		if (!Controller)
 		ABangPlayerController* BangPlayerController = Cast<ABangPlayerController>(GetOwningPlayer());
 		if (!BangPlayerController)
 		{
@@ -73,9 +71,6 @@ void UBangInGameChattingWidget::OnTextCommittedFunction(const FText& Text, const
 			return;
 		}
 
-		Controller->Server_RequestSendChatMessage(Text.ToString());
-
-		
 		BangPlayerController->SendMessageToServer(Text.ToString());
 		ChatTextField->SetText(FText::FromString(""));
 	}
