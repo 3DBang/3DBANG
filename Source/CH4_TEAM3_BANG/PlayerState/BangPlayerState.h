@@ -54,7 +54,6 @@ public:
 	// 컨트롤러가 카드 버릴때 호출
 	UFUNCTION()
 	void RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard);
-
 	
 	// 턴 시작
 	UFUNCTION()

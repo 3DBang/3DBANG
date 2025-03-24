@@ -48,9 +48,13 @@ void ABangPlayerState::GainPlayerHealth(const uint32& TargetUniqueID, int32 Amou
 	}
 }
 
-void ABangPlayerState::OnRep_PlayerInfo()
+void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 {
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
+
+	// 딜리게이트 뺴서 PC에서 GetCard 호출 UpdateCardList
+	
+	/*
 	const FString Message = FPlayerCollectionToString(PlayerInfo);
 	GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
 	for (int32 i = 0; i < PlayerInfo.Players.Num(); ++i)
@@ -65,6 +69,7 @@ void ABangPlayerState::OnRep_PlayerInfo()
 			*UEnum::GetValueAsString(Info.JobCardType),
 			*UEnum::GetValueAsString(Info.CharacterCardType));
 	}
+	*/
 }
 
 // 컨트롤러가 카드타입 조회
@@ -108,6 +113,7 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 	{
 		FSingleCard OutFoundCard;
 		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
 		OutCardCollection.CardList.Add(OutFoundCard);
 	}
 }
