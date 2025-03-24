@@ -194,24 +194,56 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartTest"));
+	Players.Players.Empty();
 
-	ArrangeSeats();
+	// 호스트 설정
+	FPlayerInformation PlayerA;
+	PlayerA.PlayerUniqueID = 100;
+	PlayerA.PlayerName = TEXT("Alice");
+	PlayerA.MaxHealth = 4;
+	PlayerA.CurrentHealth = 3;
+	PlayerA.Range = 1;
+	PlayerA.CharacterRange = 2;
+	PlayerA.bIsMyTurn = true;
+	PlayerA.JobCardType = EJobType::Officer;
+	PlayerA.CharacterCardType = ECharacterType::BartCassidy;
+	Players.Players.Add(PlayerA);
 
+	// 게스트 설정
+	FPlayerInformation PlayerB;
+	PlayerB.PlayerUniqueID = 200;
+	PlayerB.PlayerName = TEXT("Bob");
+	PlayerB.MaxHealth = 5;
+	PlayerB.CurrentHealth = 5;
+	PlayerB.Range = 0;
+	PlayerB.CharacterRange = 1;
+	PlayerB.bIsMyTurn = false;
+	PlayerB.JobCardType = EJobType::Outlaw;
+	PlayerB.CharacterCardType = ECharacterType::JesseJones;
+	Players.Players.Add(PlayerB);
+
+	UE_LOG(LogTemp, Warning, TEXT("Players created: %d"), Players.Players.Num());
+
+	// 동기화
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
-		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
+		const TObjectPtr<ABangPlayerController> PC = Cast<ABangPlayerController>(It->Get());
+		const TObjectPtr<ABangPlayerState> PS = PC->GetPlayerState<ABangPlayerState>();
 
-		for (FPlayerInformation Player : Players.Players)
+		if (!PS)
 		{
-			Player.CurrentHealth = 2;
+			UE_LOG(LogTemp, Error, TEXT("PlayerState not found for controller: %s"), *PC->GetName());
+			continue;
 		}
-		
-		// 최초 등록 동기화
-		BangPlayerState->PlayerInfo = Players;
-		BangPlayerState->ForceNetUpdate();
+
+		PS->PlayerInfo = Players;
+		PS->ForceNetUpdate();
+
+		UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *PC->GetName());
 	}
 }
+
+
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
 void ABangGameMode::ForceUpdate_StartGame_Real()

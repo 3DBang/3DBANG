@@ -29,6 +29,18 @@ void ABangPlayerState::OnRep_PlayerInfo()
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
 	const FString Message = FPlayerCollectionToString(PlayerInfo);
 	GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
+	for (int32 i = 0; i < PlayerInfo.Players.Num(); ++i)
+	{
+		const FPlayerInformation& Info = PlayerInfo.Players[i];
+		UE_LOG(LogTemp, Warning, TEXT("[OnRep] Player %d Info:"), i);
+		UE_LOG(LogTemp, Warning, TEXT("  Name: %s, ID: %d"), *Info.PlayerName, Info.PlayerUniqueID);
+		UE_LOG(LogTemp, Warning, TEXT("  HP: %d/%d"), Info.CurrentHealth, Info.MaxHealth);
+		UE_LOG(LogTemp, Warning, TEXT("  RangeToMe: %d, RangeFromMe: %d"), Info.Range, Info.CharacterRange);
+		UE_LOG(LogTemp, Warning, TEXT("  IsMyTurn: %s"), Info.bIsMyTurn ? TEXT("true") : TEXT("false"));
+		UE_LOG(LogTemp, Warning, TEXT("  Job: %s, Character: %s"),
+			*UEnum::GetValueAsString(Info.JobCardType),
+			*UEnum::GetValueAsString(Info.CharacterCardType));
+	}
 }
 
 // 컨트롤러가 카드 조회 호출용
