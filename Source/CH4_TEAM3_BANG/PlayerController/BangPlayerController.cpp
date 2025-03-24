@@ -44,7 +44,10 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
-	
+
+	// 플레이어 스테이트에 UniqueID등록
+	const TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(PlayerState);
+	BangPlayerState->SetUniqueIDFromController(GetUniqueID());
 	
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);

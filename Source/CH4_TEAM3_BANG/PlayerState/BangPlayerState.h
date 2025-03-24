@@ -22,6 +22,14 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerInfo)
 	FPlayerCollection PlayerInfo;
 
+	// UniqueID 등록
+	UFUNCTION()
+	FORCEINLINE_DEBUGGABLE void SetUniqueIDFromController(const int32 InPlayerControllerUniqueID) { PlayerControllerUniqueID = InPlayerControllerUniqueID; }
+
+	// UniqueID 조회
+	UFUNCTION()
+	FORCEINLINE_DEBUGGABLE int32 GetUniqueIDFromController() const { return PlayerControllerUniqueID; }
+	
 	// 플레이어 Info가 서버에서 변경됐을떄 호출되는 함수
 	UFUNCTION()
 	void OnRep_PlayerInfo();
@@ -54,7 +62,6 @@ public:
 	// 컨트롤러가 카드 버릴때 호출
 	UFUNCTION()
 	void RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard);
-
 	
 	// 턴 시작
 	UFUNCTION()
@@ -112,6 +119,10 @@ private:
 	// 심볼, 번호 정보로 카드리스트에서 카드를 찾아온다.
 	UFUNCTION()
 	FCardCollection GetCardListFromCardManager(const FPlayerInformation& Info) const;
+
+	// 본인 컨트롤러 UniqueID
+	UPROPERTY()
+	int32 PlayerControllerUniqueID;
 
 	// 디버그용
 	UFUNCTION()
