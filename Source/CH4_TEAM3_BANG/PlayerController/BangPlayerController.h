@@ -55,9 +55,7 @@ protected:
 ///////////////////////////
 ////서버 관련 로직 작성란
 //////////////////////////
-public:
-	void StartMyTurn();
-	
+public:	
 	UPROPERTY()
 	bool bCanUseBang;
 
