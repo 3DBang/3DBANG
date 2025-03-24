@@ -69,8 +69,7 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCardReturn(bool IsAble);
-
-
+	
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn();
 
@@ -109,13 +108,19 @@ public:
 		int32 RequiredSelectCount,
 		ECardSelectPurpose Purpose);
 
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateCardList();
+	
+	UFUNCTION(Client, Reliable)
+	void Client_OnTurnStart();
+	
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
 	void UpdatePlayerUI(FName& NewText);
 	void UpdatePlayerHP(int32 NewHP);
 	void SetInitializeHP(int32 NewHP);
-
+	
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
 	
@@ -214,5 +219,9 @@ public:
 	// 플레이어에게 카드 선택권 요구 응답
 	UFUNCTION(Server, Reliable)
 	void Server_RespondSelectCard();
+
+	
 };
+
+
 

@@ -16,6 +16,7 @@
 #include "GameState/BangGameState.h"
 #include "UI/BangInGameChattingWidget.h"
 #include "UI/BangPlayerHUD.h"
+#include "UI/CardList.h"
 
 ABangPlayerController::ABangPlayerController()
 {}
@@ -75,6 +76,56 @@ void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator
 	}	
 }
 
+void ABangPlayerController::Client_OnTurnStart_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: It's my turn! Controller Name: %s"), *GetName());
+	ABangPlayerState* BangPlayerState= GetPlayerState<ABangPlayerState>();
+
+	if (!PlayerState)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: PlayerState is null!"));
+		return;
+	}
+	
+	
+}
+
+void ABangPlayerController::Client_UpdateCardList_Implementation()
+{
+	UE_LOG(LogTemp, Log, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] UI 카드리스트 업데이트"));
+
+	ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
+	if (!PlayerState)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] PlayerState 없음"));
+		return;
+	}
+
+	FCardCollection MyCardCollection;
+	BangPlayerState->GetCard(GetUniqueID(), MyCardCollection); // PS에서 카드 정보 가져오기
+
+	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
+	{
+		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
+		{
+			CardListWidget->ClearCards(); // 기존 카드 리스트 비우기
+
+			for (const FSingleCard& Card : MyCardCollection.CardList)
+			{
+				CardListWidget->AddCard(Card); // 카드 위젯 추가
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] CardListWidgetInstance 없음 HUD 있음"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] BangHUD 없음"));
+	}
+}
+
 void ABangPlayerController::UpdatePlayerUI(FName& NewText)
 {
 	if (HasAuthority())
@@ -119,12 +170,18 @@ void ABangPlayerController::Client_SelectCard_Implementation()
 
 	const FCardCollection& MyCards = CurrentCardCollection;
 	//이걸 기반으로 카드 UI에 표시하기
-
+	
 	// 유저가 클릭한 카드의 정보로
 	//FSingleCard SelectedCard = /* 유저가 선택한 카드 */;
 	//Client_HandleCardSelection(SelectedCard);
 }
 
+
+/**
+ * 카드 선택에 대한 클라이언트 작업을 처리합니다. 선택된 카드와 필요에 따라 타겟 플레이어를 기반으로 적절한 서버 작업을 실행합니다.
+ *
+ * @param SingleCard 선택된 카드에 대한 정보를 포함하는 구조체입니다.
+ */
 void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSingleCard& SingleCard)
 {
     uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정

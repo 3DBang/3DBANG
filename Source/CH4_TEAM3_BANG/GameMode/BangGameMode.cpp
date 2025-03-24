@@ -238,8 +238,6 @@ void ABangGameMode::StartTest()
 
 		PS->PlayerInfo = Players;
 		PS->ForceNetUpdate();
-
-		UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *PC->GetName());
 	}
 }
 
@@ -306,6 +304,10 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 		// 최초 등록 동기화
 		BangPlayerState->PlayerInfo = Players;
 		BangPlayerState->ForceNetUpdate();
+
+		//플레이어 카드리스트 초기화
+		CastingController->Client_UpdateCardList(); 
+		UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *CastingController->GetName());
 	}
 
 	AdvanceGameTurn();
@@ -389,8 +391,9 @@ void ABangGameMode::AdvanceGameTurn()
 
 		FBangSinglePlayerState CurrentPlayerState;
 		GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
-		CurrentPlayerState.State->PlayerInfo.GetPlayerInformation(CurrentTurnPlayerUniqeID)->MyCards.AddCardCollectionToPlayerCards(DrawCards);
-		CurrentPlayerState.State->ForceNetUpdate();
+
+		//PlayerStete로 전달
+		CurrentPlayerState.State->StartTurn(CurrentTurnPlayerUniqeID, DrawCards);
 		
 		CurrentPlayerTurnState = EPlayerTurnState::UseCard;
 	}
