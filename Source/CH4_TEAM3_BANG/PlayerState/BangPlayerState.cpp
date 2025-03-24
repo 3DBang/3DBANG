@@ -2,6 +2,7 @@
 
 #include "Card/BangCardManager.h"
 #include "Card/BaseCard/BangCardBase.h"
+#include "Card/PassiveCard/BangPassiveCard.h"
 #include "GameMode/BangGameMode.h"
 #include "GameState/BangGameState.h"
 #include "Instance/BangGameInstance.h"
@@ -27,6 +28,28 @@ void ABangPlayerState::BeginPlay()
 	}
 }
 
+void ABangPlayerState::LoosePlayerHealth(const uint32& TargetUniqueID, int32 Amount)
+{
+	// Message::피 닳은거 알림
+	PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth -= Amount;
+	
+	if (PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth <= 0)
+	{
+		// 사망처리
+		Server_PlayerDead(TargetUniqueID);
+	}
+}
+
+void ABangPlayerState::GainPlayerHealth(const uint32& TargetUniqueID, int32 Amount)
+{
+	PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth += Amount;
+	
+	if (PlayerInfo.GetPlayerInformation(TargetUniqueID)->MaxHealth < PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth)
+	{
+		PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth = PlayerInfo.GetPlayerInformation(TargetUniqueID)->MaxHealth;
+	}
+}
+
 void ABangPlayerState::OnRep_PlayerInfo()
 {
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
@@ -46,10 +69,41 @@ void ABangPlayerState::OnRep_PlayerInfo()
 	}
 }
 
+// 컨트롤러가 카드타입 조회
+void ABangPlayerState::GetCardType(const int32 InPlayerUniqueID, const FSingleCard& Card, EActiveType& OutActiveType, EPassiveType& OutPassiveType)
+{
+	if (InPlayerUniqueID == 0) return;
+	
+	CardManager->GetCardTypeFromDataAsset(Card.Card->SymbolType, Card.Card->SymbolNumber, OutActiveType, OutPassiveType);
+}
+
+// 컨트롤러가 카드 조회 응답용
+void ABangPlayerState::Client_CheckCardSymbolReturn_Implementation(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection)
+{
+	for (FPlayerInformation Player : PlayerInfo.Players)
+	{
+		// Message::전역 메세지
+
+		// 해당 플레이어
+		if (Player.PlayerUniqueID == FromUniqueID)
+		{
+			for (auto [SymbolType, SymbolNumber] : PlayerCardCollection.PlayerCards)
+			{
+				if (SymbolType == ESymbolType::Heart)
+				{
+					// Message::피안단거 알림
+					return;
+				}
+				LoosePlayerHealth(FromUniqueID, 1);
+			}
+		}
+	}
+}
+
 // 컨트롤러가 카드 조회 호출용
 void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection)
 {
-	if (InPlayerUniqueID == 0) return;
+	if (InPlayerUniqueID == 0 || !CardManager) return;
 
 	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
 	for (auto [SymbolType, SymbolNumber] : PlayerInformation->MyCards.PlayerCards)
@@ -65,13 +119,6 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 	// 카드 각종 분기 처리 카드를 사용할 수 없는 경우에는 PC에 응답 후 리턴처리
 	if (!CardManager) return;
 
-	// 거리 접근 가능한지 확인
-	if (!PlayerInfo.IsDistanceAble(FromUniqueID, ToUniqueID))
-	{
-		// 거리 안된다고 PC에 알려줘야함
-		return;
-	}
-
 	EActiveType OutActiveType;
 	EPassiveType OutPassiveType;
 	CardManager->GetCardTypeFromDataAsset(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, OutActiveType, OutPassiveType);
@@ -82,74 +129,239 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 		break;
 	case EActiveType::Bang:
 		{
+			if (ToUniqueID == 0) return;
+			// 거리 접근 가능한지 확인
+			if (!PlayerInfo.IsBangDistanceAble(FromUniqueID, ToUniqueID))
+			{
+				// 거리 안된다고 PC에 알려줘야함
+				return;
+			}
+			
 			FPlayerCardSymbol SingleSymbolCard;
 			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
 			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
 
-			TObjectPtr<ABangPlayerState> OutPlayerState;
+			FBangSinglePlayerState OutPlayerState;
 			FindTargetPlayerState(ToUniqueID, OutPlayerState);
-			OutPlayerState->UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
+			OutPlayerState.State->UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
 			break;
 		}
 	case EActiveType::Missed:
 		{
-			
+			// PC 에서 못쓰게 막음
 			break;
 		}
 	case EActiveType::Stagecoach:
-		break;
+		{
+			Server_DrawCard(FromUniqueID, 2, true);
+			break;
+		}
 	case EActiveType::WellsFargoBank:
-		break;
+		{
+			Server_DrawCard(FromUniqueID, 3, true);
+			break;
+		}
 	case EActiveType::Beer:
-		break;
+		{
+			PlayerInfo.GetPlayerInformation(FromUniqueID)->CurrentHealth++;
+			break;
+		}
 	case EActiveType::GatlingGun:
-		break;
+		{
+			// 모든 플레이어 공격 빗나감으로 막을수 있음 술통 사용가능 거리 x
+			// 1. 술통 회피
+			// 2. 빗나감 사용여부 응답
+			FPlayerCardSymbol SingleSymbolCard;
+			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
+			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
+			
+			for (FPlayerInformation Player : PlayerInfo.Players)
+			{
+				if (FromUniqueID == Player.PlayerUniqueID) continue;
+
+				FBangSinglePlayerState OutPlayerState;
+				FindTargetPlayerState(ToUniqueID, OutPlayerState);
+				OutPlayerState.State->UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
+			}
+			
+			break;
+		}
 	case EActiveType::Robbery:
-		break;
+		{
+			if (ToUniqueID == 0) return;
+			// 거리 접근 가능한지 확인
+			if (!PlayerInfo.IsDistanceAble(FromUniqueID, ToUniqueID))
+			{
+				// 거리 안된다고 PC에 알려줘야함
+				return;
+			}
+
+			// PC에서 뺏을 카드 선택 ToUniqueID
+			
+			break;
+		}
 	case EActiveType::CatBalou:
-		break;
+		{
+			if (ToUniqueID == 0) return;
+			// 거리 x
+
+			// PC 에 지목할카드
+			break;
+		}
 	case EActiveType::Saloon:
-		break;
+		{
+			// 모든 플레이어 체력 회복
+			for (FPlayerInformation Player : PlayerInfo.Players)
+			{
+				GainPlayerHealth(Player.PlayerUniqueID, 1);
+			}
+			break;
+		}
 	case EActiveType::Duel:
-		break;
+		{
+			if (ToUniqueID == 0) return;
+			// PC에 전달
+			FPlayerCardSymbol SingleSymbolCard;
+			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
+			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
+			
+			UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
+			break;
+		}
 	case EActiveType::GeneralStore:
-		break;
+		{
+			FPlayerCardSymbol SingleSymbolCard;
+			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
+			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
+			
+			Server_DrawCard(FromUniqueID, PlayerInfo.Players.Num(), false);
+			UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
+			break;
+		}
 	case EActiveType::Indians:
-		break;
+		{
+			FPlayerCardSymbol SingleSymbolCard;
+			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
+			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
+
+			UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
+			break;
+		}
 	case EActiveType::Jail:
-		break;
+		{
+			if (ToUniqueID == 0) return;
+			if (PlayerInfo.GetPlayerInformation(ToUniqueID)->JobCardType == EJobType::Officer)
+			{
+				// 보완관한테는 감옥 못 씀
+				return;
+			}
+			FPlayerCardSymbol SingleSymbolCard;
+			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
+			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
+
+			UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
+			break;
+		}
 	case EActiveType::Dynamite:
-		break;
+		{
+			if (ToUniqueID == 0) return;
+
+			break;
+		}
 	}
 
-	switch (OutPassiveType)
+	if (OutPassiveType != EPassiveType::None)
 	{
-	case EPassiveType::None:
-		break;
-	case EPassiveType::Barrel:
-		break;
-	case EPassiveType::Scope:
-		break;
-	case EPassiveType::Mustang:
-		break;
-	case EPassiveType::Schofield:
-		break;
-	case EPassiveType::Volcanic:
-		break;
-	case EPassiveType::Remington:
-		break;
-	case EPassiveType::Carbine:
-		break;
-	case EPassiveType::Winchester:
-		break;
-	}
-	
-	if (ToUniqueID == 0) // 사용 대상이 없을때 (자기 자신한테 사용)
-	{
+		if (CheckIsCardAble(FromUniqueID, SingleCard))
+		{
+			FPlayerCardSymbol SingleSymbolCard;
+			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
+			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
+			PlayerInfo.GetPlayerInformation(FromUniqueID)->EquippedCards.PlayerCards.Add(SingleSymbolCard);
+		}
+		else
+		{
+			// PC에 장착 불가라고 호출
+			return;
+		}
 		
+		switch (OutPassiveType)
+		{
+		case EPassiveType::None:
+			break;
+		case EPassiveType::Barrel:
+			break;
+		case EPassiveType::Scope:
+			{
+				PlayerInfo.GetPlayerInformation(FromUniqueID)->Range++;
+				break;
+			}
+		case EPassiveType::Mustang:
+			{
+				PlayerInfo.GetPlayerInformation(FromUniqueID)->CharacterRange++;
+				break;
+			}
+		case EPassiveType::Schofield:
+			{
+				PlayerInfo.GetPlayerInformation(FromUniqueID)->GunRange = 2;
+				break;
+			}
+		case EPassiveType::Volcanic:
+			{
+				PlayerInfo.GetPlayerInformation(FromUniqueID)->GunRange = 1;
+				break;
+			}
+		case EPassiveType::Remington:
+			{
+				PlayerInfo.GetPlayerInformation(FromUniqueID)->GunRange = 3;
+				break;
+			}
+		case EPassiveType::Carbine:
+			{
+				PlayerInfo.GetPlayerInformation(FromUniqueID)->GunRange = 4;
+				break;
+			}
+		case EPassiveType::Winchester:
+			{
+				PlayerInfo.GetPlayerInformation(FromUniqueID)->GunRange = 5;
+				break;
+			}
+		}
 	}
 
 	RestoreCard(FromUniqueID, SingleCard);
+}
+
+// 패시브 카드 중복 장착 방지용
+bool ABangPlayerState::CheckIsCardAble(const int32 FromUniqueID, const FSingleCard& SingleCard)
+{
+	if (!CardManager) return false;
+	
+	for (auto [SymbolType, SymbolNumber] : PlayerInfo.GetPlayerInformation(FromUniqueID)->EquippedCards.PlayerCards)
+	{
+		// const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& OutFoundCard
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+
+		if (SingleCard == OutFoundCard)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void ABangPlayerState::Server_CheckCardSymbol_Implementation(const uint32& FromUniqueID, const uint16& CardCount)
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->CheckCardSymbol(FromUniqueID, CardCount);
 }
 
 // 카드 사용에 대한 응답 (상호작용)
@@ -168,6 +380,12 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 			{
 				// 빗나감 두개 써야 막아지도록 PC에서 설정	
 			}
+			else if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::Jourdonnais)
+			{
+				// 카드 펼치기 해야함
+				Server_CheckCardSymbol(ToUniqueID, 1);
+				return;
+			}
 		}
 	case EActiveType::Missed:
 		break;
@@ -178,7 +396,26 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 	case EActiveType::Beer:
 		break;
 	case EActiveType::GatlingGun:
-		break;
+		{
+			for (FPlayerCardSymbol PlayerCard : PlayerInfo.GetPlayerInformation(ToUniqueID)->EquippedCards.PlayerCards)
+			{
+				FSingleCard OutFoundCard;
+				CardManager->GetCardBySymbolAndNumberFromDataAsset(PlayerCard.SymbolType, PlayerCard.SymbolNumber, OutFoundCard);
+
+				if (TObjectPtr<UBangPassiveCard> PassiveCard = Cast<UBangPassiveCard>(OutFoundCard.Card))
+				{
+					if (PassiveCard->PassiveType == EPassiveType::Barrel)
+					{
+						
+					}
+				}
+			}
+			
+			
+			
+			//PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards.Contains();
+			break;
+		}
 	case EActiveType::Robbery:
 		break;
 	case EActiveType::CatBalou:
@@ -186,11 +423,20 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 	case EActiveType::Saloon:
 		break;
 	case EActiveType::Duel:
-		break;
+		{
+			// PC에 뱅 사용여부 전달
+			break;
+		}
 	case EActiveType::GeneralStore:
-		break;
+		{
+			// PC에 카드 선택 요구 SelectableCards에서 하나 선택하고 MyCards로 갱신한뒤 SelectableCards 다 삭제해야함
+			break;
+		}
 	case EActiveType::Indians:
-		break;
+		{
+			// PC에 뱅 내라고 요청
+			break;
+		}
 	case EActiveType::Jail:
 		break;
 	case EActiveType::Dynamite:
@@ -219,7 +465,7 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 	}
 }
 
-void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, TObjectPtr<ABangPlayerState>& OutPlayerState) const
+void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, FBangSinglePlayerState& OutPlayerState) const
 {
 	const TObjectPtr<UWorld> World = GetWorld();
 	if (!World) return;
@@ -232,7 +478,7 @@ void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, TObjec
 			{
 				if (OtherPlayerState != this && OtherPlayerState->GetPlayerController()->GetUniqueID() == TargetUniqueID)
 				{
-					OutPlayerState = OtherPlayerState;
+					OutPlayerState.State = OtherPlayerState;
 					return;
 				}
 			}
@@ -364,7 +610,7 @@ void ABangPlayerState::Server_EndTurn_Implementation(const int32 InPlayerUniqueI
 	GameMode->EndTurn(InPlayerUniqueID);
 }
 
-void ABangPlayerState::Server_DrawCard_Implementation(const uint32 FromUniqueID, const uint16 CardCount)
+void ABangPlayerState::Server_DrawCard_Implementation(const uint32 FromUniqueID, const uint16 CardCount, const bool bIsForce)
 {
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (!GameMode)
@@ -372,8 +618,15 @@ void ABangPlayerState::Server_DrawCard_Implementation(const uint32 FromUniqueID,
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
 		return;
 	}
-	
-	GameMode->ForceUpdate_DrawCard(FromUniqueID, CardCount);
+
+	if (bIsForce)
+	{
+		GameMode->ForceUpdate_DrawCard(FromUniqueID, CardCount);
+	}
+	else
+	{
+		GameMode->DrawCard(CardCount);
+	}
 }
 
 void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
