@@ -141,3 +141,16 @@ void UBangInGameChattingWidget::UpdatePlayerList(const TArray<FPlayerInformation
 		AddPlayerToList(DisplayText, bIsAlive);  
 	}
 }
+
+void UBangInGameChattingWidget::AddGameLog(const FString& LogText)
+{
+	if (!IsValid(GameLogScrollBox)) return;
+
+	UTextBlock* LogEntry = NewObject<UTextBlock>(this);
+	LogEntry->SetText(FText::FromString(LogText));
+	LogEntry->Font.Size = 18;
+	LogEntry->SetColorAndOpacity(FSlateColor(FLinearColor::Yellow));
+
+	GameLogScrollBox->AddChild(LogEntry);
+	GameLogScrollBox->ScrollToEnd();
+}

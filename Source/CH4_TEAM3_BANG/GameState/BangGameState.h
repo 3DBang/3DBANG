@@ -33,7 +33,6 @@ public:
 
 	void BroadcastPlayerListToClients();
 
-	
 	UFUNCTION()
 	void OnRep_Message();
 
@@ -42,4 +41,14 @@ public:
 
 	UFUNCTION()
 	void ReceiveMessage(const FString& ChatMessage, const FString& FromNickname, const FString& ReciverNickname);
+
+	UFUNCTION()
+	void BroadcastGameLogToClients(const FString& GameLogMessage);
+
+	UFUNCTION()
+	void OnRep_GameLog();
+
+	UPROPERTY(ReplicatedUsing = OnRep_GameLog)
+	FString CurrentGameLog;
+
 };

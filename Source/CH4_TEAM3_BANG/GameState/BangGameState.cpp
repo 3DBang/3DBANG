@@ -72,6 +72,24 @@ void ABangGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	DOREPLIFETIME(ABangGameState, FromPlayerNickname);
 	DOREPLIFETIME(ABangGameState, ToPlayerNickname);
 	DOREPLIFETIME(ABangGameState, PlayerList);
+	DOREPLIFETIME(ABangGameState, CurrentGameLog);
 
+}
 
+void ABangGameState::BroadcastGameLogToClients(const FString& GameLogMessage)
+{
+	CurrentGameLog = GameLogMessage;
+
+	
+}
+
+void ABangGameState::OnRep_GameLog()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			PC->Client_UpdateGameLogUI(CurrentGameLog);
+		}
+	}
 }

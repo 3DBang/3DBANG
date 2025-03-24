@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Card/BangCardManager.h"
-
 #include "GameFramework/PlayerController.h"
 #include "BangPlayerController.generated.h"
 
@@ -51,8 +50,6 @@ public:
 
 	UPROPERTY()
 	TObjectPtr<UBangCardManager> CardManager;
-
-
 protected:
 	virtual void BeginPlay() override;
 	///////////////////////////
@@ -72,7 +69,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_UseCardReturn(bool IsAble);
 
-
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn();
 
@@ -87,6 +83,10 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Init")
 	void Init();
+
+	//정빈
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateGameLogUI(const FString& GameLogMessage);
 
 	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
 	UFUNCTION(Client, Reliable)

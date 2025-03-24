@@ -125,9 +125,8 @@ void ABangPlayerController::Client_SelectCard_Implementation()
 
 void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSingleCard& SingleCard)
 {
-	uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
-	if (!CardManager || !SingleCard.Card)return;
-
+	uint32 TargetPlayerID = 0;
+	if (!CardManager || !SingleCard.Card) return;
 
 	EActiveType OutActiveType;
 	EPassiveType OutPassiveType;
@@ -139,6 +138,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		UE_LOG(LogTemp, Warning, TEXT("Missed card cannot be used on your own turn"));
 		return;
 	}
+
 	bool bNeedsTarget = (OutActiveType == EActiveType::Bang ||
 		OutActiveType == EActiveType::Robbery ||
 		OutActiveType == EActiveType::CatBalou ||
@@ -147,9 +147,8 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 
 	if (bNeedsTarget)
 	{
-		Client_SelectTarget(); // 나중에 실제 대상 선택 구현 예정
-		TargetPlayerID = 57; // 테스트용 임시 값
-
+		Client_SelectTarget();
+		TargetPlayerID = 57; // 테스트용
 		if (TargetPlayerID == 0)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Target required but not selected"));
@@ -158,9 +157,12 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	}
 	else
 	{
+
+		// 카드 사용
 		Server_UseCard(SingleCard, TargetPlayerID);
 	}
 }
+
 
 void ABangPlayerController::Server_EndTurn_Implementation()
 {
@@ -744,5 +746,16 @@ void ABangPlayerController::Server_RequestPlayerListBroadcast_Implementation()
 	if (ABangGameState* GS = GetWorld()->GetGameState<ABangGameState>())
 	{
 		GS->BroadcastPlayerListToClients();
+	}
+}
+
+void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString& GameLogMessage)
+{
+	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		if (UBangInGameChattingWidget* ChatWidget = HUD->ChattingWidgetInstance)
+		{
+			ChatWidget->AddGameLog(GameLogMessage);
+		}
 	}
 }

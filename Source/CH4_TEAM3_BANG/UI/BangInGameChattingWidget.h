@@ -56,6 +56,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerList(const TArray<FPlayerInformation>& PlayerList);
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UScrollBox> GameLogScrollBox;
+
+	UFUNCTION(BlueprintCallable)
+	void AddGameLog(const FString& LogMessage);
 protected:
 	virtual void NativeConstruct() override;
 

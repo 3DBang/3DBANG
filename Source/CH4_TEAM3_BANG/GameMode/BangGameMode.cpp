@@ -190,7 +190,6 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 	}
 }
 
-// 테스트용으로 쓰는중
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartTest"));
@@ -241,9 +240,20 @@ void ABangGameMode::StartTest()
 
 		UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *PC->GetName());
 	}
+
+	EActiveType TestActive = EActiveType::Bang;
+	EPassiveType TestPassive = EPassiveType::Barrel;
+
+	FString ActionText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)TestActive);
+	FString PassiveText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)TestPassive);
+	FString LogMessage = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *PlayerA.PlayerName, *PassiveText);
+
+	// 클라이언트로 전송
+	if (ABangGameState* GS = GetGameState<ABangGameState>())
+	{
+		GS->BroadcastGameLogToClients(LogMessage);
+	}
 }
-
-
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
 void ABangGameMode::ForceUpdate_StartGame_Real()
