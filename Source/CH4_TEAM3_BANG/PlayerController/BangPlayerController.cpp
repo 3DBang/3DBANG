@@ -4,6 +4,10 @@
 #include "GameMode/BangGameMode.h"
 #include "PlayerState/BangPlayerState.h"
 #include "BangCharacter/BangCharacter.h"
+#include "Card/BangCardManager.h"
+#include "Card/BaseCard/BangCardBase.h"
+#include "Instance/BangGameInstance.h"
+
 #include "CharacterUIActor/BangUIActor.h"
 #include "Camera/CameraComponent.h" 
 #include "Camera/CameraActor.h"
@@ -75,6 +79,12 @@ void ABangPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	bShowMouseCursor = true;*/
+
+	//카드매니저 초기화
+	UBangGameInstance* BangGameInstance = GetGameInstance<UBangGameInstance>();
+	FCardManagerInstance OutCardManager;
+	BangGameInstance->GetCardManager(OutCardManager);
+	CardManager = OutCardManager.CardManager;
 }
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
@@ -134,40 +144,54 @@ void ABangPlayerController::SetInitializeHP(int32 NewHP)
 
 void ABangPlayerController::Client_SelectCard_Implementation()
 {
-    // UI 창 띄우기 (보유 중인 카드 표시)
-    // 예시: UWidget* CardUI = CreateWidget<UWidget>(this, CardUIClass);
-    // CardUI->AddToViewport();
+	// PlayerState에서 받아온 CurrentCardCollection을 기반으로
+	// 유저가 실제로 들고 있는 카드 중에서 선택하도록 UI 연동
 
-    // 사용자가 카드 선택 (입력 대기)
-    EActiveType SelectedActiveCard = EActiveType::None;
-    EPassiveType SelectedPassiveCard = EPassiveType::None;
+	const FCardCollection& MyCards = CurrentCardCollection;
+	//이걸 기반으로 카드 UI에 표시하기
 
-    // 카드 선택 후 처리 (별도 함수 호출)
-    Client_HandleCardSelection(SelectedActiveCard);
+	// 유저가 클릭한 카드의 정보로
+	//FSingleCard SelectedCard = /* 유저가 선택한 카드 */;
+	//Client_HandleCardSelection(SelectedCard);
 }
 
-void ABangPlayerController::Client_HandleCardSelection_Implementation(EActiveType SelectedCard)
+void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSingleCard& SingleCard)
 {
     uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
+	if (!CardManager || !SingleCard.Card)return;
 
-    bool NeedsTarget = (SelectedCard == EActiveType::Bang ||
-        SelectedCard == EActiveType::Robbery ||
-        SelectedCard == EActiveType::CatBalou ||
-        SelectedCard == EActiveType::Duel ||
-        SelectedCard == EActiveType::Jail);
 
-    if (NeedsTarget)
-    {
-        Client_SelectTarget();
-        // 공격할 대상 선택 (레이 트레이싱 등)
-        TargetPlayerID = 57;//SelectTarget();
-        if (TargetPlayerID == 0)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("대상이 필요한 카드인데 선택되지 않음!"));
-            return;
-        }
-    }
-    Server_UseCard(SelectedCard, TargetPlayerID);
+	EActiveType OutActiveType;
+	EPassiveType OutPassiveType;
+
+	CardManager->GetCardTypeFromDataAsset(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, OutActiveType, OutPassiveType);
+
+	if (OutActiveType == EActiveType::Missed)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Missed card cannot be used on your own turn"));
+		return;
+	}
+	bool bNeedsTarget = (OutActiveType == EActiveType::Bang ||
+		OutActiveType == EActiveType::Robbery ||
+		OutActiveType == EActiveType::CatBalou ||
+		OutActiveType == EActiveType::Duel ||
+		OutActiveType == EActiveType::Jail);
+
+	if (bNeedsTarget)
+	{
+		Client_SelectTarget(); // 나중에 실제 대상 선택 구현 예정
+		TargetPlayerID = 57; // 테스트용 임시 값
+
+		if (TargetPlayerID == 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Target required but not selected"));
+			return;
+		}
+	}
+	else 
+	{
+		Server_UseCard(SingleCard, TargetPlayerID);
+	}
 }
 
 ///////////////////////////
@@ -469,14 +493,16 @@ void ABangPlayerController::Client_SelectTarget_Implementation()
     }
 }
 
-void ABangPlayerController::Server_UseCard_Implementation(EActiveType SelectedCard, uint32 TargetPlayerID)
+void ABangPlayerController::Server_UseCard_Implementation(const FSingleCard& SingleCard, int32 TargetID)
 {
-    ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
-    if (BangPlayerState)
-    {
-        //BangPlayerState->ProcessCardUsage(SelectedCard, TargetPlayerID);
-    }
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	if (!PS) return;
+
+	const int32 FromID = PS->GetUniqueID(); // 혹은 PlayerState에 저장된 내 ID
+	PS->UseCard(FromID, SingleCard, TargetID);
 }
+
+
 UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const FName& Tag)
 {
 	TArray<UCameraComponent*> BangCameras;
@@ -566,7 +592,7 @@ void ABangPlayerController::NotifyHUDLoaded()
 	{
 		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 		{
-			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
+			//BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }
