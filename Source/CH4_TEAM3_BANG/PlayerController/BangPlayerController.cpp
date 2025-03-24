@@ -43,6 +43,9 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
+
+	TObjectPtr<ABangPlayerState> PlayerState = Cast<ABangPlayerState>(PlayerState);
+	PlayerState->FOnPlayerInfoUpdated.AddDynamic(this, &ABangPlayerController::PlayerInfoUpdatedEvent);
 	
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
@@ -805,6 +808,11 @@ void ABangPlayerController::SendMessageToServer(FString Message)
 
 	// 전체챗팅
 	Server_SendMessage(Message, PlayerNickname, ToPlayerNickname);
+}
+
+void ABangPlayerController::PlayerInfoUpdatedEvent()
+{
+	UpdateCardList();
 }
 
 // 플레이어에게 카드 선택권 요구 응답
