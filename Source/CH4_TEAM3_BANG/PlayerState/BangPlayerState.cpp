@@ -153,7 +153,6 @@ void ABangPlayerState::GetCardByCharacter(const ECharacterType CharacterType, FS
 
 void ABangPlayerState::GetCardByJobType(const EJobType JobType, FSingleCard& OutSingleCard)
 {
-	
 }
 
 void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& SingleCard, const int32 ToUniqueID)
@@ -448,6 +447,7 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 			Server_CheckCardSymbol(ToUniqueID, 1);
 			return;
 		}
+		
 	}
 	case EActiveType::Missed:
 		break;
