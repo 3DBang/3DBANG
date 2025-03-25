@@ -25,6 +25,7 @@ enum class ESymbolType : uint8
 UENUM(BlueprintType)
 enum class EJobType : uint8
 {
+	None UMETA(DisplayName = "None"),
 	Officer UMETA(DisplayName = "Officer"),
 	SubOfficer UMETA(DisplayName = "SubOfficer"),
 	Outlaw UMETA(DisplayName = "Outlaw"),

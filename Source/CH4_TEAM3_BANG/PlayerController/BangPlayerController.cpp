@@ -166,9 +166,18 @@ void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 		return;
 	}
 
+	//플레이어 스테이트의 플레이어 인포를 써보기
+	FPlayerInformation* PlayerInformation =  BangPlayerState->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
 	FCardCollection MyCardCollection;
 	BangPlayerState->GetCard(PlayerUniqueID, MyCardCollection); // PS에서 카드 정보 가져오기
-	
+	FSingleCard JobCard;
+	FSingleCard CharacterCard;
+	// 직업카드 및 캐릭터 카드 세팅
+	if (PlayerInformation)
+	{
+		BangPlayerState->GetCardByJobType(PlayerInformation->JobCardType, JobCard);
+		BangPlayerState->GetCardByCharacter(PlayerInformation->CharacterCardType, CharacterCard);
+	}
 	
 	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] Player ID: %d"), PlayerUniqueID);
 
@@ -176,9 +185,10 @@ void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 	{
 		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
 		{
-			CardListWidget->ClearCards(); // 기존 카드 리스트 비우기
-			
-			//CardListWidget->AddCardToCharacterCardSlot();
+			CardListWidget->ClearCards(); // 기존 카드 리스트 비우기 여기서 캐릭터와 직업 카드도 지워줌
+
+			CardListWidget->AddCardToJobCardSlot(JobCard);
+			CardListWidget->AddCardToCharacterCardSlot(CharacterCard);
 			
 			for (const FSingleCard& Card : MyCardCollection.CardList)
 			{
