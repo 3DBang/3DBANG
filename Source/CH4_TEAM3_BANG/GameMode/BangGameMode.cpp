@@ -180,6 +180,11 @@ void ABangGameMode::ForceUpdate_RemovePlayer(const uint32& UniqueID)
 	{
 		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
 		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
+
+		if (GetNetMode() == NM_ListenServer)
+		{
+			BangPlayerState->HandlePlayerInfoUpdated();
+		}
 		
 		BangPlayerState->PlayerInfo.RemovePlayer(UniqueID);
 		BangPlayerState->ForceNetUpdate();
@@ -240,10 +245,10 @@ void ABangGameMode::StartTest()
 	for (int i = 0; i < LobbyPlayers.Players.Num(); ++i)
 	{
 		FPlayerInformation PlayerInformation;
-		PlayerInformation.PlayerName = LobbyPlayers.Players[i].PlayerName;
+		FString PlayerName = FString::Printf(TEXT("Player[%d]"), LobbyPlayers.Players[i].PlayerUniqueID);
+		PlayerInformation.PlayerName = PlayerName;
 		PlayerInformation.PlayerUniqueID = LobbyPlayers.Players[i].PlayerUniqueID;
-
-		if (i == 0)
+		if (i == 0) // 보안관
 		{
 			PlayerInformation.JobCardType = EJobType::Officer;
 			PlayerInformation.CharacterCardType = ECharacterType::ElGringo;
@@ -318,6 +323,11 @@ void ABangGameMode::StartTest()
 		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
 
 		BangPlayerState->PlayerInfo = Players;
+		if (GetNetMode() == NM_ListenServer)
+		{
+			BangPlayerState->HandlePlayerInfoUpdated();
+		}
+		
 		BangPlayerState->ForceNetUpdate();
 	}
 
@@ -409,6 +419,10 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
 		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
 
+		if (GetNetMode() == NM_ListenServer)
+		{
+			BangPlayerState->HandlePlayerInfoUpdated();
+		}
 		// 최초 등록 동기화
 		BangPlayerState->PlayerInfo = Players;
 		BangPlayerState->ForceNetUpdate();
