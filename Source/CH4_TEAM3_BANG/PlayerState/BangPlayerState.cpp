@@ -487,7 +487,7 @@ void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, FBangS
 		{
 			if (ABangPlayerState* OtherPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
 			{
-				if (OtherPlayerState != this && OtherPlayerState->GetPlayerController()->GetUniqueID() == TargetUniqueID)
+				if (OtherPlayerState != this && OtherPlayerState->PlayerUniqueID == TargetUniqueID)
 				{
 					OutPlayerState.State = OtherPlayerState;
 					return;
