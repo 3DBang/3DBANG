@@ -25,13 +25,17 @@ public:
 	UPROPERTY(Replicated)
 	FString ToPlayerNickname;
 
-	UPROPERTY(ReplicatedUsing = OnRep_PlayerList)
-	TArray<FPlayerInformation> PlayerList;
+	UFUNCTION()
+	void BroadcastPlayerListToClients();
+
+	UFUNCTION()
+	void ReceivePlayerList(const TArray<FPlayerInformation>& InPlayerList);
 
 	UFUNCTION()
 	void OnRep_PlayerList();
 
-	void BroadcastPlayerListToClients();
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerList)
+	TArray<FPlayerInformation> PlayerList;
 
 	UFUNCTION()
 	void OnRep_Message();
@@ -50,5 +54,9 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_GameLog)
 	FString CurrentGameLog;
+
+	UFUNCTION()
+	void ReceiveGameLog(const FString& GameLogMessage);
+
 
 };

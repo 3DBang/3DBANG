@@ -148,7 +148,7 @@ void UBangInGameChattingWidget::AddGameLog(const FString& LogText)
 
 	UTextBlock* LogEntry = NewObject<UTextBlock>(this);
 	LogEntry->SetText(FText::FromString(LogText));
-	LogEntry->Font.Size = 18;
+	LogEntry->Font.Size = 10;
 	LogEntry->SetColorAndOpacity(FSlateColor(FLinearColor::Yellow));
 
 	GameLogScrollBox->AddChild(LogEntry);

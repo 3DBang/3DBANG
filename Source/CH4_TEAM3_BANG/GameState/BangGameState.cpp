@@ -47,23 +47,31 @@ void ABangGameState::BroadcastPlayerListToClients()
 	{
 		if (ABangPlayerState* BPS = Cast<ABangPlayerState>(PS))
 		{
-			PlayerList.Append(BPS->PlayerInfo.Players); //  FPlayerCollection.Players는 TArray<FPlayerInformation>
+			PlayerList.Append(BPS->PlayerInfo.Players);
 		}
 	}
 
-	// RepNotify 작동하도록 수동 호출 (서버에서만)
+	// 서버에서만 호출 (클라이언트 RPC 호출은 안 함)
 	OnRep_PlayerList();
+
+	// 명시적으로 클라이언트 RPC 호출
+	ReceivePlayerList(PlayerList);
 }
 
-void ABangGameState::OnRep_PlayerList()
+void ABangGameState::ReceivePlayerList(const TArray<FPlayerInformation>& InPlayerList)
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			PC->Client_UpdatePlayerListUI(PlayerList);
+			PC->Client_UpdatePlayerListUI(InPlayerList);
 		}
 	}
+}
+
+void ABangGameState::OnRep_PlayerList()
+{
+	UE_LOG(LogTemp, Log, TEXT("PlayerList Replicated: %d players"), PlayerList.Num());
 }
 void ABangGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
@@ -80,16 +88,26 @@ void ABangGameState::BroadcastGameLogToClients(const FString& GameLogMessage)
 {
 	CurrentGameLog = GameLogMessage;
 
-	
+	// 서버용 로그만 찍음 (클라이언트 RPC 호출하지 않음)
+	OnRep_GameLog();
+
+	// 클라이언트에 명시적으로 RPC 호출
+	ReceiveGameLog(CurrentGameLog);
 }
 
-void ABangGameState::OnRep_GameLog()
+void ABangGameState::ReceiveGameLog(const FString& GameLogMessage)
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			PC->Client_UpdateGameLogUI(CurrentGameLog);
+			PC->Client_UpdateGameLogUI(GameLogMessage);
 		}
 	}
+}
+
+void ABangGameState::OnRep_GameLog()
+{
+	// 서버에서 로그 확인용
+	UE_LOG(LogTemp, Log, TEXT("[GameLog]: %s"), *CurrentGameLog);
 }

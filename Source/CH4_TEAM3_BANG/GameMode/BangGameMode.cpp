@@ -195,43 +195,69 @@ void ABangGameMode::StartTest()
 	UE_LOG(LogTemp, Warning, TEXT("StartTest"));
 	Players.Players.Empty();
 
-	// 호스트 설정
-	FPlayerInformation PlayerA;
-	PlayerA.PlayerUniqueID = 100;
-	PlayerA.PlayerName = TEXT("Alice");
-	PlayerA.MaxHealth = 4;
-	PlayerA.CurrentHealth = 3;
-	PlayerA.Range = 1;
-	PlayerA.CharacterRange = 2;
-	PlayerA.bIsMyTurn = true;
-	PlayerA.JobCardType = EJobType::Officer;
-	PlayerA.CharacterCardType = ECharacterType::BartCassidy;
-	Players.Players.Add(PlayerA);
-
-	// 게스트 설정
-	FPlayerInformation PlayerB;
-	PlayerB.PlayerUniqueID = 200;
-	PlayerB.PlayerName = TEXT("Bob");
-	PlayerB.MaxHealth = 5;
-	PlayerB.CurrentHealth = 5;
-	PlayerB.Range = 0;
-	PlayerB.CharacterRange = 1;
-	PlayerB.bIsMyTurn = false;
-	PlayerB.JobCardType = EJobType::Outlaw;
-	PlayerB.CharacterCardType = ECharacterType::JesseJones;
-	Players.Players.Add(PlayerB);
-
-	UE_LOG(LogTemp, Warning, TEXT("Players created: %d"), Players.Players.Num());
-
-	// 동기화
+	// 플레이어 목록을 실제 PlayerState로부터 생성
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		const TObjectPtr<ABangPlayerController> PC = Cast<ABangPlayerController>(It->Get());
-		const TObjectPtr<ABangPlayerState> PS = PC->GetPlayerState<ABangPlayerState>();
+		ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get());
+		ABangPlayerState* PS = PC ? PC->GetPlayerState<ABangPlayerState>() : nullptr;
 
 		if (!PS)
 		{
 			UE_LOG(LogTemp, Error, TEXT("PlayerState not found for controller: %s"), *PC->GetName());
+			continue;
+		}
+
+		/* 호스트 설정
+		FPlayerInformation PlayerA;
+		PlayerA.PlayerUniqueID = 100;
+		PlayerA.PlayerName = TEXT("Alice");
+		PlayerA.MaxHealth = 4;
+		PlayerA.CurrentHealth = 3;
+		PlayerA.Range = 1;
+		PlayerA.CharacterRange = 2;
+		PlayerA.bIsMyTurn = true;
+		PlayerA.JobCardType = EJobType::Officer;
+		PlayerA.CharacterCardType = ECharacterType::BartCassidy;
+		Players.Players.Add(PlayerA);
+
+		// 게스트 설정
+		FPlayerInformation PlayerB;
+		PlayerB.PlayerUniqueID = 200;
+		PlayerB.PlayerName = TEXT("Bob");
+		PlayerB.MaxHealth = 5;
+		PlayerB.CurrentHealth = 5;
+		PlayerB.Range = 0;
+		PlayerB.CharacterRange = 1;
+		PlayerB.bIsMyTurn = false;
+		PlayerB.JobCardType = EJobType::Outlaw;
+		PlayerB.CharacterCardType = ECharacterType::JesseJones;
+		Players.Players.Add(PlayerB);
+		*/
+
+		FPlayerInformation PlayerInfo;
+		PlayerInfo.PlayerUniqueID = 100;
+		PlayerInfo.PlayerName = PS->GetPlayerName();
+		PlayerInfo.MaxHealth = 4; // 임의로 설정하거나 실제 값 사용
+		PlayerInfo.CurrentHealth = 4; // 임의 설정
+		PlayerInfo.Range = 1;
+		PlayerInfo.CharacterRange = 2;
+		PlayerInfo.bIsMyTurn = false; // 현재 턴 관련 로직에 따라 설정
+		PlayerInfo.JobCardType = EJobType::Officer; // 예시 설정
+		PlayerInfo.CharacterCardType = ECharacterType::BartCassidy; // 예시 설정
+
+		Players.Players.Add(PlayerInfo);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Players created: %d"), Players.Players.Num());
+
+	// PlayerState에 동기화
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get());
+		ABangPlayerState* PS = PC ? PC->GetPlayerState<ABangPlayerState>() : nullptr;
+
+		if (!PS)
+		{
 			continue;
 		}
 
@@ -241,17 +267,30 @@ void ABangGameMode::StartTest()
 		UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *PC->GetName());
 	}
 
+	// 테스트 카드 설정
 	EActiveType TestActive = EActiveType::Bang;
 	EPassiveType TestPassive = EPassiveType::Barrel;
 
-	FString ActionText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)TestActive);
-	FString PassiveText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)TestPassive);
-	FString LogMessage = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *PlayerA.PlayerName, *PassiveText);
-
-	// 클라이언트로 전송
-	if (ABangGameState* GS = GetGameState<ABangGameState>())
+	// 실제 플레이어 중 첫 번째 플레이어의 이름을 가져와 출력 (예시)
+	if (Players.Players.Num() > 0)
 	{
-		GS->BroadcastGameLogToClients(LogMessage);
+		const FString& RealPlayerName = Players.Players[0].PlayerName;
+
+		FString ActiveCardText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)TestActive);
+		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)TestPassive);
+
+		// 액티브 카드 출력 예시
+		FString LogMessageActive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *ActiveCardText);
+
+		// 패시브 카드 출력 예시 (원하는대로 택일 가능)
+		FString LogMessagePassive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
+
+		// 최종적으로 사용할 카드 타입을 선택 (예: 액티브 카드 사용)
+		if (ABangGameState* GS = GetGameState<ABangGameState>())
+		{
+			GS->BroadcastGameLogToClients(LogMessageActive); // 액티브카드 사용시
+			//GS->BroadcastGameLogToClients(LogMessagePassive); // 패시브카드 사용시
+		}
 	}
 }
 
