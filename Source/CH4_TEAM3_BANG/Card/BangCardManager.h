@@ -172,6 +172,7 @@ private:
 	FCardCollection CharacterCards;
 	UPROPERTY()
 	FCardCollection JobCards;
+	// 개별 카드 배열
 
 	// 사용된 카드 덱
 	UPROPERTY()
