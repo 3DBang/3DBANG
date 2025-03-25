@@ -214,9 +214,9 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 // 플레이어 유니크 아이디 설정
 void ABangGameMode::SetPlayerUniqueID()
 {
-	for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
+	for (const TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
 	{
-		if (TObjectPtr<ABangPlayerState> BangPlayerState = BPC->GetPlayerState<ABangPlayerState>())
+		if (TObjectPtr<ABangPlayerState> BangPlayerState = BangPlayerController->GetPlayerState<ABangPlayerState>())
 		{
 			BangPlayerState->Client_SetUniqueId(PlayerUniqueIndex++);
 			UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] PlayerUniqueIndex: %d"), PlayerUniqueIndex);
@@ -339,15 +339,7 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 
 	CurrentGameState = EGameState::GamePlaying;
 
-	for (TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
-	{
-		if (TObjectPtr<ABangPlayerState> BangPlayerState = BangPlayerController->GetPlayerState<ABangPlayerState>())
-		{
-			BangPlayerState->Client_SetUniqueId(PlayerUniqueIndex++);
-			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::StartGame] PlayerUniqueIndex: %d"), PlayerUniqueIndex);
-		}
-	}
-	
+	SetPlayerUniqueID();
 	ArrangeSeats();
 	
 	// 직업 선택
