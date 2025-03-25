@@ -112,7 +112,6 @@ public:
 	void Client_SelectTarget();
 
 	UFUNCTION(Client, Reliable)
-
 	void Client_RequestCardSelection(const FCardCollection& CardsToChooseFrom,
 		int32 RequiredSelectCount,
 		ECardSelectPurpose Purpose);
@@ -121,8 +120,6 @@ public:
 	UFUNCTION()
 	void UpdateCardList();
 	
-	UFUNCTION(Client, Reliable)
-	void Client_RequestDiscardCards(const FCardCollection& CurrentCards, int32 DiscardCount);
 
 	UFUNCTION(Client, Reliable)
 	void Client_UpdatePlayerListUI(const TArray<FPlayerInformation>& PlayerList);
@@ -130,6 +127,7 @@ public:
 	///////////////////////////
 	//// 원명 추가 
 	//////////////////////////
+	UFUNCTION(Client, Reliable)
 	void Client_OnTurnStart(const FCardCollection& DrawCards);
 	
 ///////////////////////////

@@ -383,18 +383,15 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 		FPlayerCollection PlayerCollection;
 		if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::SlabTheKiller)
 		{
-			FPlayerCollection PlayerCollection;
-			if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::SlabTheKiller)
-			{
-				// 빗나감 두개 써야 막아지도록 PC에서 설정	
-			}
-			else if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::Jourdonnais)
-			{
-				// 카드 펼치기 해야함
-				Server_CheckCardSymbol(ToUniqueID, 1);
-				return;
-			}
+			// 빗나감 두개 써야 막아지도록 PC에서 설정	
 		}
+		else if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::Jourdonnais)
+		{
+			// 카드 펼치기 해야함
+			Server_CheckCardSymbol(ToUniqueID, 1);
+			return;
+		}
+		
 	}
 	case EActiveType::Missed:
 		break;

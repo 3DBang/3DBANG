@@ -200,151 +200,53 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
+
 	Players.Players.Empty();
 
-	// 플레이어 목록을 실제 PlayerState로부터 생성
+	// Player 정보 수집 및 셋업
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get());
 		ABangPlayerState* PS = PC ? PC->GetPlayerState<ABangPlayerState>() : nullptr;
 
-		if (!PS)
-		{
-			UE_LOG(LogTemp, Error, TEXT("PlayerState not found for controller: %s"), *PC->GetName());
-			continue;
-		}
-
-		/* 호스트 설정
-		FPlayerInformation PlayerA;
-		PlayerA.PlayerUniqueID = 100;
-		PlayerA.PlayerName = TEXT("Alice");
-		PlayerA.MaxHealth = 4;
-		PlayerA.CurrentHealth = 3;
-		PlayerA.Range = 1;
-		PlayerA.CharacterRange = 2;
-		PlayerA.bIsMyTurn = true;
-		PlayerA.JobCardType = EJobType::Officer;
-		PlayerA.CharacterCardType = ECharacterType::BartCassidy;
-		Players.Players.Add(PlayerA);
-
-		// 게스트 설정
-		FPlayerInformation PlayerB;
-		PlayerB.PlayerUniqueID = 200;
-		PlayerB.PlayerName = TEXT("Bob");
-		PlayerB.MaxHealth = 5;
-		PlayerB.CurrentHealth = 5;
-		PlayerB.Range = 0;
-		PlayerB.CharacterRange = 1;
-		PlayerB.bIsMyTurn = false;
-		PlayerB.JobCardType = EJobType::Outlaw;
-		PlayerB.CharacterCardType = ECharacterType::JesseJones;
-		Players.Players.Add(PlayerB);
-		*/
+		if (!PS) continue;
 
 		FPlayerInformation PlayerInfo;
-		PlayerInfo.PlayerUniqueID = 100;
-		PlayerInfo.PlayerName = PS->GetPlayerName();
-		PlayerInfo.MaxHealth = 4; // 임의로 설정하거나 실제 값 사용
-		PlayerInfo.CurrentHealth = 4; // 임의 설정
+		PlayerInfo.PlayerUniqueID = PC->GetUniqueID();
+
+		// 호스트 판별 (서버 + 로컬 컨트롤러)
+		if (PC->HasAuthority() && PC->IsLocalController())
+		{
+			PlayerInfo.PlayerName = FString::Printf(TEXT("Host[%d]"), PlayerInfo.PlayerUniqueID);
+			PlayerInfo.JobCardType = EJobType::Officer;
+			PlayerInfo.CharacterCardType = ECharacterType::BartCassidy;
+		}
+		else
+		{
+			PlayerInfo.PlayerName = FString::Printf(TEXT("Guest[%d]"), PlayerInfo.PlayerUniqueID);
+			PlayerInfo.JobCardType = EJobType::SubOfficer;
+			PlayerInfo.CharacterCardType = ECharacterType::CalamityJanet;
+		}
+
+		PlayerInfo.MaxHealth = 4;
+		PlayerInfo.CurrentHealth = 4;
 		PlayerInfo.Range = 1;
-		PlayerInfo.CharacterRange = 2;
-		PlayerInfo.bIsMyTurn = false; // 현재 턴 관련 로직에 따라 설정
-		PlayerInfo.JobCardType = EJobType::Officer; // 예시 설정
-		PlayerInfo.CharacterCardType = ECharacterType::BartCassidy; // 예시 설정
+		PlayerInfo.CharacterRange = 0;
+		PlayerInfo.bIsMyTurn = false;
 
 		Players.Players.Add(PlayerInfo);
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Players created: %d"), Players.Players.Num());
 
-	// PlayerState에 동기화
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get());
-		ABangPlayerState* PS = PC ? PC->GetPlayerState<ABangPlayerState>() : nullptr;
+	// 캐릭터/직업/카드 분배 및 턴 결정
+	TArray<EJobType> JobCards = { EJobType::Officer, EJobType::SubOfficer };
 
-		if (!PS)
-		{
-			continue;
-		}
-
-		PS->PlayerInfo = Players;
-		PS->ForceNetUpdate();
-
-		UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *PC->GetName());
-	}
-
-	// 테스트 카드 설정
-	EActiveType TestActive = EActiveType::Bang;
-	EPassiveType TestPassive = EPassiveType::Barrel;
-
-	// 실제 플레이어 중 첫 번째 플레이어의 이름을 가져와 출력 (예시)
-	if (Players.Players.Num() > 0)
-	{
-		const FString& RealPlayerName = Players.Players[0].PlayerName;
-
-		FString ActiveCardText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)TestActive);
-		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)TestPassive);
-
-		// 액티브 카드 출력 예시
-		FString LogMessageActive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *ActiveCardText);
-
-		// 패시브 카드 출력 예시 (원하는대로 택일 가능)
-		FString LogMessagePassive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
-
-		// 최종적으로 사용할 카드 타입을 선택 (예: 액티브 카드 사용)
-		if (ABangGameState* GS = GetGameState<ABangGameState>())
-		{
-			GS->BroadcastGameLogToClients(LogMessageActive); // 액티브카드 사용시
-			//GS->BroadcastGameLogToClients(LogMessagePassive); // 패시브카드 사용시
-		}
-	}
-	for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
-	{
-		if (BPC && BPC->PlayerState)
-		{
-			FPlayerInformation Player;
-			Player.PlayerUniqueID = BPC->GetUniqueID();
-
-			// 호스트 판별 조건 (서버 + 로컬)
-			if (BPC->HasAuthority() && BPC->IsLocalController())
-			{
-				FString PlayerName = FString::Printf(TEXT("Host[%d]"), Player.PlayerUniqueID);
-				Player.PlayerName = PlayerName;
-				Player.JobCardType = EJobType::Officer;
-				Player.CharacterCardType = ECharacterType::BartCassidy;
-			}
-			else
-			{
-				FString PlayerName = FString::Printf(TEXT("Guest[%d]"), Player.PlayerUniqueID);
-				Player.PlayerName = PlayerName;
-				Player.JobCardType = EJobType::SubOfficer;
-				Player.CharacterCardType = ECharacterType::CalamityJanet;
-			}
-
-			Player.MaxHealth = 4;
-			Player.CurrentHealth = 4;
-			Player.Range = 1;
-			Player.CharacterRange = 0;
-			Player.bIsMyTurn = false;
-
-			Players.Players.Add(Player);
-		}
-	}
-
-	CurrentGameState = EGameState::GamePlaying;
-	
-	UE_LOG(LogTemp, Warning, TEXT("Players created: %d"), Players.Players.Num());
-
-	TArray<EJobType> JobCards;
-	JobCards.Add(EJobType::Officer);
-	JobCards.Add(EJobType::SubOfficer);
-
-	FCardCollection CharacterCards;
-	for (int16 i = 0; i < Players.Players.Num(); i++)
+	for (int32 i = 0; i < Players.Players.Num(); ++i)
 	{
 		Players.Players[i].JobCardType = JobCards[i];
 		Players.Players[i].CharacterCardType = CardManager->GetCharacterCard();
+
 		if (Players.Players[i].CharacterCardType == ECharacterType::RoseDoolan)
 		{
 			Players.Players[i].Range++;
@@ -353,14 +255,15 @@ void ABangGameMode::StartTest()
 		{
 			Players.Players[i].CharacterRange++;
 		}
-		Players.Players[i].MaxHealth = CardManager->GetHealthByCharacteType(CardManager->GetCharacterCard());
 
-		// 최초 카드 분배
-		int16 Health = Players.Players[i].MaxHealth;
+		Players.Players[i].MaxHealth = CardManager->GetHealthByCharacteType(Players.Players[i].CharacterCardType);
+		Players.Players[i].CurrentHealth = Players.Players[i].MaxHealth;
+
 		FCardCollection Cards;
-		CardManager->HandCards(Health, Cards);
+		CardManager->HandCards(Players.Players[i].MaxHealth, Cards);
 		Players.Players[i].MyCards.AddCardCollectionToPlayerCards(Cards);
-		
+
+		// 첫 번째 플레이어 턴
 		if (JobCards[i] == EJobType::Officer)
 		{
 			CurrentTurnPlayerUniqeID = Players.Players[i].PlayerUniqueID;
@@ -369,28 +272,43 @@ void ABangGameMode::StartTest()
 		}
 	}
 
-	for (FPlayerInformation Player : Players.Players)
+	// PlayerState에 데이터 반영
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s"), *Player.PlayerName);
-		UE_LOG(LogTemp, Warning, TEXT("JobCardType: %d"), Player.JobCardType);
-		UE_LOG(LogTemp, Warning, TEXT("MaxHealth: %d"), Player.MaxHealth);
-		UE_LOG(LogTemp, Warning, TEXT("CharacterCardType: %d"), Player.CharacterCardType);
+		ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get());
+		ABangPlayerState* PS = PC ? PC->GetPlayerState<ABangPlayerState>() : nullptr;
+
+		if (PS)
+		{
+			PS->PlayerInfo = Players;
+			PS->ForceNetUpdate();
+		}
+	}
+
+	// 액티브/패시브 카드 사용 로그 출력 (→ 이 시점에 Players가 완성돼 있어야 함)
+	if (Players.Players.Num() > 0)
+	{
+		const FString& RealPlayerName = Players.Players[0].PlayerName;
+
+		FString ActiveCardText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)EActiveType::Bang);
+		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
+
+		FString LogMessageActive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *ActiveCardText);
+		FString LogMessagePassive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
+
+		if (ABangGameState* GS = GetGameState<ABangGameState>())
+		{
+			GS->BroadcastGameLogToClients(LogMessageActive);
+			//GS->BroadcastGameLogToClients(LogMessagePassive);
+		}
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("CurrentPlayerTurn: %d"), CurrentTurnPlayerUniqeID);
 
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
-		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
-
-		// 최초 등록 동기화
-		BangPlayerState->PlayerInfo = Players;
-		BangPlayerState->ForceNetUpdate();
-	}
-
+	// 턴 진행
 	AdvanceGameTurn();
 }
+
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
 void ABangGameMode::ForceUpdate_StartGame_Real()
