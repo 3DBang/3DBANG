@@ -58,6 +58,16 @@ void ABangPlayerState::Server_SetPlayerInfo_Implementation(const FPlayerCollecti
 {
 	PlayerInfo = NewInfo;
 	// OnRep_PlayerInfo() 호출
+
+	if (HasAuthority())
+	{
+		HandlePlayerInfoUpdated();
+	}
+}
+
+void ABangPlayerState::HandlePlayerInfoUpdated()
+{
+	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
 }
 
 void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
@@ -65,7 +75,10 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
 
 	// 딜리게이트 뺴서 PC에서 GetCard 호출 UpdateCardList
-	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
+	if (!HasAuthority())
+	{
+		HandlePlayerInfoUpdated();
+	}
 	
 	if (const TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(GetPlayerController()))
 	{
@@ -383,7 +396,6 @@ bool ABangPlayerState::CheckIsCardAble(const int32 FromUniqueID, const FSingleCa
 	
 	for (auto [SymbolType, SymbolNumber] : PlayerInfo.GetPlayerInformation(FromUniqueID)->EquippedCards.PlayerCards)
 	{
-		// const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& OutFoundCard
 		FSingleCard OutFoundCard;
 		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
 

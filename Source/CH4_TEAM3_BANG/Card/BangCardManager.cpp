@@ -159,6 +159,46 @@ void UBangCardManager::GetCardTypeFromDataAsset(const ESymbolType SymbolType, co
 	}
 }
 
+// DataAsset에서 Character 타입 받기 (서버에서 호출하면 안됨)
+void UBangCardManager::GetCardByCharacterTypeFromDataAsset(const ECharacterType CharacterType, FSingleCard& OutSingleCard) const
+{
+	if (!CardData) return;
+
+	for (const TObjectPtr<UBangCardBase> Card : CardData->Cards)
+	{
+		if (!Card) return;
+
+		if (const UBangCharacterCard* CharacterCard = Cast<UBangCharacterCard>(Card))
+		{
+			if (CharacterCard->CharacterType == CharacterType)
+			{
+				OutSingleCard.Card = Card;
+				break;
+			}
+		}
+	}
+}
+
+// DataAsset에서 Job 타입 받기 (서버에서 호출하면 안됨)
+void UBangCardManager::GetCardByJobTypeFromDataAsset(const EJobType JobType, FSingleCard& OutSingleCard) const
+{
+	if (!CardData) return;
+
+	for (const TObjectPtr<UBangCardBase> Card : CardData->Cards)
+	{
+		if (!Card) return;
+
+		if (const UBangJobCard* JobCard = Cast<UBangJobCard>(Card))
+		{
+			if (JobCard->JobType == JobType)
+			{
+				OutSingleCard.Card = Card;
+				break;
+			}
+		}
+	}
+}
+
 // 건내준 카드를 다시 사용된 카드 덱에 넣는다
 void UBangCardManager::ReorderUsedCards(const FSingleCard HandedCard)
 {
