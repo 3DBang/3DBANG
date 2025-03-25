@@ -1,16 +1,31 @@
+// TableCard.cpp
 
-
-#include "UI/Card/TableCard.h"
-#include "UI/Card/CardList.h"
+#include "TableCard.h"
+#include "Card.h"
+#include "Components/WrapBox.h"
 
 void UTableCard::InitializeCardList(const TArray<FSingleCard>& Cards)
 {
-	if (!CardListWidget) return;
-
-	CardListWidget->ClearCards();
-
-	for (const FSingleCard& Card : Cards)
+	if (!CardContainer || !CardWidgetClass)
 	{
-		CardListWidget->AddCard(Card);
+		UE_LOG(LogTemp, Error, TEXT("UTableCard: CardContainer 또는 CardWidgetClass가 없습니다."));
+		return;
+	}
+
+	// 혹시 기존에 있던 카드 제거
+	CardContainer->ClearChildren();
+
+	for (const FSingleCard& CardData : Cards)
+	{
+		UCard* CardWidget = CreateWidget<UCard>(GetWorld(), CardWidgetClass);
+		if (CardWidget)
+		{
+			CardWidget->InitializeWithCard(CardData);
+			CardContainer->AddChildToWrapBox(CardWidget);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UTableCard: 카드 위젯 생성 실패"));
+		}
 	}
 }

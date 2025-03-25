@@ -878,23 +878,35 @@ void ABangGameMode::CloseCamera()
 
 void ABangGameMode::Test_DrawAndLogCards()
 {
-	if (!CardManager)
+	if (!CardManager) return;
+
+	FCardCollection Drawn;
+	CardManager->HandCards(3, Drawn);
+	UE_LOG(LogTemp, Warning, TEXT(" Test_DrawAndLogCards() → 카드 수: %d"), Drawn.CardList.Num());
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[Test_DrawAndLogCards] CardManager is NULL"));
-		return;
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT(" 클라이언트에 카드 전달 중"));
+
+			PC->Client_ShowDrawnCards(Drawn.CardList);
+		}
 	}
+}
 
-	FCardCollection DrawnCards;
-	CardManager->HandCards(3, DrawnCards); // 카드 3장 뽑기
+void ABangGameMode::ShowTableCardsToAll()
+{
+	if (!CardManager) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("[Test_DrawAndLogCards] Drawn Cards:"));
+	FCardCollection Drawn;
+	CardManager->HandCards(3, Drawn);
 
-	for (const FSingleCard& Card : DrawnCards.CardList)
+	for (const TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
 	{
-		const FString CardName = Card.Card ? Card.Card->CardName.ToString() : TEXT("NULL");
-		const FString SymbolType = StaticEnum<ESymbolType>()->GetNameStringByValue((int64)Card.Card->SymbolType);
-		const int32 SymbolNumber = Card.Card->SymbolNumber;
-
-		UE_LOG(LogTemp, Warning, TEXT("  - %s | %s %d"), *CardName, *SymbolType, SymbolNumber);
+		if (BangPlayerController)
+		{
+			BangPlayerController->Client_ShowDrawnCards(Drawn.CardList);
+		}
 	}
 }

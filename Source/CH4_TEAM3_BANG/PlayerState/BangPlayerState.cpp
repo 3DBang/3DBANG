@@ -526,6 +526,11 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 	
 	// 플레이어 턴으로 변경 및 인포에 카드 추가
 	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
+	if (!PlayerInformation)
+	{
+		UE_LOG(LogTemp, Error, TEXT("StartTurn: PlayerInformation is nullptr for ID: %d"), InPlayerUniqueID);
+		return;
+	}
 	PlayerInformation->bIsMyTurn = true;
 	PlayerInformation->MyCards.AddCardCollectionToPlayerCards(DrawCards);
 	ForceNetUpdate();

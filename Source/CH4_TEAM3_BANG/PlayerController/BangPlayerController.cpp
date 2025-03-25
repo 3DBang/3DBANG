@@ -1208,9 +1208,11 @@ void ABangPlayerController::GetPlayerStateAtBegin()
 
 void ABangPlayerController::Server_TestDrawCards_Implementation()
 {
+	UE_LOG(LogTemp, Warning, TEXT(" Server_TestDrawCards_Implementation() 실행"));
+
 	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
-		GM->Test_DrawAndLogCards(); //  올바른 GameMode 함수 호출
+		GM->Test_DrawAndLogCards(); // 여기서 카드 뽑고 로그 남기고 → 아래 클라이언트 함수 호출해야 함
 	}
 }
 
@@ -1218,13 +1220,8 @@ void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FS
 {
 	if (!IsLocalController()) return;
 
-	if (TableCard)
+	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
-		UTableCard* Card = CreateWidget<UTableCard>(this, TableCard);
-		if (Card)
-		{
-			Card->AddToViewport();
-			Card->InitializeCardList(DrawnCards);
-		}
+		HUD->ShowDrawCardUI(DrawnCards);
 	}
 }
