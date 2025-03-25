@@ -227,21 +227,6 @@ void ABangGameMode::StartTest()
 
 	Players.Players.Empty();
 
-	/*if (LobbyPlayers.Players.Num() == 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("LobbyPlayers 비어 있음 → 테스트용 플레이어 추가"));
-
-		FPlayerInformation TempPlayer;
-		TempPlayer.PlayerUniqueID = 0;
-		TempPlayer.PlayerName = TEXT("TestPlayer");
-		TempPlayer.CurrentHealth = 4;
-		TempPlayer.MaxHealth = 4;
-		TempPlayer.JobCardType = EJobType::Officer;
-		TempPlayer.CharacterCardType = ECharacterType::BartCassidy;
-
-		LobbyPlayers.Players.Add(TempPlayer);
-	}*/
-
 	// 기존 코드 계속 진행
 	for (int i = 0; i < LobbyPlayers.Players.Num(); ++i)
 	{
@@ -339,7 +324,18 @@ void ABangGameMode::StartTest()
 
 	if (Players.Players.Num() > 0)
 	{
-		const FString& RealPlayerName = Players.Players[0].PlayerName;
+		FString RealPlayerName = TEXT("Unknown");
+
+		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+		{
+			if (ABangPlayerState* PS = Cast<ABangPlayerState>(PC->PlayerState))
+			{
+				if (PS->PlayerInfo.Players.Num() > 0)
+				{
+					RealPlayerName = PS->PlayerInfo.Players[0].PlayerName;
+				}
+			}
+		}
 
 		FString ActiveCardText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)EActiveType::Bang);
 		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
@@ -352,6 +348,7 @@ void ABangGameMode::StartTest()
 			GS->BroadcastGameLogToClients(LogMessageActive);
 			//GS->BroadcastGameLogToClients(LogMessagePassive);
 		}
+
 
 		AdvanceGameTurn();
 	}
