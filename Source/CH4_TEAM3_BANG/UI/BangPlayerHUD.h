@@ -7,8 +7,8 @@
 
 class UCardList;
 class UTableCard;
-class UBangInGamePlayerListWidget;
 class UBangInGameChattingWidget;
+class UPlayerListGameLog; 
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerHUD : public AHUD
@@ -26,9 +26,14 @@ public:
 
 	UPROPERTY()
 	TObjectPtr<UTableCard> TableCardWidgetInstance;
+
+	UPROPERTY()
+	TObjectPtr<UPlayerListGameLog> PlayerListGameLogInstance; //  새 위젯 인스턴스 추가
+
 	void ShowDrawCardUI(const TArray<FSingleCard>& Cards);
 
 protected:
+	// === 클래스 설정들 ===
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UBangInGameChattingWidget> ChattingWidgetClass;
 
@@ -38,5 +43,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UTableCard> TableCardWidgetClass;
 
-
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UPlayerListGameLog> PlayerListGameLog; //  새 위젯 클래스 추가
 };

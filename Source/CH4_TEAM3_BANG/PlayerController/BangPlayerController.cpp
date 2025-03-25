@@ -18,7 +18,9 @@
 #include "Components/CapsuleComponent.h"
 #include "UI/Card/CardList.h"
 #include "UI/Chat/BangInGameChattingWidget.h"
-#include "UI/Card/TableCard.h" // 
+#include "UI/Card/TableCard.h" 
+#include "UI/Chat/PlayerListGameLog.h"
+
 #include "Data/PlayerInformation.h"
 
 ABangPlayerController::ABangPlayerController()
@@ -1049,9 +1051,9 @@ void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArra
 {
 	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
-		if (UBangInGameChattingWidget* ChatWidget = HUD->ChattingWidgetInstance)
+		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
 		{
-			ChatWidget->UpdatePlayerList(PlayerList);
+			StatusWidget->UpdatePlayerList(PlayerList); 
 		}
 	}
 }
@@ -1094,12 +1096,13 @@ void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString&
 {
 	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
-		if (UBangInGameChattingWidget* ChatWidget = HUD->ChattingWidgetInstance)
+		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance) 
 		{
-			ChatWidget->AddGameLog(GameLogMessage);
+			StatusWidget->AddGameLog(GameLogMessage); 
 		}
 	}
 }
+
 //void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 {
@@ -1215,11 +1218,9 @@ void ABangPlayerController::GetPlayerStateAtBegin()
 
 void ABangPlayerController::Server_TestDrawCards_Implementation()
 {
-	UE_LOG(LogTemp, Warning, TEXT(" Server_TestDrawCards_Implementation() 실행"));
-
 	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
-		GM->Test_DrawAndLogCards(); // 여기서 카드 뽑고 로그 남기고 → 아래 클라이언트 함수 호출해야 함
+		GM->ShowTableCardsToAll(); 
 	}
 }
 

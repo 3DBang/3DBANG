@@ -2,19 +2,21 @@
 
 #include "Blueprint/UserWidget.h"
 #include "Card/CardList.h"
-#include "Card/TableCard.h"         // UTableCard
-
+#include "Card/TableCard.h"
 #include "Chat/BangInGameChattingWidget.h"
+#include "UI/Chat/PlayerListGameLog.h" 
 #include "PlayerController/BangPlayerController.h"
 
 void ABangPlayerHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 채팅 UI 노출
+	UWorld* World = GetWorld();
+	APlayerController* PC = GetOwningPlayerController();
+
 	if (ChattingWidgetClass)
 	{
-		ChattingWidgetInstance = CreateWidget<UBangInGameChattingWidget>(GetWorld(), ChattingWidgetClass);
+		ChattingWidgetInstance = CreateWidget<UBangInGameChattingWidget>(World, ChattingWidgetClass);
 		if (ChattingWidgetInstance)
 		{
 			ChattingWidgetInstance->AddToViewport();
@@ -23,17 +25,25 @@ void ABangPlayerHUD::BeginPlay()
 
 	if (CardListWidgetClass)
 	{
-		CardListWidgetInstance = CreateWidget<UCardList>(GetWorld(), CardListWidgetClass);
+		CardListWidgetInstance = CreateWidget<UCardList>(World, CardListWidgetClass);
 		if (CardListWidgetInstance)
 		{
 			CardListWidgetInstance->AddToViewport();
 		}
 	}
-	
-	if (APlayerController* PlayerController = GetOwningPlayerController()) {
-		if (ABangPlayerController* BangPlayerController = Cast<ABangPlayerController>(PlayerController)) {
-			BangPlayerController->NotifyHUDLoaded();
+
+	if (PlayerListGameLog)
+	{
+		PlayerListGameLogInstance = CreateWidget<UPlayerListGameLog>(World, PlayerListGameLog);
+		if (PlayerListGameLogInstance)
+		{
+			PlayerListGameLogInstance->AddToViewport();
 		}
+	}
+
+	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(PC))
+	{
+		BangPC->NotifyHUDLoaded();
 	}
 }
 
@@ -45,6 +55,6 @@ void ABangPlayerHUD::ShowDrawCardUI(const TArray<FSingleCard>& Cards)
 	if (TableCardWidgetInstance)
 	{
 		TableCardWidgetInstance->AddToViewport();
-		TableCardWidgetInstance->InitializeCardList(Cards); // 카드 UI 생성 함수
+		TableCardWidgetInstance->InitializeCardList(Cards);
 	}
 }
