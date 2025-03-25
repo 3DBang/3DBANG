@@ -26,6 +26,12 @@ void ABangPlayerState::BeginPlay()
 	}
 }
 
+void ABangPlayerState::Client_SetUniqueId_Implementation(const uint32& FromPlayerUniqueID)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Client_SetUniqueId: [%d]"), FromPlayerUniqueID);
+	PlayerUniqueID = FromPlayerUniqueID;
+}
+
 void ABangPlayerState::LoosePlayerHealth(const uint32& TargetUniqueID, int32 Amount)
 {
 	// Message::피 닳은거 알림
@@ -60,6 +66,12 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 
 	// 딜리게이트 뺴서 PC에서 GetCard 호출 UpdateCardList
 	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
+	
+	if (const TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(GetPlayerController()))
+	{
+		BangPlayerController->PlayerUniqueID = PlayerUniqueID;
+		UE_LOG(LogTemp, Display, TEXT("Update UniqueID {%d}{%d}"), PlayerUniqueID, BangPlayerController->PlayerUniqueID);
+	}
 	
 	//const FString Message = FPlayerCollectionToString(PlayerInfo);
 	//GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
@@ -520,9 +532,9 @@ void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleC
 	Server_UseCard(FromUniqueID, SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, EDeckType::HandedCard);
 }
 
- 
 void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards)
 {
+	/*
 	const TObjectPtr<UWorld> World = GetWorld();
 	if (!World || InPlayerUniqueID == 0)
 	{
@@ -563,6 +575,7 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 			PlayerController->Client_OnTurnStart(DrawCards);
 		}
 	}
+	*/
 }
 
 // 턴 종료 모든 처리 끝나면 호출
