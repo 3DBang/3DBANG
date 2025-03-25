@@ -80,18 +80,16 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_RequestPlayerListBroadcast();
 
-	///////////////////////////
-	////클라이언트 관련 로직 작성란
-	//////////////////////////
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
 	UPROPERTY()
 	uint32 PlayerUniqueID = 0;
-	
+
+	//PlayerUniqueID 설정
 	UFUNCTION(BlueprintCallable)
 	void InitPlayerUniqueID();
-
+	
 	UFUNCTION(BlueprintCallable)
 	void JCH_Test();
 
@@ -101,9 +99,12 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Init")
 	void Init();
 
+	UFUNCTION(Client, Reliable)
+	void Client_RequestCardSelection(int32 RequiredSelectCount,
+		ECardSelectPurpose Purpose);
+
 	UFUNCTION()
 	void OnCardSelectionComplete(
-		const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
 		const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
 		int32 RequiredSelectCount,                      // 선택해야 할 개수
 		ECardSelectPurpose Purpose                      // 선택 목적
@@ -121,10 +122,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget(const FSingleCard& SingleCard);
 
-	UFUNCTION(Client, Reliable)
-	void Client_RequestCardSelection(const FCardCollection& CardsToChooseFrom,
-		int32 RequiredSelectCount,
-		ECardSelectPurpose Purpose);
+	//UFUNCTION(Client, Reliable)
+	//void Client_BangSelectTarget(const FSingleCard& SingleCard);
 
 	// 호출 시점을 위젯에서 카드 보일때
 	UFUNCTION()
