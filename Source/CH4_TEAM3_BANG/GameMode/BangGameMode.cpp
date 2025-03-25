@@ -50,13 +50,8 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{
 			BangPlayerControllers.Add(BangPlayerController);
-		}
-		
-		for (const TObjectPtr BangPlayerController : BangPlayerControllers)
-		{
 			BangPlayerController->Init();
-			
-			AddLobbyPlayer(PlayerUniqueIndex, BangPlayerController->PlayerNickname);
+			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, BangPlayerController);
 		}
 	}
 	
@@ -122,7 +117,7 @@ void ABangGameMode::GetPlayerCollection(FPlayerCollection& OutPlayerCollection) 
 	OutPlayerCollection = Players;
 }
 
-void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName)
+void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const TObjectPtr<ABangPlayerController>& PlayerController)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
 
@@ -143,6 +138,14 @@ void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& Player
 		PlayerInfo.PlayerName = PlayerNickName;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::AddLobbyPlayer] Player ID: %u nickname: %s"), UniqueID, *PlayerNickName);
+
+	// PS에 전달
+	if (TObjectPtr<ABangPlayerState> BangPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
+	{
+		BangPlayerState->Client_SetUniqueId(UniqueID);
+		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::SetPlayerUniqueID] PlayerUniqueIndex: %d"), UniqueID);
+	}
+	
 	LobbyPlayers.Players.Add(PlayerInfo);
 }
 
@@ -211,59 +214,34 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 	}
 }
 
-// 플레이어 유니크 아이디 설정
-void ABangGameMode::SetPlayerUniqueID()
-{
-	for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
-	{
-		if (TObjectPtr<ABangPlayerState> BangPlayerState = BPC->GetPlayerState<ABangPlayerState>())
-		{
-			BangPlayerState->Client_SetUniqueId(PlayerUniqueIndex++);
-			UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] PlayerUniqueIndex: %d"), PlayerUniqueIndex);
-		}
-	}
-}
-
 // 테스트용으로 쓰는중
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
 	Players.Players.Empty();
-	int iiiiiindex = 0;
 
-	SetPlayerUniqueID();
-
-	for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
+	for (int i = 0; i < LobbyPlayers.Players.Num(); ++i)
 	{
-		if (BPC && BPC->PlayerState)
+		FPlayerInformation PlayerInformation;
+		FString PlayerName = FString::Printf(TEXT("Player[%d]"), LobbyPlayers.Players[i].PlayerUniqueID);
+		PlayerInformation.PlayerName = PlayerName;
+		if (i == 0) // 보안관
 		{
-			FPlayerInformation Player;
-			Player.PlayerUniqueID = ++iiiiiindex;
-
-			// 호스트 판별 조건 (서버 + 로컬)
-			if (BPC->HasAuthority() && BPC->IsLocalController())
-			{
-				FString PlayerName = FString::Printf(TEXT("Host[%d]"), Player.PlayerUniqueID);
-				Player.PlayerName = PlayerName;
-				Player.JobCardType = EJobType::Officer;
-				Player.CharacterCardType = ECharacterType::BartCassidy;
-			}
-			else
-			{
-				FString PlayerName = FString::Printf(TEXT("Guest[%d]"), Player.PlayerUniqueID);
-				Player.PlayerName = PlayerName;
-				Player.JobCardType = EJobType::SubOfficer;
-				Player.CharacterCardType = ECharacterType::CalamityJanet;
-			}
-
-			Player.MaxHealth = 4;
-			Player.CurrentHealth = 4;
-			Player.Range = 1;
-			Player.CharacterRange = 0;
-			Player.bIsMyTurn = false;
-
-			Players.Players.Add(Player);
+			PlayerInformation.JobCardType = EJobType::Officer;
+			PlayerInformation.CharacterCardType = ECharacterType::ElGringo;
 		}
+		else
+		{
+			PlayerInformation.JobCardType = EJobType::Betrayer;
+			PlayerInformation.CharacterCardType = ECharacterType::BartCassidy;
+		}
+		PlayerInformation.MaxHealth = 4;
+		PlayerInformation.CurrentHealth = 4;
+		PlayerInformation.Range = 1;
+		PlayerInformation.CharacterRange = 0;
+		PlayerInformation.bIsMyTurn = false;
+		
+		Players.Players.Add(PlayerInformation);
 	}
 
 	CurrentGameState = EGameState::GamePlaying;
@@ -306,6 +284,7 @@ void ABangGameMode::StartTest()
 	for (FPlayerInformation Player : Players.Players)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s"), *Player.PlayerName);
+		UE_LOG(LogTemp, Warning, TEXT("PlayerUniqueID: %d"), Player.PlayerUniqueID);
 		UE_LOG(LogTemp, Warning, TEXT("JobCardType: %d"), Player.JobCardType);
 		UE_LOG(LogTemp, Warning, TEXT("MaxHealth: %d"), Player.MaxHealth);
 		UE_LOG(LogTemp, Warning, TEXT("CharacterCardType: %d"), Player.CharacterCardType);
@@ -338,15 +317,6 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 	if (LobbyPlayers.Players.Num() < 4 || LobbyPlayers.Players.Num() > 7) return;
 
 	CurrentGameState = EGameState::GamePlaying;
-
-	for (TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
-	{
-		if (TObjectPtr<ABangPlayerState> BangPlayerState = BangPlayerController->GetPlayerState<ABangPlayerState>())
-		{
-			BangPlayerState->Client_SetUniqueId(PlayerUniqueIndex++);
-			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::StartGame] PlayerUniqueIndex: %d"), PlayerUniqueIndex);
-		}
-	}
 	
 	ArrangeSeats();
 	
