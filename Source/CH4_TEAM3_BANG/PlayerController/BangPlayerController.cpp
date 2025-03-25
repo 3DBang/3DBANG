@@ -52,6 +52,12 @@ void ABangPlayerController::BeginPlay()
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
 	}
+
+	if (HasAuthority())
+	{
+		TryBindPlayerInfoUpdated();
+	}
+	
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	InputMode.SetHideCursorDuringCapture(false);
@@ -64,6 +70,7 @@ void ABangPlayerController::BeginPlay()
 void ABangPlayerController::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
+	
 	TryBindPlayerInfoUpdated();
 
 	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
@@ -79,6 +86,7 @@ void ABangPlayerController::TryBindPlayerInfoUpdated()
 		}
 	}
 }
+
 void ABangPlayerController::InitPlayerUniqueID()
 {
 	if (ABangPlayerState* PS = GetPlayerState<ABangPlayerState>())
@@ -409,8 +417,6 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	}
 }
 
-
-
 void ABangPlayerController::OnCardSelectionComplete(
 	const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
 	const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
@@ -651,7 +657,7 @@ void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerColl
 
 	// HUD에 접근해서 Map 데이터 갱신 + 플레이어 수도 맞춰야겠죠
 
-	// 상대 스테이터스 info 갱신
+	// 상대 스테이터스 info 갱신 호스트에서 호출 안됨;;;;;;;;;;;;;;;;;;;;;
 	UpdateCardList(FPlayerCollection);
 }
 
