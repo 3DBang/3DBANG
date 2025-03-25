@@ -44,7 +44,10 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] Player Login"));
-	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap") || MapName.Contains("Hwang"))
+
+	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap")
+		|| MapName.Contains("Hwang")
+		|| MapName.Contains("Bong"))
 	{
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{

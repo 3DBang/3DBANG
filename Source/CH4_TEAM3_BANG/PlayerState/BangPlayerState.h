@@ -28,12 +28,16 @@ public:
 	FPlayerCollection PlayerInfo;
 
 	// 본인 UniqueID
-	UPROPERTY()
+	// UPROPERTY(Replicated)
 	uint32 PlayerUniqueID = 0;
 
 	// 플레이어 Info가 서버에서 변경됐을떄 호출되는 함수
 	UFUNCTION()
 	void OnRep_PlayerInfo();
+
+	// 플레이어 Info가 서버에서 변경됐을떄 호출되는 함수
+	UFUNCTION()
+	void HandlePlayerInfoUpdated();
 
 	// 플레이어 체력 감소
 	UFUNCTION()
@@ -90,6 +94,10 @@ public:
 	// 패시브 카드 중복 장착 방지용
 	UFUNCTION()
 	bool CheckIsCardAble(const int32 FromUniqueID, const FSingleCard& SingleCard);
+
+	// 패시브 카드 타입 확인
+	UFUNCTION()
+	bool CheckIsCardAbleByPassive(const int32 FromUniqueID, const EPassiveType PassiveType);
 	
 	/////////////////////
 	/// 서버통신
@@ -126,9 +134,6 @@ public:
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)
 	void Client_CheckCardSymbolReturn(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection);
-
-	UFUNCTION()
-	void HandlePlayerInfoUpdated();
 private:
 	// 카드매니저
 	UPROPERTY()
