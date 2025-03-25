@@ -137,7 +137,7 @@ void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 
 	FCardCollection MyCardCollection;
 	
-	BangPlayerState->GetCard(GetUniqueID(), MyCardCollection, PlayerInfo); // PS에서 카드 정보 가져오기
+	BangPlayerState->GetCard(BangPlayerState->PlayerUniqueID, MyCardCollection, PlayerInfo); // PS에서 카드 정보 가져오기
 	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::UpdateCardList] Player ID: %d"), GetUniqueID());
 
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
@@ -918,7 +918,7 @@ void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerColl
 	// HUD에 접근해서 Map 데이터 갱신 + 플레이어 수도 맞춰야겠죠
 
 	// 상대 스테이터스 info 갱신
-	UpdateCardList();
+	UpdateCardList(FPlayerCollection);
 }
 
 // 플레이어에게 카드 선택권 요구 응답
