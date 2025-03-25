@@ -746,7 +746,8 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	Server_StartGame();
+	JCH_Test();
+	//Server_StartGame();
 }
 
 void ABangPlayerController::Server_StartTest_Implementation()
