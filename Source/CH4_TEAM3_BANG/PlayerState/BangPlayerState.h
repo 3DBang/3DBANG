@@ -7,7 +7,6 @@
 #include "BangPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTurnStartDelegate);
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerInfoUpdated);
 
 UCLASS()

@@ -53,6 +53,8 @@ void ABangPlayerController::BeginPlay()
 
 void ABangPlayerController::OnRep_PlayerState()
 {
+	Super::OnRep_PlayerState();
+	
 	if (const TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(PlayerState))
 	{
 		BangPlayerState->FOnPlayerInfoUpdated.AddDynamic(this, &ABangPlayerController::PlayerInfoUpdatedEvent);
