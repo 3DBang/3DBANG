@@ -5,7 +5,6 @@
 #include "Data/PlayerInformation.h"
 #include "GameFramework/GameMode.h"
 #include "PlayerController/BangPlayerController.h"
-#include "PlayerState/BangPlayerState.h"
 #include "BangGameMode.generated.h"
 
 class UBangCardManager;
