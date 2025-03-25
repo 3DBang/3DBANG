@@ -19,10 +19,14 @@
 #include "Components/CapsuleComponent.h"
 #include "UI/Card/CardList.h"
 #include "UI/Chat/BangInGameChattingWidget.h"
+#include "UI/Card/TableCard.h" 
+#include "UI/Chat/PlayerListGameLog.h"
+
 #include "Data/PlayerInformation.h"
 
 ABangPlayerController::ABangPlayerController()
-{}
+{
+}
 
 void ABangPlayerController::BeginPlay()
 {
@@ -36,7 +40,7 @@ void ABangPlayerController::BeginPlay()
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
-	
+
 	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
@@ -102,15 +106,17 @@ void ABangPlayerController::InitPlayerUniqueID()
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
 {
-	
+
 }
+
+
 
 void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator NewRotation)
 {
 	if (IsLocalController())
 	{
 		SetControlRotation(NewRotation);
-	}	
+	}
 }
 
 void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollection& DrawCards)
@@ -306,11 +312,14 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 			return;
 		}
 	}
-	else 
+	else
 	{
+
+		// 카드 사용
 		Server_UseCard(SingleCard, TargetPlayerID);
 	}
 }
+
 
 void ABangPlayerController::Server_EndTurn_Implementation()
 {
@@ -594,6 +603,7 @@ void ABangPlayerController::Client_DisplayBangUI_Implementation()
 	}	
 }
 
+
 void ABangPlayerController::NotifyHUDLoaded()
 {
 	Server_HUDLoaded();
@@ -780,6 +790,8 @@ void ABangPlayerController::TestButtonCLicked()
 	// 로직 작성
 	
 	Server_StartTest();
+	Server_RequestPlayerListBroadcast();
+	Server_TestDrawCards();
 }
 
 
@@ -903,8 +915,8 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		return;
 	}
 
-	
-	
+
+
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
 		if (BangPlayer->GetFirstPersonMode())
@@ -916,23 +928,23 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		UCameraComponent* EndCam = BangPlayer->BangCamera;
 		if (!StartCam || !EndCam) return;
 
-	
+
 		const FTransform StartTransform = StartCam->GetComponentTransform();
 		ACameraActor* TempCam = GetWorld()->SpawnActor<ACameraActor>(
 			ACameraActor::StaticClass(), StartTransform);
 		if (!TempCam) return;
 
-	
+
 		BangPlayer->FollowCamera->Deactivate();
 		BangPlayer->BangCamera->Deactivate();
 
 		constexpr float BlendTime = 5.f;
 		CameraOpenBlendStartTime = FPlatformTime::Seconds();
 		SetViewTarget(TempCam);
-		
+
 		const FVector StartLocation = StartTransform.GetLocation();
-		const FVector EndLocation = EndCam->GetComponentLocation()+300.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
-		
+		const FVector EndLocation = EndCam->GetComponentLocation() + 300.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
+
 		//BangCamera의 위치를 한번 봐야할듯
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
 
@@ -973,7 +985,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 			}), 0.01f, true);
 		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 10.f, false);
 	}
-	
+
 }
 
 void ABangPlayerController::Client_SetInputEnabled_Implementation(bool IsAttacker)
@@ -982,7 +994,7 @@ void ABangPlayerController::Client_SetInputEnabled_Implementation(bool IsAttacke
 	{
 		return;
 	}
-		
+
 	if (IsAttacker)
 	{
 		if (auto LocalPlayer = GetLocalPlayer())
@@ -1012,7 +1024,7 @@ void ABangPlayerController::Server_OpenCamera_Implementation()
 	{
 		return;
 	}
-	uint32 BangUID= GetUniqueID();
+	uint32 BangUID = GetUniqueID();
 	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (GM)
 	{
@@ -1084,12 +1096,12 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 		CameraOpenBlendStartTime = FPlatformTime::Seconds();
 		SetViewTarget(TempCam);
 
-		const FVector StartLocation = StartTransform.GetLocation()-100.f;
+		const FVector StartLocation = StartTransform.GetLocation() - 100.f;
 		const FVector EndLocation = EndCam->GetComponentLocation();
-		
+
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
 
-		
+
 		GetWorldTimerManager().SetTimer(CameraCloseBlendTimerHandle, FTimerDelegate::CreateLambda(
 			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation]() mutable
 			{
@@ -1141,7 +1153,7 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 
 void ABangPlayerController::Client_SelectTarget_Implementation(const FSingleCard& SingleCard)
 {
-    uint32 TargetPlayerID = 15;//GetSelectedTargetID(); // 상대 플레이어 ID를 가져옴 (레이 트레이싱 담당자에게 받아올 부분)
+	uint32 TargetPlayerID = 15;//GetSelectedTargetID(); // 상대 플레이어 ID를 가져옴 (레이 트레이싱 담당자에게 받아올 부분)
 
     if (TargetPlayerID > 0)
     {
@@ -1191,6 +1203,10 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
 	}
 }
+
+///////////////////////////
+//// 찬호 추가 
+//////////////////////////
 
 void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 {
@@ -1329,4 +1345,51 @@ void ABangPlayerController::GetPlayerStateAtBegin()
 		}
 	}
 	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
+}
+
+void ABangPlayerController::Server_RequestPlayerListBroadcast_Implementation()
+{
+	if (ABangGameState* GS = GetWorld()->GetGameState<ABangGameState>())
+	{
+		GS->BroadcastPlayerListToClients();
+	}
+}
+
+void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString& GameLogMessage)
+{
+	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
+		{
+			StatusWidget->AddGameLog(GameLogMessage);
+		}
+	}
+}
+
+void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArray<FPlayerInformation>& PlayerList)
+{
+	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
+		{
+			StatusWidget->UpdatePlayerList(PlayerList);
+		}
+	}
+}
+
+void ABangPlayerController::Server_TestDrawCards_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT(" Server_TestDrawCards_Implementation() 실행"));
+	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
+	{
+		GM->Test_DrawAndLogCards(); // 여기서 카드 뽑고 로그 남기고 → 아래 클라이언트 함수 호출해야 함
+	}
+}
+
+void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FSingleCard>& DrawnCards)
+{
+	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		HUD->ShowDrawCardUI(DrawnCards);
+	}
 }

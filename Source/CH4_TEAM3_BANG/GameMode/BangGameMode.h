@@ -88,6 +88,14 @@ public:
 	UFUNCTION()
 	void EndTurn(const uint32 UniqueID);
 	
+	void Test_DrawAndLogCards();
+
+	// 카드 펼치기
+	UFUNCTION()
+	void ShowTableCardsToAll();
+
+	void DrawCardsAndNotifyClients(int32 CardCount);
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;

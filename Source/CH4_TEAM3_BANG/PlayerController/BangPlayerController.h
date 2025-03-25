@@ -13,6 +13,7 @@ class ABangCharacter;
 class ABangGameMode;
 class UCameraComponent;
 class UWidgetComponent;
+class UTableCard;
 
 enum class EJobType : uint8;
 enum class ECharacterType : uint8;
@@ -21,9 +22,9 @@ UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
 {
 	GENERATED_BODY()
-///////////////////////////
-//// Enhanced Input
-//////////////////////////
+	///////////////////////////
+	//// Enhanced Input
+	//////////////////////////
 
 public:
 	ABangPlayerController();
@@ -49,7 +50,10 @@ public:
 	/**Test Sample*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction = nullptr;
-	
+
+	UPROPERTY()
+	TObjectPtr<UBangCardManager> CardManager;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnRep_PlayerState() override; // PS가 다 생성되고 난 뒤에 호출
@@ -73,6 +77,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn();
 
+	UFUNCTION(Server, Reliable)
+	void Server_RequestPlayerListBroadcast();
+
+	///////////////////////////
+	////클라이언트 관련 로직 작성란
+	//////////////////////////
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
@@ -88,10 +98,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FString PlayerNickname;
-	
+
 	UFUNCTION(BlueprintImplementableEvent, Category = "Init")
 	void Init();
-	
+
 	UFUNCTION()
 	void OnCardSelectionComplete(
 		const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
@@ -102,18 +112,17 @@ public:
 	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
 	UFUNCTION(Client, Reliable)
 	void Client_SelectCard();
-	
+
 	UFUNCTION(Client, Reliable)
 	void Client_HandleCardSelection(const FSingleCard& SingleCard);
 
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
-	
+
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget(const FSingleCard& SingleCard);
 
 	UFUNCTION(Client, Reliable)
-
 	void Client_RequestCardSelection(const FCardCollection& CardsToChooseFrom,
 		int32 RequiredSelectCount,
 		ECardSelectPurpose Purpose);
@@ -122,6 +131,23 @@ public:
 	UFUNCTION()
 	void UpdateCardList(FPlayerCollection& PlayerInfo);
 	
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateGameLogUI(const FString& GameLogMessage);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdatePlayerListUI(const TArray<FPlayerInformation>& PlayerList);
+
+	UFUNCTION(Server, Reliable)
+	void Server_TestDrawCards();
+	// 정빈
+	UFUNCTION(Client, Reliable)
+	void Client_ShowDrawnCards(const TArray<FSingleCard>& DrawnCards);
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UTableCard> TableCard;
+	///////////////////////////
+	//// 원명 추가 
+	//////////////////////////
 	UFUNCTION(Client, Reliable)
 	void Client_OnTurnStart(const FCardCollection& DrawCards);
 	
@@ -134,7 +160,7 @@ public:
 	
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
-	
+
 	//id의 값을 PlayerState ->
 
 public:
@@ -147,7 +173,7 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SetInputEnabled(bool IsAttacker);
 
-	UFUNCTION(BlueprintCallable,Server, Reliable)
+	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void Server_OpenCamera();
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
@@ -190,9 +216,9 @@ public:
 	FCardCollection CurrentCardCollection;
 
 	UPROPERTY() // 유저가 카드고를수있는 카드컬렉션,
-	//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
-	FCardCollection SelectCardCollection;
-	
+		//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
+		FCardCollection SelectCardCollection;
+
 	UFUNCTION(Client, Reliable)
 	void Client_DisplayBangUI();
 
@@ -213,16 +239,16 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_StartTest();
-	
+
 	UFUNCTION()
 	void SendMessageToServer(FString Message);
-	
+
 	UFUNCTION(Server, Reliable)
 	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
-	
+
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
-	
+
 	// 플레이어에게 카드 선택권 요구
 	UFUNCTION(Client, Reliable)
 	void Client_RequestSelectCard(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards);
