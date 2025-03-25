@@ -318,16 +318,20 @@ void ABangGameMode::StartTest()
 	// PS 동기화
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
-		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
-
-		BangPlayerState->PlayerInfo = Players;
-		if (GetNetMode() == NM_ListenServer)
+		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			BangPlayerState->HandlePlayerInfoUpdated();
-		}
+			if (const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>())
+			{
+				// 최초 등록 동기화
+				BangPlayerState->PlayerInfo = Players;
+				if (GetNetMode() == NM_ListenServer)
+				{
+					BangPlayerState->HandlePlayerInfoUpdated();
+				}
 		
-		BangPlayerState->ForceNetUpdate();
+				BangPlayerState->ForceNetUpdate();
+			}
+		}
 	}
 
 	if (Players.Players.Num() > 0)
@@ -415,17 +419,21 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
-		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
-
-		if (GetNetMode() == NM_ListenServer)
+		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			BangPlayerState->HandlePlayerInfoUpdated();
+			if (const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>())
+			{
+				if (GetNetMode() == NM_ListenServer)
+				{
+					BangPlayerState->HandlePlayerInfoUpdated();
+				}
+		
+				// 최초 등록 동기화
+				BangPlayerState->PlayerInfo = Players;
+				BangPlayerState->ForceNetUpdate();
+			}
 		}
-		// 최초 등록 동기화
-		BangPlayerState->PlayerInfo = Players;
-		BangPlayerState->ForceNetUpdate();
-
+		
 		//플레이어 카드리스트 초기화
 		//CastingController->Client_UpdateCardList(); 
 		//UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *CastingController->GetName());
