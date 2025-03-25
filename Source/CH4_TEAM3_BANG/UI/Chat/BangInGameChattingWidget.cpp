@@ -4,6 +4,9 @@
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "PlayerController/BangPlayerController.h"
+#include "PlayerState/BangPlayerState.h"
+#include "Components/Image.h"
+#include "UObject/ConstructorHelpers.h"
 
 void UBangInGameChattingWidget::NativeConstruct()
 {
@@ -20,7 +23,7 @@ void UBangInGameChattingWidget::NativeConstruct()
 	{
 		StartButton->OnClicked.AddDynamic(this, &UBangInGameChattingWidget::OnStartButtonClicked);
 	}
-	
+
 	if (IsValid(TestButton))
 	{
 		TestButton->OnClicked.AddDynamic(this, &UBangInGameChattingWidget::OnTestButtonClicked);
@@ -56,6 +59,7 @@ void UBangInGameChattingWidget::OnTestButtonClicked()
 	{
 		OwningPlayerController->TestButtonCLicked();
 	}
+
 }
 
 void UBangInGameChattingWidget::OnTextCommittedFunction(const FText& Text, const ETextCommit::Type CommitMethod)
@@ -70,8 +74,9 @@ void UBangInGameChattingWidget::OnTextCommittedFunction(const FText& Text, const
 			UE_LOG(LogTemp, Error, TEXT("PlayerController is NULL!"));
 			return;
 		}
-		
+
 		BangPlayerController->SendMessageToServer(Text.ToString());
 		ChatTextField->SetText(FText::FromString(""));
 	}
 }
+
