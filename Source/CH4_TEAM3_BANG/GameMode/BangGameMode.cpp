@@ -45,16 +45,11 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] Player Login"));
 
-	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap"))
+	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap") || MapName.Contains("Hwang"))
 	{
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{
 			BangPlayerControllers.Add(BangPlayerController);
-			if (TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(BangPlayerController->PlayerState))
-			{
-				BangPlayerState->PlayerUniqueID = PlayerUniqueIndex++;
-				UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] PlayerUniqueIndex: %d"), PlayerUniqueIndex);
-			}
 		}
 		
 		for (const TObjectPtr BangPlayerController : BangPlayerControllers)
@@ -92,7 +87,7 @@ void ABangGameMode::GetPlayerStatesByUniqueID(const int32& UniqueID, FBangSingle
 	{
 		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			if (TObjectPtr<ABangPlayerState> PlayerState = Cast<ABangPlayerState>(CastingController->PlayerState))
+			if (TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
 			{
 				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
 				{
@@ -109,7 +104,7 @@ void ABangGameMode::GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSi
 	{
 		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			if (TObjectPtr<ABangPlayerState> PlayerState = Cast<ABangPlayerState>(CastingController->PlayerState))
+			if (TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
 			{
 				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
 				{
@@ -216,12 +211,27 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 	}
 }
 
+// 플레이어 유니크 아이디 설정
+void ABangGameMode::SetPlayerUniqueID()
+{
+	for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
+	{
+		if (TObjectPtr<ABangPlayerState> BangPlayerState = BPC->GetPlayerState<ABangPlayerState>())
+		{
+			BangPlayerState->Client_SetUniqueId(PlayerUniqueIndex++);
+			UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] PlayerUniqueIndex: %d"), PlayerUniqueIndex);
+		}
+	}
+}
+
 // 테스트용으로 쓰는중
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
 	Players.Players.Empty();
 	int iiiiiindex = 0;
+
+	SetPlayerUniqueID();
 
 	for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
 	{
@@ -328,6 +338,15 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 	if (LobbyPlayers.Players.Num() < 4 || LobbyPlayers.Players.Num() > 7) return;
 
 	CurrentGameState = EGameState::GamePlaying;
+
+	for (TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
+	{
+		if (TObjectPtr<ABangPlayerState> BangPlayerState = BangPlayerController->GetPlayerState<ABangPlayerState>())
+		{
+			BangPlayerState->Client_SetUniqueId(PlayerUniqueIndex++);
+			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::StartGame] PlayerUniqueIndex: %d"), PlayerUniqueIndex);
+		}
+	}
 	
 	ArrangeSeats();
 	
