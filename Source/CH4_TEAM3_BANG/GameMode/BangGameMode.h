@@ -25,24 +25,6 @@ enum class EPlayerTurnState : uint8
 	LooseCard UMETA(DisplayName = "LooseCard")
 };
 
-USTRUCT(BlueprintType)
-struct FBangSinglePlayerState
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TObjectPtr<ABangPlayerState> State;
-};
-
-USTRUCT(BlueprintType)
-struct FBangSinglePlayerController
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TObjectPtr<ABangPlayerController> Controller;
-};
-
 UCLASS()
 class CH4_TEAM3_BANG_API ABangGameMode : public AGameMode
 {
@@ -68,11 +50,13 @@ public:
 	/////////////////
 	/// 통신 로직
 	////////////////
-
+	
 	// 선택후 남은카드 덱에 돌려놓기
 	UFUNCTION()
-	void RefundCards(const FPlayerCardCollection RefundCard);
-	
+	void RefundCards(const FPlayerCardCollection& RefundCard);
+	// 카드한장을 뽑아서 심볼을 알려준다.
+	UFUNCTION()
+	void CheckCardSymbol(const uint32& UniqueID, const uint16& CardCount);
 	// 플레이어 삭제
 	UFUNCTION()
 	void ForceUpdate_RemovePlayer(const uint32& UniqueID);
@@ -81,13 +65,16 @@ public:
 	void ForceUpdate_StartGame_Real();
 	// 게임 중인 플레이어의 정보를 가져온다.
 	UFUNCTION()
-	void GetPlayerCollection(FPlayerCollection& PlayerCollection_) const;
+	void GetPlayerCollection(FPlayerCollection& OutPlayerCollection) const;
 	// 심볼로 특정 카드 찾기 (Play Role)
 	UFUNCTION()
 	void GetCardBySymbol(const FPlayerCardSymbol& Card);
-	// 카드 뽑아서 PS에 전달
+	// 카드 뽑아서 PS에 적용
 	UFUNCTION()
 	void ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount);
+	// 카드 뽑아서 PS에 전달
+	UFUNCTION()
+	void DrawCard(const uint16 CardCount);
 	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
 	// 플레이어 사망
 	UFUNCTION()

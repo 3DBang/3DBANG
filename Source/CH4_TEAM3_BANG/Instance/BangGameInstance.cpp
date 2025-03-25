@@ -1,8 +1,6 @@
 #include "BangGameInstance.h"
 
 #include "Card/BangCardManager.h"
-#include "Kismet/GameplayStatics.h"
-
 
 void UBangGameInstance::Init()
 {

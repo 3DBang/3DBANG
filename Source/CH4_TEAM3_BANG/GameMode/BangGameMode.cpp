@@ -27,7 +27,7 @@ void ABangGameMode::BeginPlay()
 	Super::BeginPlay();
 
 	// 카드매니저 가져오기
-	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()); CardManager)
+	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()))
 	{
 		FCardManagerInstance OutCardManager;
 		BangGameInstance->GetCardManager(OutCardManager);
@@ -49,7 +49,7 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 
 	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap"))
 	{
-		for (const TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
+		for (const TObjectPtr BangPlayerController : BangPlayerControllers)
 		{
 			BangPlayerController->Init();
 			AddLobbyPlayer(BangPlayerController->GetUniqueID(), BangPlayerController->PlayerNickname);
@@ -101,11 +101,11 @@ void ABangGameMode::GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSi
 	}
 }
 
-void ABangGameMode::GetPlayerCollection(FPlayerCollection& PlayerCollection_) const
+void ABangGameMode::GetPlayerCollection(FPlayerCollection& OutPlayerCollection) const
 {
 	if (Players.Players.Num() == 0) return;
 
-	PlayerCollection_ = Players;
+	OutPlayerCollection = Players;
 }
 
 void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName)
@@ -120,7 +120,14 @@ void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& Player
 
 	FPlayerInformation PlayerInfo;
 	PlayerInfo.PlayerUniqueID = UniqueID;
-	PlayerInfo.PlayerName = PlayerNickName;
+	if (PlayerNickName == "")
+	{
+		PlayerInfo.PlayerName = FString::FromInt(UniqueID);
+	}
+	else
+	{
+		PlayerInfo.PlayerName = PlayerNickName;
+	}
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::AddLobbyPlayer] Player ID: %u nickname: %s"), UniqueID, *PlayerNickName);
 	LobbyPlayers.Players.Add(PlayerInfo);
 }
@@ -192,7 +199,7 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 
 void ABangGameMode::StartTest()
 {
-	UE_LOG(LogTemp, Warning, TEXT("StartTest"));
+	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
 	Players.Players.Empty();
 
 	// 플레이어 목록을 실제 PlayerState로부터 생성
@@ -292,18 +299,113 @@ void ABangGameMode::StartTest()
 			//GS->BroadcastGameLogToClients(LogMessagePassive); // 패시브카드 사용시
 		}
 	}
+	for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
+	{
+		if (BPC && BPC->PlayerState)
+		{
+			FPlayerInformation Player;
+			Player.PlayerUniqueID = BPC->GetUniqueID();
+
+			// 호스트 판별 조건 (서버 + 로컬)
+			if (BPC->HasAuthority() && BPC->IsLocalController())
+			{
+				FString PlayerName = FString::Printf(TEXT("Host[%d]"), Player.PlayerUniqueID);
+				Player.PlayerName = PlayerName;
+				Player.JobCardType = EJobType::Officer;
+				Player.CharacterCardType = ECharacterType::BartCassidy;
+			}
+			else
+			{
+				FString PlayerName = FString::Printf(TEXT("Guest[%d]"), Player.PlayerUniqueID);
+				Player.PlayerName = PlayerName;
+				Player.JobCardType = EJobType::SubOfficer;
+				Player.CharacterCardType = ECharacterType::CalamityJanet;
+			}
+
+			Player.MaxHealth = 4;
+			Player.CurrentHealth = 4;
+			Player.Range = 1;
+			Player.CharacterRange = 0;
+			Player.bIsMyTurn = false;
+
+			Players.Players.Add(Player);
+		}
+	}
+
+	CurrentGameState = EGameState::GamePlaying;
+	
+	UE_LOG(LogTemp, Warning, TEXT("Players created: %d"), Players.Players.Num());
+
+	TArray<EJobType> JobCards;
+	JobCards.Add(EJobType::Officer);
+	JobCards.Add(EJobType::SubOfficer);
+
+	FCardCollection CharacterCards;
+	for (int16 i = 0; i < Players.Players.Num(); i++)
+	{
+		Players.Players[i].JobCardType = JobCards[i];
+		Players.Players[i].CharacterCardType = CardManager->GetCharacterCard();
+		if (Players.Players[i].CharacterCardType == ECharacterType::RoseDoolan)
+		{
+			Players.Players[i].Range++;
+		}
+		else if (Players.Players[i].CharacterCardType == ECharacterType::PaulRegret)
+		{
+			Players.Players[i].CharacterRange++;
+		}
+		Players.Players[i].MaxHealth = CardManager->GetHealthByCharacteType(CardManager->GetCharacterCard());
+
+		// 최초 카드 분배
+		int16 Health = Players.Players[i].MaxHealth;
+		FCardCollection Cards;
+		CardManager->HandCards(Health, Cards);
+		Players.Players[i].MyCards.AddCardCollectionToPlayerCards(Cards);
+		
+		if (JobCards[i] == EJobType::Officer)
+		{
+			CurrentTurnPlayerUniqeID = Players.Players[i].PlayerUniqueID;
+			Players.Players[i].bIsMyTurn = true;
+			PlayerIndex = i;
+		}
+	}
+
+	for (FPlayerInformation Player : Players.Players)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s"), *Player.PlayerName);
+		UE_LOG(LogTemp, Warning, TEXT("JobCardType: %d"), Player.JobCardType);
+		UE_LOG(LogTemp, Warning, TEXT("MaxHealth: %d"), Player.MaxHealth);
+		UE_LOG(LogTemp, Warning, TEXT("CharacterCardType: %d"), Player.CharacterCardType);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("CurrentPlayerTurn: %d"), CurrentTurnPlayerUniqeID);
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
+		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
+
+		// 최초 등록 동기화
+		BangPlayerState->PlayerInfo = Players;
+		BangPlayerState->ForceNetUpdate();
+	}
+
+	AdvanceGameTurn();
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
 void ABangGameMode::ForceUpdate_StartGame_Real()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartGame [%d]"), LobbyPlayers.Players.Num());
+	if (!CardManager)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CardManager NULL"));
+	}
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager) return;
 	if (LobbyPlayers.Players.Num() < 4 || LobbyPlayers.Players.Num() > 7) return;
 
-	ArrangeSeats();
-	
 	CurrentGameState = EGameState::GamePlaying;
+	
+	ArrangeSeats();
 	
 	// 직업 선택
 	TArray<EJobType> JobCards;
@@ -357,6 +459,10 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 		// 최초 등록 동기화
 		BangPlayerState->PlayerInfo = Players;
 		BangPlayerState->ForceNetUpdate();
+
+		//플레이어 카드리스트 초기화
+		//CastingController->Client_UpdateCardList(); 
+		//UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *CastingController->GetName());
 	}
 
 	AdvanceGameTurn();
@@ -440,8 +546,9 @@ void ABangGameMode::AdvanceGameTurn()
 
 		FBangSinglePlayerState CurrentPlayerState;
 		GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
-		CurrentPlayerState.State->PlayerInfo.GetPlayerInformation(CurrentTurnPlayerUniqeID)->MyCards.AddCardCollectionToPlayerCards(DrawCards);
-		CurrentPlayerState.State->ForceNetUpdate();
+
+		//PlayerStete로 전달
+		CurrentPlayerState.State->StartTurn(CurrentTurnPlayerUniqeID, DrawCards);
 		
 		CurrentPlayerTurnState = EPlayerTurnState::UseCard;
 	}
@@ -575,6 +682,8 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID,
 		break;
 	}
 
+	// Message:: 사망처리 알림
+
 	// 플레이어 제거
 	for (uint16 i = 0; i < Players.Players.Num(); i++)
 	{
@@ -619,6 +728,29 @@ void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 Car
 	PlayerState.State->ForceNetUpdate();
 }
 
+void ABangGameMode::DrawCard(const uint16 CardCount)
+{
+	if (!CardManager) return;
+
+	FCardCollection DrawCards;
+	CardManager->HandCards(CardCount, DrawCards);
+
+	FBangSinglePlayerState PlayerState;
+	GetPlayerStatesByUniqueID(CurrentTurnPlayerUniqeID, PlayerState);
+
+	for (FPlayerInformation Player : PlayerState.State->PlayerInfo.Players)
+	{
+		for (auto [Card] : DrawCards.CardList)
+		{
+			FPlayerCardSymbol PlayerCard;
+			PlayerCard.SymbolNumber = Card->SymbolNumber;
+			PlayerCard.SymbolType = Card->SymbolType;
+			Player.SelectableCards.PlayerCards.Add(PlayerCard);
+		}
+	}
+	PlayerState.State->ForceNetUpdate();
+}
+
 // 플레이어 HUD 노출
 void ABangGameMode::UpdatePlayerHUD()
 {
@@ -628,7 +760,7 @@ void ABangGameMode::UpdatePlayerHUD()
 	}
 }
 
-void ABangGameMode::RefundCards(const FPlayerCardCollection RefundCard)
+void ABangGameMode::RefundCards(const FPlayerCardCollection& RefundCard)
 {
 	if (!CardManager) return;
 
@@ -637,6 +769,33 @@ void ABangGameMode::RefundCards(const FPlayerCardCollection RefundCard)
 		FSingleCard SingleCard;
 		CardManager->GetCardBySymbolAndNumber(SymbolType, SymbolNumber, EDeckType::HandedCard, SingleCard);
 		CardManager->ReorderAvailCards(SingleCard);
+	}
+}
+
+void ABangGameMode::CheckCardSymbol(const uint32& UniqueID, const uint16& CardCount)
+{
+	if (!CardManager) return;
+
+	FCardCollection OutCards;
+	CardManager->CheckCardSymbolFromAvailCards(CardCount, OutCards);
+
+	FPlayerCardCollection PlayerCardCollection;
+
+	for (FSingleCard CardList : OutCards.CardList)
+	{
+		FPlayerCardSymbol SinglePlayerCard;
+		SinglePlayerCard.SymbolNumber = CardList.Card->SymbolNumber;
+		SinglePlayerCard.SymbolType = CardList.Card->SymbolType;
+
+		PlayerCardCollection.PlayerCards.Add(SinglePlayerCard);
+	}
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
+		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
+
+		BangPlayerState->Client_CheckCardSymbolReturn(UniqueID, PlayerCardCollection);
 	}
 }
 

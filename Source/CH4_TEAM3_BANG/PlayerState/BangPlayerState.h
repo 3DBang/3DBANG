@@ -6,6 +6,10 @@
 #include "GameFramework/PlayerState.h"
 #include "BangPlayerState.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTurnStartDelegate);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerInfoUpdated);
+
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerState : public APlayerState
 {
@@ -16,6 +20,10 @@ public:
 
 	virtual void BeginPlay() override;
 
+	// Delegate
+	UPROPERTY(BlueprintAssignable, Category = "Delegate|Event")
+	FOnPlayerInfoUpdated FOnPlayerInfoUpdated;
+
 	// PlayerState에서 사용하는 플레이어 정보 저장용
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerInfo)
 	FPlayerCollection PlayerInfo;
@@ -24,9 +32,21 @@ public:
 	UFUNCTION()
 	void OnRep_PlayerInfo();
 
-	// 컨트롤러가 카드 조회 호출
+	// 플레이어 체력 감소
+	UFUNCTION()
+	void LoosePlayerHealth(const uint32& TargetUniqueID, int32 Amount);
+
+	// 플레이어 체력 증가
+	UFUNCTION()
+	void GainPlayerHealth(const uint32& TargetUniqueID, int32 Amount);
+
+	// 컨트롤러가 카드 조회
 	UFUNCTION()
 	void GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
+
+	// 컨트롤러가 카드타입 조회
+	UFUNCTION()
+	void GetCardType(const int32 InPlayerUniqueID, const FSingleCard& Card, EActiveType& OutActiveType, EPassiveType& OutPassiveType);
 
 	// 컨트롤러가 카드 사용할때 호출
 	// PC -> PS
@@ -40,7 +60,11 @@ public:
 	// 컨트롤러가 카드 버릴때 호출
 	UFUNCTION()
 	void RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard);
-
+	
+	// 턴 시작
+	UFUNCTION()
+	void StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards);
+	
 	// 턴 종료
 	UFUNCTION()
 	void EndTurn(const int32 InPlayerUniqueID);
@@ -49,8 +73,14 @@ public:
 	UFUNCTION()
 	void UseCardReturn(const int32& FromUniqueID, const FPlayerCardSymbol& SingleCard, const int32& ToUniqueID, const EActiveType& ActiveType, const EPassiveType& PassiveType);
 
-	void FindTargetPlayerState(const uint32 TargetUniqueID, TObjectPtr<ABangPlayerState>& OutPlayerState) const;
+	// 대상의 PS를 찾는다
+	UFUNCTION()
+	void FindTargetPlayerState(const uint32 TargetUniqueID, FBangSinglePlayerState& OutPlayerState) const;
 
+	// 패시브 카드 중복 장착 방지용
+	UFUNCTION()
+	bool CheckIsCardAble(const int32 FromUniqueID, const FSingleCard& SingleCard);
+	
 	/////////////////////
 	/// 서버통신
 	/////////////////////
@@ -70,7 +100,15 @@ public:
 
 	// 플레이어 카드 뽑기
 	UFUNCTION(Server, Reliable)
-	void Server_DrawCard(const uint32 FromUniqueID, const uint16 CardCount);
+	void Server_DrawCard(const uint32 FromUniqueID, const uint16 CardCount, const bool bIsForce);
+
+	// 카드 심볼 확인
+	UFUNCTION(Server, Reliable)
+	void Server_CheckCardSymbol(const uint32& FromUniqueID, const uint16& CardCount);
+	
+	// 카드 심볼 확인 리턴
+	UFUNCTION(Client, Reliable)
+	void Client_CheckCardSymbolReturn(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection);
 private:
 	// 카드매니저
 	UPROPERTY()

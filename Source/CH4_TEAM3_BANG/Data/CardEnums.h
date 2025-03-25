@@ -90,3 +90,16 @@ enum class ECharacterType : uint8
 	KitCarlson UMETA(DisplayName = "Kit Carlson")		 // 키트 칼슨
 };
 
+UENUM(BlueprintType)
+enum class ECardSelectPurpose : uint8
+{
+	UseCard               UMETA(DisplayName = "Use Card"),				   //카드 사용
+	DiscardCard           UMETA(DisplayName = "Discard by Overdraw"),      // 카드 수 > 체력
+	KitCarlsonDrawCard      UMETA(DisplayName = "Kit Carlson Draw Card"),  // 키트 칼슨 능력 - 카드 3장 중 2장 선택
+	GeneralStoreDraft     UMETA(DisplayName = "General Store Draft"),      // 잡화점처럼 순서대로 선택
+	StealFromOpponent     UMETA(DisplayName = "Steal from Opponent"),      // 강탈
+
+	RespondToDuel             UMETA(DisplayName = "Respond to Duel"),       // 결투 - 뱅으로 응답
+	RespondToIndians          UMETA(DisplayName = "Respond to Indians"),    // 인디언 - 뱅으로 응답
+	RespondToAttack           UMETA(DisplayName = "Respond to Attack"),     // 공격(Bang, Gatling) - 회피카드로 대응
+};
