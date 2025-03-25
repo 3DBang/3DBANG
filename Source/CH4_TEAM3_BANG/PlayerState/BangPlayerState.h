@@ -57,7 +57,7 @@ public:
 	
 	// 직업 카드 타입으로 싱글 카드 받아오기
 	UFUNCTION()
-	void GetCardByJobType(const EJobType JobType, FSingleCard& OutSingleCard);
+	void GetCardByJobType(const EJobType JobType, FSingleCard& OutCard);
 	
 	UFUNCTION()
 	void GetCardType(const int32 InPlayerUniqueID, const FSingleCard& Card, EActiveType& OutActiveType, EPassiveType& OutPassiveType);
