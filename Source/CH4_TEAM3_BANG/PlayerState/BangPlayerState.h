@@ -122,6 +122,8 @@ public:
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)
 	void Client_CheckCardSymbolReturn(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection);
+
+	void HandlePlayerInfoUpdated();
 private:
 	// 카드매니저
 	UPROPERTY()
