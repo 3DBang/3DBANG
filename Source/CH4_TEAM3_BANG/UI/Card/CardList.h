@@ -18,6 +18,8 @@ class UCanvasPanel;
  * 
  */
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUseCardDelegate, FSingleCard, SelectedCard);
+
 // 카드 선택 이벤트를 위한 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardSelectedDelegate, FSingleCard, SelectedCard);
 UCLASS()
@@ -75,6 +77,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "CardList")
 	FOnCardSelectedDelegate OnCardSelected;
 
+	// 카드 사용시 델리게이트
+	UPROPERTY(BlueprintAssignable, Category = "CardList")
+	FOnUseCardDelegate OnUseCard;
+	
 	UPROPERTY(BlueprintReadOnly, Category = "CardList")
 	bool bIsHidden;
 	
@@ -103,12 +109,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CardList")
 	UCard* AddCard(FSingleCard CardData);
 
+	// 캐릭터 카드추가
 	void AddCardToCharacterCardSlot(FSingleCard CardData);
+	// 직업카드 추가
 	void AddCardToJobCardSlot(FSingleCard CardData);
 	
 	// 선택된 카드를 리스트에서 제거하는 함수
 	UFUNCTION(BlueprintCallable, Category = "CardList")
-	void RemoveSelectedCard();
+	void RemoveSelectedCard(FSingleCard RemoveCard);
 
 	// 선택된 카드를 반환
 	UFUNCTION(BlueprintCallable, Category = "CardList")

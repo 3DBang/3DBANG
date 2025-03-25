@@ -23,7 +23,7 @@ void UCardList::SelectCard(UCard* CardWidget)
 		SelectedCardWidget->SetCardSelected(false); 
 		SelectedCardWidget = nullptr;             
 		SelectedCard = FSingleCard();            
-
+		
 		// 빈 FSingleCard 또는 유효하지 않은 값으로 브로드캐스트
 		OnCardSelected.Broadcast(FSingleCard()); 
 		
@@ -85,7 +85,7 @@ void UCardList::AddCardToJobCardSlot(FSingleCard CardData)
 void UCardList::OnUseInputButtonClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("[UCardList::OnUseInputButtonClicked] Use Card Button 클릭!"));
-	RemoveSelectedCard();
+	OnUseCard.Broadcast(SelectedCard);
 }
 
 void UCardList::OnHiddenCardListButtonClicked()
@@ -123,31 +123,57 @@ void UCardList::ClearCards()
 	
 }
 
-void UCardList::RemoveSelectedCard()
+void UCardList::RemoveSelectedCard(FSingleCard RemoveCard)
 {
-	if (SelectedCardWidget)
+	if (!ScrollBox || ScrollBox->GetChildrenCount() == 0)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[UCardList::RemoveSelectedCard] Removing Selected Card: %s"), *SelectedCardWidget->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("[UCardList::RemoveSelectedCard] ScrollBox가 비어있거나 유효하지 않습니다."));
+		return;
+	}
 
+	bool bCardRemoved = false; // 카드 제거 여부를 추적하는 변수
+	
+	for (int32 i = 0; i < ScrollBox->GetChildrenCount(); ++i)
+	{
+		UCard* CardWidget = Cast<UCard>(ScrollBox->GetChildAt(i));
+		if (CardWidget && CardWidget->Card.Card) // CardWidget이 유효하고 Card 데이터가 있는지 확인
+		{
+			// 카드 심볼 비교
+			if (CardWidget->Card.Card->SymbolType == RemoveCard.Card->SymbolType &&
+				CardWidget->Card.Card->SymbolNumber == RemoveCard.Card->SymbolNumber) 
+			{
+				UE_LOG(LogTemp, Log, TEXT("[UCardList::RemoveSelectedCard] 카드 제거: %s, Card Symbol: %s, Number: %d"),
+					*CardWidget->GetName(), *UEnum::GetValueAsString(RemoveCard.Card->SymbolType), RemoveCard.Card->SymbolNumber);
+				
+				ScrollBox->RemoveChildAt(i);
+				
+				CardWidget->RemoveFromParent();
 
-		// 컨트롤러에서 카드를 사용할때 호출될 함수
+				bCardRemoved = true; // 카드 제거 성공 표시
+				break; // 카드 제거 후 루프 종료 (중복 제거 방지)
+			}
+		}
+	}
 
-		//
+	if (bCardRemoved)
+	{
+		// 5. 제거된 카드가 현재 선택된 카드였다면 선택 정보 초기화
+		if (SelectedCardWidget && SelectedCardWidget->Card.Card &&
+			SelectedCardWidget->Card.Card->SymbolType == RemoveCard.Card->SymbolType &&
+			SelectedCardWidget->Card.Card->SymbolNumber == RemoveCard.Card->SymbolNumber)
+		{
+			SelectedCardWidget->SetCardSelected(false);
+			SelectedCardWidget = nullptr;
+			SelectedCard = FSingleCard();
 
-		// 스크롤 박스에서 카드 위젯 제거
-		ScrollBox->RemoveChild(SelectedCardWidget);
-
-		// 선택된 카드 정보 초기화
-		SelectedCardWidget = nullptr;
-		SelectedCard = FSingleCard();
-
-		// 카드 선택 상태 변경 알림 (선택 해제)
-		OnCardSelected.Broadcast(FSingleCard()); // 빈 FSingleCard 브로드캐스트하여 선택 해제 알림
-		
+			// 6. 카드 선택 상태 변경 알림 (선택 해제)
+			OnCardSelected.Broadcast(FSingleCard());
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[UCardList::RemoveSelectedCard] No card selected to remove."));
+		UE_LOG(LogTemp, Warning, TEXT("[UCardList::RemoveSelectedCard] 제거할 카드 (%s %d) 를 찾지 못했습니다."),
+			*UEnum::GetValueAsString(RemoveCard.Card->SymbolType), RemoveCard.Card->SymbolNumber);
 	}
 }
 
