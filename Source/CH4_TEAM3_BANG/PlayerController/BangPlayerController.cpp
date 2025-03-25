@@ -351,7 +351,7 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	if (CardCount > CurrentHealth)
 	{
 		// 클라이언트에 카드 버리기 UI 요청
-		Client_RequestCardSelection(CurrentCardCollection, CardCount-CurrentHealth, ECardSelectPurpose::DiscardCard);
+		Client_RequestCardSelection(CardCount-CurrentHealth, ECardSelectPurpose::DiscardCard);
 		return;
 	}
 
@@ -361,20 +361,6 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 
 void ABangPlayerController::JCH_Test()
 {
-	FCardCollection DummyCardList;
-
-	UBangActiveCard* DummyCard = NewObject<UBangActiveCard>();
-	DummyCard->ActiveType = EActiveType::Bang;
-	DummyCard->SymbolType = ESymbolType::Heart;
-	DummyCard->SymbolNumber = 1;
-
-	FSingleCard SingleCard;
-	SingleCard.Card = DummyCard;
-
-	DummyCardList.CardList.Add(SingleCard);
-
-	Client_RequestCardSelection(DummyCardList, 1, ECardSelectPurpose::UseCard);
-	Client_HandleCardSelection_Implementation(SingleCard);
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (PS)
 	{
@@ -383,7 +369,6 @@ void ABangPlayerController::JCH_Test()
 }
 
 void ABangPlayerController::Client_RequestCardSelection_Implementation(
-	const FCardCollection& CardsToChooseFrom,
 	int32 RequiredSelectCount,
 	ECardSelectPurpose Purpose)
 {
@@ -392,15 +377,15 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	{
 	case ECardSelectPurpose::UseCard:
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[TEST] Use_called"));
-		TArray<FSingleCard> SelectedCards;
-		SelectedCards.Add(CardsToChooseFrom.CardList[0]);
-		OnCardSelectionComplete(CardsToChooseFrom, SelectedCards, RequiredSelectCount, ECardSelectPurpose::UseCard);// 내 턴에서 카드 사용 (자유롭게 선택)
+		//카드 사용하기
+		//OnUseInputButtonClicked(사용하기, 1,  ECardSelectPurpose::UseCard:)
 		break;
 	}
 
 	case ECardSelectPurpose::DiscardCard:
 		// 보유 카드 수 > 체력, 초과분 만큼 버려야 함
+		//버튼을 버리기 버튼으로 바꿈 
+		//OnUseInputButtonClicked(버리기, 보유카드 - 현재체력, ECardSelectPurpose::DiscardCard)
 		break;
 
 	case ECardSelectPurpose::GeneralStoreDraft:
@@ -420,16 +405,19 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	case ECardSelectPurpose::RespondToDuel:
 		// 결투 중 뱅 카드 선택
 		// 보유 카드 띄우기 1장 선택(뱅만)
+		//OnUseInputButtonClicked(응수하기, 1, ECardSelectPurpose::RespondToDuel:)
 		break;
 
 	case ECardSelectPurpose::RespondToIndians:
 		// 인디언 카드 대응 – 뱅 카드 선택
 		// 보유 카드 중 1장 선택(뱅만)
+		//OnUseInputButtonClicked(쫓아내기, 1, ECardSelectPurpose::RespondToIndians:)
 		break;
 
 	case ECardSelectPurpose::RespondToAttack:
 		// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
 		// 보유카드 중 1장 선택(Missed)만
+		//OnUseInputButtonClicked(피하기, 1, ECardSelectPurpose::RespondToAttack:)
 		break;
 
 	default:
@@ -439,7 +427,6 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 }
 
 void ABangPlayerController::OnCardSelectionComplete(
-	const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
 	const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
 	int32 RequiredSelectCount,                      // 선택해야 할 개수
 	ECardSelectPurpose Purpose)                     // 선택 목적
@@ -489,6 +476,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 			//보유 카드에서 제거 후 버린카드덱에 추가
 			MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
 			PS->RestoreCard(PlayerUniqueID, Card);
+			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		}
 
 		// 턴 종료 호출
@@ -506,13 +494,13 @@ void ABangPlayerController::OnCardSelectionComplete(
 		// 키트 칼슨 능력 – 카드 3장 중 2장 선택
 		// 안뽑은 카드 걸러내기
 		TArray<FSingleCard> NotChosenCards;
-		for (const FSingleCard& Card : CardsToChooseFrom.CardList)
+		/*for (const FSingleCard& Card : CardsToChooseFrom.CardList)
 		{
 			if (!SelectedCards.Contains(Card))
 			{
 				NotChosenCards.Add(Card);
 			}
-		}
+		}*/
 
 		FCardCollection SelectedCardCollection;
 		SelectedCardCollection.CardList = SelectedCards;
@@ -786,7 +774,7 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	JCH_Test();
+	//JCH_Test();
 	//Server_StartGame();
 }
 
