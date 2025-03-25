@@ -54,10 +54,10 @@ void ABangPlayerController::BeginPlay()
 	}
 
 
-	if (IsLocalController())
+	/*if (IsLocalController())
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
-	}
+	}*/
 
 	// 호스트는 직접 동작 수행 해줘야함
 	if (HasAuthority())
