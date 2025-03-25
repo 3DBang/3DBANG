@@ -21,7 +21,7 @@
 #include "UI/Chat/BangInGameChattingWidget.h"
 #include "UI/Card/TableCard.h" 
 #include "UI/Chat/PlayerListGameLog.h"
-
+#include "UI/Card/CardDescriptionWidget.h"
 #include "Data/PlayerInformation.h"
 #include "UI/PlayerInfo/BangInfoWidget.h"
 
@@ -1383,16 +1383,10 @@ void ABangPlayerController::UpdatePlayerInfo(uint32 BangUniqueID, int32 NewHP, i
 	InfoWidget->UpdateCurrentHealth(NewHP);
 }
 
-void ABangPlayerController::Server_RequestPlayerListBroadcast_Implementation()
-{
-	if (ABangGameState* GS = GetWorld()->GetGameState<ABangGameState>())
-	{
-		GS->BroadcastPlayerListToClients();
-	}
-}
 
 void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString& GameLogMessage)
 {
+
 	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
 		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
@@ -1402,8 +1396,19 @@ void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString&
 	}
 }
 
+void ABangPlayerController::Server_RequestPlayerListBroadcast_Implementation()
+{
+	if (ABangGameState* GS = GetWorld()->GetGameState<ABangGameState>())
+	{
+		GS->BroadcastPlayerListToClients();
+	}
+}
+
+
 void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArray<FPlayerInformation>& PlayerList)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Client] PlayerListUI 업데이트 호출됨 - 플레이어 수: %d"), PlayerList.Num());
+
 	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
 		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
@@ -1425,7 +1430,6 @@ void ABangPlayerController::Server_TestDrawCards_Implementation()
 void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FSingleCard>& DrawnCards)
 {
 	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
-	{
 		HUD->ShowDrawCardUI(DrawnCards);
-	}
+	
 }
