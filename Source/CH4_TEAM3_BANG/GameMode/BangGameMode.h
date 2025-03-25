@@ -128,11 +128,10 @@ private:
 	EPlayerTurnState CurrentPlayerTurnState;
 
 	UPROPERTY()
-	uint32 PlayerUniqueIndex = 0;
+	uint32 PlayerUniqueIndex = 1;
 
 	// 로비 플레이어 등록
-	UFUNCTION()
-	void AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName);
+	void AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const TObjectPtr<ABangPlayerController>& PlayerController);
 	// 로비 플레이어 삭제
 	UFUNCTION()
 	void RemoveLobbyPlayer(const uint32& UniqueID);
@@ -154,9 +153,6 @@ private:
 	// UniqueID로 PlayerController 받아오기
 	UFUNCTION()
 	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSinglePlayerController& PlayerController_);
-	// 플레이어 유니크 아이디 설정
-	UFUNCTION()
-	void SetPlayerUniqueID();
 	
 	UFUNCTION(BlueprintCallable)
 	void SetUserHP();
