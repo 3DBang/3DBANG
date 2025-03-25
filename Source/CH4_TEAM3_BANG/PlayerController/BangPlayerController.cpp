@@ -664,7 +664,7 @@ void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerColl
 			PlayerInfo.CurrentHealth,
 			PlayerInfo.CharacterRange
 		);
-
+		//제거할때 제거하는것도 해야함 
 	}
 	// 플레이어 인포가 바겼을떄 변경돼야 하는것들
 	// 카드정보, 플레이어 정보
@@ -855,30 +855,12 @@ void ABangPlayerController::MouseClicked()
 						ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
 						if (GEngine)
 						{
-							for (const auto &a : BangState->PlayerInfo.Players)
-							{
-								UE_LOG(LogTemp, Display, TEXT("Unique id %d"),a.PlayerUniqueID);
-								UE_LOG(LogTemp, Display, TEXT("Current Hea%d"), a.CurrentHealth);
-								UE_LOG(LogTemp, Display, TEXT("Range %d"), a.Range);
-								UE_LOG(LogTemp, Display, TEXT("Name is %s"),*a.PlayerName);
-								UE_LOG(LogTemp, Display, TEXT("====================="));
-							}
-							UE_LOG(LogTemp, Display, TEXT("====================="));
-							UE_LOG(LogTemp, Display, TEXT("State Start"))
-							
 							auto Information = BangState->PlayerInfo.GetPlayerInformation(BangState->PlayerUniqueID);
 							UE_LOG(LogTemp, Display, TEXT("Unique id %d"), Information->PlayerUniqueID);
 							UE_LOG(LogTemp, Display, TEXT("Current Hea%d"), Information-> CurrentHealth);
 							UE_LOG(LogTemp, Display, TEXT("Range %d"), Information->Range);
 							UE_LOG(LogTemp, Display, TEXT("Name is %s"), *Information->PlayerName);
 							UE_LOG(LogTemp, Display, TEXT("====================="));
-
-							GEngine->AddOnScreenDebugMessage(
-								-1,                              // Key: -1 = auto‑generate a new message each call
-								5.0f,                            // Duration (seconds)
-								FColor::Yellow,                  // Text color
-								FString::Printf(TEXT("PlayerUniqueID: %d"), BangState->PlayerUniqueID)
-							);
 						}
 						if (PlayerWidgets.Contains(BangState->PlayerUniqueID))
 						{
@@ -1283,14 +1265,6 @@ void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 //void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 {
-	//if (!IsLocalController()) return;
-
-	//InteractionWidgetComponent->SetHiddenInGame(!bVisible);
-	//InteractionWidgetComponent->SetVisibility(bVisible);
-	/*if (UWidgetComponent** CompPtr = PlayerWidgets.Find(PlayerID))
-	{
-		(*CompPtr)->SetVisibility(bVisible);
-	}*/
 
 	if (!IsLocalController() || ControllerPlayerStateID == PlayerID)
 		return;
