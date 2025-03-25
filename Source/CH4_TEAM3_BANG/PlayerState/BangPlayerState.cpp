@@ -58,27 +58,20 @@ void ABangPlayerState::Server_SetPlayerInfo_Implementation(const FPlayerCollecti
 {
 	PlayerInfo = NewInfo;
 	// OnRep_PlayerInfo() 호출
-
-	if (HasAuthority())
-	{
-		HandlePlayerInfoUpdated();
-	}
+	HandlePlayerInfoUpdated();
 }
 
 void ABangPlayerState::HandlePlayerInfoUpdated()
 {
+	// 호스트에서 호출 되는거 확인
 	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
 }
 
 void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 {
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
-
 	// 딜리게이트 뺴서 PC에서 GetCard 호출 UpdateCardList
-	if (!HasAuthority())
-	{
-		HandlePlayerInfoUpdated();
-	}
+	HandlePlayerInfoUpdated();
 	
 	if (const TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(GetPlayerController()))
 	{

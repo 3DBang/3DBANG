@@ -123,6 +123,7 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_CheckCardSymbolReturn(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection);
 
+	UFUNCTION()
 	void HandlePlayerInfoUpdated();
 private:
 	// 카드매니저
