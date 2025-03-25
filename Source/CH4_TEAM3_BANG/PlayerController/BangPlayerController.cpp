@@ -911,14 +911,14 @@ void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerColl
 		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %s"), *PlayerInfo.PlayerName);
 	}
 
-	
-	const FString UniqueNetId = PlayerState->GetUniqueId().GetUniqueNetId()->ToString();
-	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] Player UniqueNetId: %s"), *UniqueNetId);
+	// 플레이어 인포가 바겼을떄 변경돼야 하는것들
+	// 카드정보, 플레이어 정보
+	// 선택시에 카드정보 동기화
 
-	//여기서 카드를 초기화해줌
-	UpdateCardList(FPlayerCollection);
-	
-	//UpdateCardList();
+	// HUD에 접근해서 Map 데이터 갱신 + 플레이어 수도 맞춰야겠죠
+
+	// 상대 스테이터스 info 갱신
+	UpdateCardList();
 }
 
 // 플레이어에게 카드 선택권 요구 응답

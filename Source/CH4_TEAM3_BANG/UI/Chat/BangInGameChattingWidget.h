@@ -28,7 +28,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void AddMessage(const FText& Message, const FSlateColor& Color);
-
 protected:
 	virtual void NativeConstruct() override;
 
