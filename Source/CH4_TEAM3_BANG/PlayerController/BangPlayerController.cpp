@@ -68,6 +68,8 @@ void ABangPlayerController::OnRep_PlayerState()
 	{
 		UE_LOG(LogTemp, Error, TEXT("ABangPlayerController::BeginPlay() PlayerState NULL"));
 	}
+
+	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
 }
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
@@ -1152,10 +1154,4 @@ void ABangPlayerController::GetPlayerStateAtBegin()
 		}
 	}
 	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
-}
-
-void ABangPlayerController::OnRep_PlayerState()
-{
-	Super::OnRep_PlayerState();
-	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
 }
