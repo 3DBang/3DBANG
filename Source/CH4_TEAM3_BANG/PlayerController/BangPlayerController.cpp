@@ -159,12 +159,12 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 	
 }
 
-void ABangPlayerController::UpdateCardList()
+void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 {
 	UE_LOG(LogTemp, Log, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] UI 카드리스트 업데이트"));
 
 	ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
-	if (!PlayerState)
+	if (!BangPlayerState)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] PlayerState 없음"));
 		return;
@@ -1069,7 +1069,7 @@ void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerColl
 	// HUD에 접근해서 Map 데이터 갱신 + 플레이어 수도 맞춰야겠죠
 
 	// 상대 스테이터스 info 갱신
-	UpdateCardList();
+	UpdateCardList(FPlayerCollection);
 }
 
 // 플레이어에게 카드 선택권 요구 응답

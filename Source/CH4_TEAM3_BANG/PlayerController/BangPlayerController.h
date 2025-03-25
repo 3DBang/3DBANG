@@ -119,7 +119,7 @@ public:
 
 	// 호출 시점을 위젯에서 카드 보일때
 	UFUNCTION()
-	void UpdateCardList();
+	void UpdateCardList(FPlayerCollection& PlayerInfo);
 	
 	UFUNCTION(Client, Reliable)
 	void Client_OnTurnStart(const FCardCollection& DrawCards);

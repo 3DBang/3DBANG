@@ -1,6 +1,7 @@
 #include "CardList.h"
 
 #include "Card.h"
+#include "Components/Border.h"
 #include "Components/Button.h"
 #include "Components/CanvasPanel.h"
 #include "Components/ScrollBox.h"
@@ -25,11 +26,6 @@ void UCardList::SelectCard(UCard* CardWidget)
 
 		// 빈 FSingleCard 또는 유효하지 않은 값으로 브로드캐스트
 		OnCardSelected.Broadcast(FSingleCard()); 
-
-		if (SelectedCardSlot)
-		{
-			SelectedCardSlot->InitializeWithCard(FSingleCard()); // 빈 FSingleCard로 초기화
-		}
 		
 		return; 
 	}
@@ -50,11 +46,6 @@ void UCardList::SelectCard(UCard* CardWidget)
 	// 델리게이트로 선택 이벤트 알림
 	OnCardSelected.Broadcast(SelectedCard);
 	
-	//선택된 카드로 변경
-	if (SelectedCardSlot)
-	{
-		SelectedCardSlot->InitializeWithCard(SelectedCard);
-	}
 }
 
 UCard* UCardList::AddCard(FSingleCard CardData)
@@ -81,6 +72,16 @@ UCard* UCardList::AddCard(FSingleCard CardData)
 	return NewCardWidget;
 }
 
+void UCardList::AddCardToCharacterCardSlot(FSingleCard CardData)
+{
+	CharacterCardSlot->Border->SetBrushFromTexture(CardData.Card->CardIcon);
+}
+
+void UCardList::AddCardToJobCardSlot(FSingleCard CardData)
+{
+	JobCardSlot->Border->SetBrushFromTexture(CardData.Card->CardIcon);
+}
+
 void UCardList::OnUseInputButtonClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("[UCardList::OnUseInputButtonClicked] Use Card Button 클릭!"));
@@ -94,12 +95,12 @@ void UCardList::OnHiddenCardListButtonClicked()
 	if(bIsHidden)
 	{
 		ScrollBox->SetVisibility(ESlateVisibility::Hidden);
-		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 숨기기")));
+		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 보이기")));
 	}
 	else
 	{
 		ScrollBox->SetVisibility(ESlateVisibility::Visible);
-		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 보이기")));
+		HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 숨기기")));
 	}
 }
 
@@ -113,16 +114,13 @@ void UCardList::ClearCards()
 	if (!ScrollBox) return;
 
 	ScrollBox->ClearChildren(); // ScrollBox의 모든 자식 위젯(카드) 제거
-
+	JobCardSlot->Border->SetBrushFromTexture(nullptr);
+	CharacterCardSlot->Border->SetBrushFromTexture(nullptr);
+	
 	// 선택된 카드 정보 초기화 (선택 해제)
 	SelectedCardWidget = nullptr;
 	SelectedCard = FSingleCard();
-
-	// SelectedCardSlot 초기화 (빈 카드 정보 표시)
-	if (SelectedCardSlot)
-	{
-		SelectedCardSlot->InitializeWithCard(FSingleCard()); // 빈 FSingleCard로 초기화
-	}
+	
 }
 
 void UCardList::RemoveSelectedCard()
@@ -145,12 +143,7 @@ void UCardList::RemoveSelectedCard()
 
 		// 카드 선택 상태 변경 알림 (선택 해제)
 		OnCardSelected.Broadcast(FSingleCard()); // 빈 FSingleCard 브로드캐스트하여 선택 해제 알림
-
-		// SelectedCardSlot 초기화 (빈 카드 정보 표시)
-		if (SelectedCardSlot)
-		{
-			SelectedCardSlot->InitializeWithCard(FSingleCard()); // 빈 FSingleCard로 초기화
-		}
+		
 	}
 	else
 	{
@@ -162,17 +155,22 @@ void UCardList::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	if (!CanvasPanel || !SizeBox || !ScrollBox || !SelectedCardSlot)
+	if (!CanvasPanel || !SizeBox || !ScrollBox)
 	{
 		UE_LOG(LogTemp, Error, TEXT(" UCardList::NativeConstruct : 위젯 바인딩 실패"));
 		return;
 	}
 	
-	bIsHidden = false;
+	bIsHidden = true;
+	ScrollBox->SetVisibility(ESlateVisibility::Hidden);
+	HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 보이기")));
+	UseInputButton->SetVisibility(ESlateVisibility::Hidden);
+	TurnEndButton->SetVisibility(ESlateVisibility::Hidden);
 	
 	UseInputButton->OnClicked.AddDynamic(this, &UCardList::OnUseInputButtonClicked);
 	HiddenCardListButton->OnClicked.AddDynamic(this, &UCardList::OnHiddenCardListButtonClicked);
 	TurnEndButton->OnClicked.AddDynamic(this, &UCardList::OnTurnEndButtonClicked);
+
 	
 	for (int32 i = 0; i < ScrollBox->GetChildrenCount(); i++)
 	{
