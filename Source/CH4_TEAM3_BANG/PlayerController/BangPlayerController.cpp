@@ -124,20 +124,21 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 	
 }
 
-void ABangPlayerController::UpdateCardList()
+void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 {
 	UE_LOG(LogTemp, Log, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] UI 카드리스트 업데이트"));
 
 	ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
-	if (!PlayerState)
+	if (!BangPlayerState)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] PlayerState 없음"));
 		return;
 	}
 
 	FCardCollection MyCardCollection;
-	BangPlayerState->GetCard(GetUniqueID(), MyCardCollection); // PS에서 카드 정보 가져오기
-	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] Player ID: %d"), GetUniqueID());
+	
+	BangPlayerState->GetCard(GetUniqueID(), MyCardCollection, PlayerInfo); // PS에서 카드 정보 가져오기
+	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::UpdateCardList] Player ID: %d"), GetUniqueID());
 
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
 	{
@@ -909,6 +910,13 @@ void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerColl
 		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %d"), PlayerInfo.PlayerUniqueID);
 		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %s"), *PlayerInfo.PlayerName);
 	}
+
+	
+	const FString UniqueNetId = PlayerState->GetUniqueId().GetUniqueNetId()->ToString();
+	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] Player UniqueNetId: %s"), *UniqueNetId);
+
+	//여기서 카드를 초기화해줌
+	UpdateCardList(FPlayerCollection);
 	
 	//UpdateCardList();
 }
