@@ -113,6 +113,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerInfo(const FPlayerCollection& NewInfo);
 	
+	UFUNCTION(Client, Reliable)
+	void Client_SetUniqueId(const uint32& FromPlayerUniqueID);
+	
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)
 	void Client_CheckCardSymbolReturn(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection);

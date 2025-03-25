@@ -10,7 +10,4 @@ ACH4_TEAM3_BANGGameMode::ACH4_TEAM3_BANGGameMode()
     {
         DefaultPawnClass = PlayerPawnBPClass.Class;
     }
-
-    PlayerControllerClass = ABangPlayerController::StaticClass();
-
 }
