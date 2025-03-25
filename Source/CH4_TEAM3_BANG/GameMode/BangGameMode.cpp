@@ -56,7 +56,6 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, BangPlayerController);
 		}
 	}
-	
 	//게임 시작버튼을 누르면 그때 Player위치 조정함수 사용
 	//현재는 테스트용 입니다 
 	//SpawnPlayers();
@@ -144,7 +143,8 @@ void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& Player
 	// PS에 전달
 	if (TObjectPtr<ABangPlayerState> BangPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
 	{
-		BangPlayerState->Client_SetUniqueId(UniqueID);
+		//BangPlayerState->Client_SetUniqueId(UniqueID);
+		BangPlayerState->PlayerUniqueID = UniqueID;
 		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::SetPlayerUniqueID] PlayerUniqueIndex: %d"), UniqueID);
 	}
 	
@@ -243,6 +243,7 @@ void ABangGameMode::StartTest()
 		{
 			PlayerInformation.JobCardType = EJobType::Betrayer;
 			PlayerInformation.CharacterCardType = ECharacterType::BartCassidy;
+
 		}
 
 		PlayerInformation.MaxHealth = 4;
