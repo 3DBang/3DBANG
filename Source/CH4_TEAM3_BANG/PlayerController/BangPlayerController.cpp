@@ -70,13 +70,6 @@ void ABangPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	bShowMouseCursor = true;*/
-
-	if (IsLocalController())
-	{
-		// 약간 딜레이를 줘서 GameMode, PlayerState가 준비되도록 함
-		FTimerHandle TimerHandle;
-		//GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ABangPlayerController::Test, 5.0f, false);
-	}
 	FTimerHandle InitDelayHandle;
 	GetWorld()->GetTimerManager().SetTimer(InitDelayHandle, this, &ABangPlayerController::InitPlayerUniqueID, 3.0f, false);
 }
@@ -108,7 +101,7 @@ void ABangPlayerController::InitPlayerUniqueID()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Init] PlayerState가 아직 초기화되지 않았습니다."));
+		UE_LOG(LogTemp, Warning, TEXT("[Init] not PlayerState"));
 	}
 }
 
@@ -173,6 +166,8 @@ void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 
 	FCardCollection MyCardCollection;
 	BangPlayerState->GetCard(PlayerUniqueID, MyCardCollection); // PS에서 카드 정보 가져오기
+	
+	
 	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] Player ID: %d"), PlayerUniqueID);
 
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
@@ -180,7 +175,9 @@ void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
 		{
 			CardListWidget->ClearCards(); // 기존 카드 리스트 비우기
-
+			
+			//CardListWidget->AddCardToCharacterCardSlot();
+			
 			for (const FSingleCard& Card : MyCardCollection.CardList)
 			{
 				CardListWidget->AddCard(Card); // 카드 위젯 추가
@@ -288,25 +285,25 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection_INBang"));
 		if (!bCanUseBang)return;
 		if (Info->CharacterCardType == ECharacterType::WillyTheKid)
+			//|| PS->CheckIsCardAble(PlayerUniqueID, ))
 		{
-			Client_SelectTarget();
+			bCanUseBang = true;
+
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Bang!!Bang!!Bang!!Bang!!Bang!!"));
 			bCanUseBang = false;
-			Client_SelectTarget();
 		}
 	}
-	bool bNeedsTarget = (OutActiveType == EActiveType::Bang ||
-		OutActiveType == EActiveType::Robbery ||
+	bool bNeedsTarget = (OutActiveType == EActiveType::Robbery ||
 		OutActiveType == EActiveType::CatBalou ||
 		OutActiveType == EActiveType::Duel ||
 		OutActiveType == EActiveType::Jail);
 
 	if (bNeedsTarget)
 	{
-		Client_SelectTarget(); // 나중에 실제 대상 선택 구현 예정
+		Client_SelectTarget(SingleCard); // 나중에 실제 대상 선택 구현 예정
 
 		if (TargetPlayerID == 0)
 		{
@@ -346,7 +343,7 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	//PS->Server_EndTurn(UniqueID, MyInfo->CharacterCardType);
 }
 
-void ABangPlayerController::Test()
+void ABangPlayerController::JCH_Test()
 {
 	FCardCollection DummyCardList;
 
@@ -362,6 +359,11 @@ void ABangPlayerController::Test()
 
 	Client_RequestCardSelection(DummyCardList, 1, ECardSelectPurpose::UseCard);
 	Client_HandleCardSelection_Implementation(SingleCard);
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	if (PS)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerUniqueID : %d,"), PS->PlayerUniqueID);
+	}
 }
 
 void ABangPlayerController::Client_RequestCardSelection_Implementation(
@@ -441,8 +443,9 @@ void ABangPlayerController::OnCardSelectionComplete(
 	if (!MyInfo)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("NoInfo"));
-		//return;
+		return;
 	}
+
 	EActiveType OutActiveType;
 	EPassiveType OutPassiveType;
 
@@ -579,6 +582,209 @@ void ABangPlayerController::OnCardSelectionComplete(
 	default:
 		break;
 	}
+}
+
+///////////////////////////
+//// 찬호 추가 
+//////////////////////////
+
+void ABangPlayerController::Client_DisplayBangUI_Implementation()
+{
+	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		BangHUD->ChattingWidgetInstance->AddMessage(
+			FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
+			FSlateColor(FLinearColor::Green)
+		);
+	}	
+}
+
+void ABangPlayerController::NotifyHUDLoaded()
+{
+	Server_HUDLoaded();
+	if (!HasAuthority())
+	{
+		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
+void ABangPlayerController::Server_HUDLoaded_Implementation()
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->UpdatePlayerHUD();
+}
+
+void ABangPlayerController::SendMessageToServer(FString Message)
+{
+	if (Message.IsEmpty()) return;
+
+	FString ToPlayerNickname = "";
+
+	// 귓속말의 경우 /{플레이어 아이디} {채팅내용}
+	if (Message[0] == '/')
+	{
+		// 귓속말
+		FString RawContent = Message.RightChop(1);
+
+		FString TargetIDString;
+		FString ChatContent;
+
+		if (RawContent.Split(TEXT(" "), &TargetIDString, &ChatContent))
+		{
+			ToPlayerNickname = TargetIDString;
+		}
+	}
+
+	// 전체챗팅
+	Server_SendMessage(Message, PlayerNickname, ToPlayerNickname);
+}
+
+// PlayerState에서 값이 갱신되면 호출
+void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerCollection)
+{
+	for (FPlayerInformation PlayerInfo : FPlayerCollection.Players)
+	{
+		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent]"));
+		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %d"), PlayerInfo.PlayerUniqueID);
+		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %s"), *PlayerInfo.PlayerName);
+	}
+
+	// 플레이어 인포가 바겼을떄 변경돼야 하는것들
+	// 카드정보, 플레이어 정보
+	// 선택시에 카드정보 동기화
+
+	// HUD에 접근해서 Map 데이터 갱신 + 플레이어 수도 맞춰야겠죠
+
+	// 상대 스테이터스 info 갱신
+	UpdateCardList(FPlayerCollection);
+}
+
+// 플레이어에게 카드 선택권 요구 응답
+void ABangPlayerController::Server_RespondSelectCard_Implementation()
+{
+	FPlayerCardCollection PlayerCardCollection;
+	for (auto [Card] : SelectCardCollection.CardList)
+	{
+		FPlayerCardSymbol SingleCard;
+		SingleCard.SymbolNumber = Card->SymbolNumber;
+		SingleCard.SymbolType = Card->SymbolType;
+		PlayerCardCollection.PlayerCards.Add(SingleCard);
+	}
+	
+	SelectCardCollection.CardList.Empty();
+	
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+	
+	GameMode->RefundCards(PlayerCardCollection);
+}
+
+// 플레이어에게 카드 선택권 요구
+void ABangPlayerController::Client_RequestSelectCard_Implementation(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards)
+{
+	if (DrawCards.PlayerCards.Num() == 0) return;
+
+	if (IsLocalController() && GetUniqueID() == FromUniqueID)
+	{
+		ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
+		BangPlayerState->GetCard(FromUniqueID, SelectCardCollection);
+		
+		// 플레이어에게 카드 선택권 요구
+		
+		
+		// 선택한 카드 배열에서 지우기
+		// SelectCardCollection
+	}
+}
+
+void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
+{
+	if (Message.IsEmpty()) return;
+
+	if (FromNickname.IsEmpty())
+	{
+		// 전역
+		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			BangHUD->ChattingWidgetInstance->AddMessage(
+				FText::FromString(FString::Printf(TEXT("%s: %s"),*FromNickname, *Message)),
+				FSlateColor(FLinearColor::White)
+			);
+		}	
+	}
+	else
+	{
+		// 특정
+		if (PlayerNickname == FromNickname)
+		{
+			if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+			{
+				BangHUD->ChattingWidgetInstance->AddMessage(
+					FText::FromString(FString::Printf(TEXT("%s: %s"),*FromNickname, *Message)),
+					FSlateColor(FLinearColor::Red)
+				);
+			}
+		}
+	}
+}
+
+void ABangPlayerController::Server_SendMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
+{
+	if (ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>())
+	{
+		BangGameState->BroadcastChatMessage(Message, FromNickname, ToPlayerNickname);
+	}
+}
+
+void ABangPlayerController::Server_StartGame_Implementation()
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->ForceUpdate_StartGame_Real();
+}
+
+void ABangPlayerController::StartButtonCLicked()
+{
+	JCH_Test();
+	//Server_StartGame();
+}
+
+void ABangPlayerController::Server_StartTest_Implementation()
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->StartTest();
+}
+
+void ABangPlayerController::TestButtonCLicked()
+{
+	UE_LOG(LogTemp, Error, TEXT("TestButtonCLicked"));
+	// 로직 작성
+	
+	Server_StartTest();
 }
 
 
@@ -936,12 +1142,13 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 	}
 }
 
-void ABangPlayerController::Client_SelectTarget_Implementation()
+void ABangPlayerController::Client_SelectTarget_Implementation(const FSingleCard& SingleCard)
 {
     uint32 TargetPlayerID = 15;//GetSelectedTargetID(); // 상대 플레이어 ID를 가져옴 (레이 트레이싱 담당자에게 받아올 부분)
 
     if (TargetPlayerID > 0)
     {
+		Server_UseCard(SingleCard, TargetPlayerID);
 		UE_LOG(LogTemp, Warning, TEXT("The End"));
     }
 }
@@ -987,216 +1194,6 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 		Mesh->SetRenderCustomDepth(bEnable);
 		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
 	}
-}
-
-///////////////////////////
-//// 찬호 추가 
-//////////////////////////
-void ABangPlayerController::Client_DisplayBangUI_Implementation()
-{
-	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-	{
-		BangHUD->ChattingWidgetInstance->AddMessage(
-			FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
-			FSlateColor(FLinearColor::Green)
-		);
-	}	
-}
-
-void ABangPlayerController::NotifyHUDLoaded()
-{
-	Server_HUDLoaded();
-	if (!HasAuthority())
-	{
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-		{
-			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
-		}
-	}
-}
-
-void ABangPlayerController::Server_HUDLoaded_Implementation()
-{
-	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (!GameMode)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
-		return;
-	}
-
-	GameMode->UpdatePlayerHUD();
-}
-
-void ABangPlayerController::SendMessageToServer(FString Message)
-{
-	if (Message.IsEmpty()) return;
-
-	FString ToPlayerNickname = "";
-
-	// 귓속말의 경우 /{플레이어 아이디} {채팅내용}
-	if (Message[0] == '/')
-	{
-		// 귓속말
-		FString RawContent = Message.RightChop(1);
-
-		FString TargetIDString;
-		FString ChatContent;
-
-		if (RawContent.Split(TEXT(" "), &TargetIDString, &ChatContent))
-		{
-			ToPlayerNickname = TargetIDString;
-		}
-	}
-
-	// 전체챗팅
-	Server_SendMessage(Message, PlayerNickname, ToPlayerNickname);
-}
-
-// PlayerState에서 값이 갱신되면 호출
-void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerCollection)
-{
-	for (FPlayerInformation PlayerInfo : FPlayerCollection.Players)
-	{
-		UE_LOG(LogTemp, Display, TEXT("[======================]"));
-		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent]"));
-		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %d"), PlayerInfo.PlayerUniqueID);
-		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %s"), *PlayerInfo.PlayerName);
-		UE_LOG(LogTemp, Display, TEXT("[======================]"));
-	}
-
-	for (FPlayerInformation PlayerInfo : FPlayerCollection.Players)
-	{
-		GetPlayerStateAtBeginTest(PlayerInfo.PlayerUniqueID);
-		UpdatePlayerInfo(PlayerInfo.PlayerUniqueID,
-			PlayerInfo.CurrentHealth,
-			PlayerInfo.CharacterRange
-		);
-
-	}
-	// 플레이어 인포가 바겼을떄 변경돼야 하는것들
-	// 카드정보, 플레이어 정보
-	// 선택시에 카드정보 동기화
-
-	// HUD에 접근해서 Map 데이터 갱신 + 플레이어 수도 맞춰야겠죠
-
-	// 상대 스테이터스 info 갱신
-	UpdateCardList(FPlayerCollection);
-}
-
-// 플레이어에게 카드 선택권 요구 응답
-void ABangPlayerController::Server_RespondSelectCard_Implementation()
-{
-	FPlayerCardCollection PlayerCardCollection;
-	for (auto [Card] : SelectCardCollection.CardList)
-	{
-		FPlayerCardSymbol SingleCard;
-		SingleCard.SymbolNumber = Card->SymbolNumber;
-		SingleCard.SymbolType = Card->SymbolType;
-		PlayerCardCollection.PlayerCards.Add(SingleCard);
-	}
-	
-	SelectCardCollection.CardList.Empty();
-	
-	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (!GameMode)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
-		return;
-	}
-	
-	GameMode->RefundCards(PlayerCardCollection);
-}
-
-// 플레이어에게 카드 선택권 요구
-void ABangPlayerController::Client_RequestSelectCard_Implementation(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards)
-{
-	if (DrawCards.PlayerCards.Num() == 0) return;
-
-	if (IsLocalController() && GetUniqueID() == FromUniqueID)
-	{
-		ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
-		BangPlayerState->GetCard(FromUniqueID, SelectCardCollection);
-		
-		// 플레이어에게 카드 선택권 요구
-		
-		
-		// 선택한 카드 배열에서 지우기
-		// SelectCardCollection
-	}
-}
-
-void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
-{
-	if (Message.IsEmpty()) return;
-
-	if (FromNickname.IsEmpty())
-	{
-		// 전역
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-		{
-			BangHUD->ChattingWidgetInstance->AddMessage(
-				FText::FromString(FString::Printf(TEXT("%s: %s"),*FromNickname, *Message)),
-				FSlateColor(FLinearColor::White)
-			);
-		}	
-	}
-	else
-	{
-		// 특정
-		if (PlayerNickname == FromNickname)
-		{
-			if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-			{
-				BangHUD->ChattingWidgetInstance->AddMessage(
-					FText::FromString(FString::Printf(TEXT("%s: %s"),*FromNickname, *Message)),
-					FSlateColor(FLinearColor::Red)
-				);
-			}
-		}
-	}
-}
-
-void ABangPlayerController::Server_SendMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
-{
-	if (ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>())
-	{
-		BangGameState->BroadcastChatMessage(Message, FromNickname, ToPlayerNickname);
-	}
-}
-
-void ABangPlayerController::Server_StartGame_Implementation()
-{
-	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (!GameMode)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
-		return;
-	}
-
-	GameMode->ForceUpdate_StartGame_Real();
-}
-
-void ABangPlayerController::StartButtonCLicked()
-{
-	Server_StartGame();
-}
-
-void ABangPlayerController::Server_StartTest_Implementation()
-{
-	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (!GameMode)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
-		return;
-	}
-
-	GameMode->StartTest();
-}
-
-void ABangPlayerController::TestButtonCLicked()
-{
-	UE_LOG(LogTemp, Error, TEXT("TestButtonCLicked"));
-	Server_StartTest();
 }
 
 void ABangPlayerController::Client_ToggleMappingContext_Implementation()

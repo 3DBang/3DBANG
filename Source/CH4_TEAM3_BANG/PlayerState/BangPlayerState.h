@@ -47,9 +47,9 @@ public:
 	UFUNCTION()
 	void GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
 
-	// 플레이어 인포를 받아와서 하는 카드조회
-	void GetCard(int32 InPlayerUniqueID, FCardCollection& OutCardCollection, FPlayerCollection _PlayerInfo);
-
+	UFUNCTION() 
+	void GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard);
+	
 	// 컨트롤러가 카드타입 조회
 	UFUNCTION()
 	void GetCardType(const int32 InPlayerUniqueID, const FSingleCard& Card, EActiveType& OutActiveType, EPassiveType& OutPassiveType);
@@ -122,6 +122,8 @@ public:
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)
 	void Client_CheckCardSymbolReturn(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection);
+
+	void HandlePlayerInfoUpdated();
 private:
 	// 카드매니저
 	UPROPERTY()

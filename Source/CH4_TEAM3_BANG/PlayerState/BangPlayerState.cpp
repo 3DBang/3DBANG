@@ -58,6 +58,16 @@ void ABangPlayerState::Server_SetPlayerInfo_Implementation(const FPlayerCollecti
 {
 	PlayerInfo = NewInfo;
 	// OnRep_PlayerInfo() 호출
+
+	if (HasAuthority())
+	{
+		HandlePlayerInfoUpdated();
+	}
+}
+
+void ABangPlayerState::HandlePlayerInfoUpdated()
+{
+	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
 }
 
 void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
@@ -65,7 +75,10 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
 
 	// 딜리게이트 뺴서 PC에서 GetCard 호출 UpdateCardList
-	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
+	if (!HasAuthority())
+	{
+		HandlePlayerInfoUpdated();
+	}
 	
 	if (const TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(GetPlayerController()))
 	{
@@ -139,23 +152,9 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 	}
 }
 
-void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection, FPlayerCollection _PlayerInfo)
+void ABangPlayerState::GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard)
 {
-	if (InPlayerUniqueID == 0 || !CardManager) return;
-	
-	const FString UniqueNetId = GetUniqueId().GetUniqueNetId()->ToString();
-	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerState::GetCard] Player UniqueNetId: %s"), *UniqueNetId);
-	
-	FPlayerInformation* PlayerInformation = _PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
-	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] PlayerInformation: %d"), PlayerInformation->PlayerUniqueID);
-	
-	for (auto [SymbolType, SymbolNumber] : PlayerInformation->MyCards.PlayerCards)
-	{
-		FSingleCard OutFoundCard;
-		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
-		OutCardCollection.CardList.Add(OutFoundCard);
-	}
+	//if (CharacterType == CharacterType || !CardManager) return;
 }
 
 void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& SingleCard, const int32 ToUniqueID)
@@ -383,7 +382,6 @@ bool ABangPlayerState::CheckIsCardAble(const int32 FromUniqueID, const FSingleCa
 	
 	for (auto [SymbolType, SymbolNumber] : PlayerInfo.GetPlayerInformation(FromUniqueID)->EquippedCards.PlayerCards)
 	{
-		// const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& OutFoundCard
 		FSingleCard OutFoundCard;
 		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
 
