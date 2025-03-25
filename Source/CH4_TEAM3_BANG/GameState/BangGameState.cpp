@@ -1,12 +1,13 @@
+
 #include "BangGameState.h"
-#include "GameFramework/PlayerState.h"
+#include "PlayerState/BangPlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "PlayerController/BangPlayerController.h"
 
 void ABangGameState::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 }
 
 void ABangGameState::BroadcastChatMessage(const FString& NewMessage, const FString& SenderNickname, const FString& ReciverNickname)
@@ -44,12 +45,71 @@ void ABangGameState::OnRep_Message()
 	UE_LOG(LogTemp, Log, TEXT("[%s]: %s"), *FromPlayerNickname, *Message);
 }
 
+void ABangGameState::BroadcastPlayerListToClients()
+{
+	PlayerList.Empty();
+
+	for (APlayerState* PS : PlayerArray)
+	{
+		if (ABangPlayerState* BPS = Cast<ABangPlayerState>(PS))
+		{
+			PlayerList.Append(BPS->PlayerInfo.Players);
+		}
+	}
+
+	OnRep_PlayerList();
+
+	ReceivePlayerList(PlayerList);
+}
+
+void ABangGameState::ReceivePlayerList(const TArray<FPlayerInformation>& InPlayerList)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			PC->Client_UpdatePlayerListUI(InPlayerList);
+		}
+	}
+}
+
+void ABangGameState::OnRep_PlayerList()
+{
+	UE_LOG(LogTemp, Log, TEXT("PlayerList Replicated: %d players"), PlayerList.Num());
+}
 void ABangGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ABangGameState, Message);
 	DOREPLIFETIME(ABangGameState, FromPlayerNickname);
 	DOREPLIFETIME(ABangGameState, ToPlayerNickname);
+	DOREPLIFETIME(ABangGameState, PlayerList);
+	DOREPLIFETIME(ABangGameState, CurrentGameLog);
+
+}
+
+void ABangGameState::BroadcastGameLogToClients(const FString& GameLogMessage)
+{
+	CurrentGameLog = GameLogMessage;
+
+	OnRep_GameLog();
+	ReceiveGameLog(CurrentGameLog);
+}
+
+void ABangGameState::ReceiveGameLog(const FString& GameLogMessage)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			PC->Client_UpdateGameLogUI(GameLogMessage);
+		}
+	}
+}
+
+void ABangGameState::OnRep_GameLog()
+{
+	UE_LOG(LogTemp, Log, TEXT("[GameLog]: %s"), *CurrentGameLog);
 }
 void ABangGameState::AddPlayerState(APlayerState* NewPlayerState)
 {

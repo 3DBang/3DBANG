@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "Data/PlayerInformation.h" 
+
 #include "BangGameState.generated.h"
 
 class UBangCardManager;
@@ -24,14 +26,39 @@ public:
 	FString ToPlayerNickname;
 
 	UFUNCTION()
+	void BroadcastPlayerListToClients();
+
+	UFUNCTION()
+	void ReceivePlayerList(const TArray<FPlayerInformation>& InPlayerList);
+
+	UFUNCTION()
+	void OnRep_PlayerList();
+
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerList)
+	TArray<FPlayerInformation> PlayerList;
+
+	UFUNCTION()
 	void OnRep_Message();
 
 	UFUNCTION()
 	void BroadcastChatMessage(const FString& NewMessage, const FString& SenderNickname, const FString& ReciverNickname);
-	
+
 	UFUNCTION()
 	void ReceiveMessage(const FString& ChatMessage, const FString& FromNickname, const FString& ReciverNickname);
-	
+
+
+	UFUNCTION()
+	void BroadcastGameLogToClients(const FString& GameLogMessage);
+
+	UFUNCTION()
+	void OnRep_GameLog();
+
+	UPROPERTY(ReplicatedUsing = OnRep_GameLog)
+	FString CurrentGameLog;
+
+	UFUNCTION()
+	void ReceiveGameLog(const FString& GameLogMessage);
 	virtual void AddPlayerState(APlayerState* NewPlayerState) override;
 	virtual void RemovePlayerState(APlayerState* PlayerState) override;
+
 };

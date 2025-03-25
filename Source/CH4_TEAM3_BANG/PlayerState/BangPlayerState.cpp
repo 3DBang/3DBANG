@@ -16,7 +16,7 @@ ABangPlayerState::ABangPlayerState()
 void ABangPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()))
 	{
 		FCardManagerInstance OutCardManager;
@@ -58,27 +58,20 @@ void ABangPlayerState::Server_SetPlayerInfo_Implementation(const FPlayerCollecti
 {
 	PlayerInfo = NewInfo;
 	// OnRep_PlayerInfo() 호출
-
-	if (HasAuthority())
-	{
-		HandlePlayerInfoUpdated();
-	}
+	HandlePlayerInfoUpdated();
 }
 
 void ABangPlayerState::HandlePlayerInfoUpdated()
 {
+	// 호스트에서 호출 되는거 확인
 	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
 }
 
 void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 {
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
-
 	// 딜리게이트 뺴서 PC에서 GetCard 호출 UpdateCardList
-	if (!HasAuthority())
-	{
-		HandlePlayerInfoUpdated();
-	}
+	HandlePlayerInfoUpdated();
 	
 	if (const TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(GetPlayerController()))
 	{
@@ -154,7 +147,16 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 
 void ABangPlayerState::GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard)
 {
-	//if (CharacterType == CharacterType || !CardManager) return;
+	if (CharacterType == ECharacterType::None || !CardManager) return;
+
+	CardManager->GetCardByCharacterTypeFromDataAsset(CharacterType, OutCard);
+}
+
+void ABangPlayerState::GetCardByJobType(const EJobType JobType, FSingleCard& OutCard)
+{
+	if (JobType == EJobType::None  || !CardManager) return;
+
+	CardManager->GetCardByJobTypeFromDataAsset(JobType, OutCard);
 }
 
 void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& SingleCard, const int32 ToUniqueID)
@@ -394,6 +396,27 @@ bool ABangPlayerState::CheckIsCardAble(const int32 FromUniqueID, const FSingleCa
 	return true;
 }
 
+bool ABangPlayerState::CheckIsCardAbleByPassive(const int32 FromUniqueID, const EPassiveType PassiveType)
+{
+	if (!CardManager) return false;
+
+	for (auto [SymbolType, SymbolNumber] : PlayerInfo.GetPlayerInformation(FromUniqueID)->EquippedCards.PlayerCards)
+	{
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+
+		if (const TObjectPtr<UBangPassiveCard> BangPassiveCard = Cast<UBangPassiveCard>(OutFoundCard.Card))
+		{
+			if (PassiveType == BangPassiveCard->PassiveType)
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 void ABangPlayerState::Server_CheckCardSymbol_Implementation(const uint32& FromUniqueID, const uint16& CardCount)
 {
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
@@ -410,25 +433,25 @@ void ABangPlayerState::Server_CheckCardSymbol_Implementation(const uint32& FromU
 void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCardSymbol& SingleCard, const int32& ToUniqueID, const EActiveType& ActiveType, const EPassiveType& PassiveType)
 {
 	if (!CardManager) return;
-	
+
 	switch (ActiveType)
 	{
 	case EActiveType::None:
 		break;
 	case EActiveType::Bang:
+	{
+		FPlayerCollection PlayerCollection;
+		if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::SlabTheKiller)
 		{
-			FPlayerCollection PlayerCollection;
-			if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::SlabTheKiller)
-			{
-				// 빗나감 두개 써야 막아지도록 PC에서 설정	
-			}
-			else if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::Jourdonnais)
-			{
-				// 카드 펼치기 해야함
-				Server_CheckCardSymbol(ToUniqueID, 1);
-				return;
-			}
+			// 빗나감 두개 써야 막아지도록 PC에서 설정	
 		}
+		else if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::Jourdonnais)
+		{
+			// 카드 펼치기 해야함
+			Server_CheckCardSymbol(ToUniqueID, 1);
+			return;
+		}
+	}
 	case EActiveType::Missed:
 		break;
 	case EActiveType::Stagecoach:
@@ -540,7 +563,7 @@ void ABangPlayerState::Server_UseCard_Implementation(const int32 FromUniqueID, c
 
 void ABangPlayerState::UseCardToAll(const int32 FromUniqueID, FSingleCard SingleCard)
 {
-	
+
 }
 
 void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard)
@@ -560,6 +583,11 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 	
 	// 플레이어 턴으로 변경 및 인포에 카드 추가
 	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
+	if (!PlayerInformation)
+	{
+		UE_LOG(LogTemp, Error, TEXT("StartTurn: PlayerInformation is nullptr for ID: %d"), InPlayerUniqueID);
+		return;
+	}
 	PlayerInformation->bIsMyTurn = true;
 	PlayerInformation->MyCards.AddCardCollectionToPlayerCards(DrawCards);
 	ForceNetUpdate();
@@ -616,7 +644,7 @@ void ABangPlayerState::Server_PlayerDead_Implementation(const int32 FromUniqueID
 	const EJobType JobType = PlayerInfo.GetPlayerInformation(FromUniqueID)->JobCardType;
 	FPlayerCardCollection CardList;
 	PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
-	
+
 	GameMode->PlayerDead(FromUniqueID, PlayerCharacter, JobType, CardList);
 }
 
@@ -663,14 +691,14 @@ void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& O
 FCardCollection ABangPlayerState::GetCardListFromCardManager(const FPlayerInformation& Info) const
 {
 	FCardCollection CardCollection;
-	
+
 	for (auto [SymbolType, SymbolNumber] : Info.MyCards.PlayerCards)
 	{
 		FSingleCard OutFoundCard;
-		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber,OutFoundCard);
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
 		CardCollection.CardList.Add(OutFoundCard);
 	}
-	
+
 	return CardCollection;
 }
 
@@ -691,7 +719,7 @@ FString ABangPlayerState::FPlayerInformationToString(const FPlayerInformation& I
 	{
 		String += FString::Printf(TEXT(" Card: %s"), *CardList.Card->CardName.ToString());
 	}
-	
+
 	return String;
 }
 
@@ -703,6 +731,7 @@ FString ABangPlayerState::FPlayerCollectionToString(const FPlayerCollection& Col
 		Output += FPlayerInformationToString(Info) + TEXT("\n");
 	}
 	return Output;
+
 }
 
 void ABangPlayerState::OnRep_PlayerUniqueID()

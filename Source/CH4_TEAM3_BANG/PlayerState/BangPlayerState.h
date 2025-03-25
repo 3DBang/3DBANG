@@ -13,7 +13,7 @@ UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerState : public APlayerState
 {
 	GENERATED_BODY()
-	
+
 public:
 	ABangPlayerState();
 
@@ -38,6 +38,10 @@ public:
 	UFUNCTION()
 	void OnRep_PlayerInfo();
 
+	// 플레이어 Info가 서버에서 변경됐을떄 호출되는 함수
+	UFUNCTION()
+	void HandlePlayerInfoUpdated();
+
 	// 플레이어 체력 감소
 	UFUNCTION()
 	void LoosePlayerHealth(const uint32& TargetUniqueID, int32 Amount);
@@ -50,10 +54,14 @@ public:
 	UFUNCTION()
 	void GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
 
+	// 캐릭터 카드 타입으로 싱글 카드 받아오기
 	UFUNCTION() 
 	void GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard);
 	
-	// 컨트롤러가 카드타입 조회
+	// 직업 카드 타입으로 싱글 카드 받아오기
+	UFUNCTION()
+	void GetCardByJobType(const EJobType JobType, FSingleCard& OutCard);
+	
 	UFUNCTION()
 	void GetCardType(const int32 InPlayerUniqueID, const FSingleCard& Card, EActiveType& OutActiveType, EPassiveType& OutPassiveType);
 
@@ -89,13 +97,17 @@ public:
 	// 패시브 카드 중복 장착 방지용
 	UFUNCTION()
 	bool CheckIsCardAble(const int32 FromUniqueID, const FSingleCard& SingleCard);
+
+	// 패시브 카드 타입 확인
+	UFUNCTION()
+	bool CheckIsCardAbleByPassive(const int32 FromUniqueID, const EPassiveType PassiveType);
 	
 	/////////////////////
 	/// 서버통신
 	/////////////////////
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn(const int32 InPlayerUniqueID);
-	
+
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(
 		const int32 FromUniqueID,
@@ -106,7 +118,7 @@ public:
 	// 플레이어 사망 처리
 	UFUNCTION(Server, Reliable)
 	void Server_PlayerDead(const int32 FromUniqueID);
-	
+
 	// 플레이어 카드 뽑기
 	UFUNCTION(Server, Reliable)
 	void Server_DrawCard(const uint32 FromUniqueID, const uint16 CardCount, const bool bIsForce);
@@ -125,13 +137,11 @@ public:
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)
 	void Client_CheckCardSymbolReturn(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection);
-
-	void HandlePlayerInfoUpdated();
 private:
 	// 카드매니저
 	UPROPERTY()
 	TObjectPtr<UBangCardManager> CardManager;
-	
+
 	// 심볼, 번호 정보로 카드리스트에서 카드를 찾아온다.
 	UFUNCTION()
 	FCardCollection GetCardListFromCardManager(const FPlayerInformation& Info) const;
@@ -141,7 +151,5 @@ private:
 	FString FPlayerInformationToString(const FPlayerInformation& Info);
 	UFUNCTION()
 	FString FPlayerCollectionToString(const FPlayerCollection& Collection);
-	
+
 };
-
-

@@ -18,6 +18,8 @@ class UCanvasPanel;
  * 
  */
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUseCardDelegate, FCardCollection, SelectedCard, ECardSelectPurpose, Purpose);
+
 // 카드 선택 이벤트를 위한 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardSelectedDelegate, FSingleCard, SelectedCard);
 UCLASS()
@@ -54,29 +56,57 @@ public:
 	//턴 종료 버튼
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
 	UButton* TurnEndButton;
-	
+
+	// 직업 카드 슬롯
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
 	UCard* JobCardSlot;
 
+	// 캐릭터 카드 슬롯
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
 	UCard* CharacterCardSlot;
-	
+
+	// 카드 위젯 클래스
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UCard> CardWidgetClass;
+	
 public:
 	// 선택된 카드 정보를 저장하는 변수
 	UPROPERTY(BlueprintReadOnly, Category = "CardList")
-	FSingleCard SelectedCard;
+	FCardCollection SelectedCardList;
     
 	// 선택된 카드 위젯 포인터
 	UPROPERTY(BlueprintReadOnly, Category = "CardList")
-	TObjectPtr<UCard> SelectedCardWidget;
-    
+	TArray<TObjectPtr<UCard>> SelectedCardWidgetList;
+
+	//카드가 선택되면 다른 카드들의 선택을 해제함
 	UPROPERTY(BlueprintAssignable, Category = "CardList")
 	FOnCardSelectedDelegate OnCardSelected;
 
+	/**
+	 * OnUseCard는 카드 사용이 발생했을 때 호출되는 델리게이트입니다.
+	 * 선택된 카드 리스트와 현재 카드 선택 목적을 전달하여 해당 이벤트를 처리할 수 있습니다.
+	 *
+	 * 델리게이트 매개변수:
+	 * - FCardCollection SelectedCardList: 선택된 카드들의 컬렉션을 나타냅니다.
+	 * - ECardSelectPurpose CurrentCardSelectPurpose: 현재 카드 선택 목적을 나타냅니다.
+	 *
+	 * 이 델리게이트는 외부에서 바인딩하여 카드 사용 이벤트를 처리하는 데 사용할 수 있습니다.
+	 */
+	UPROPERTY(BlueprintAssignable, Category = "CardList")
+	FOnUseCardDelegate OnUseCard;
+	
+	
+	// 카드 리스트 숨김 처리 불 변수
 	UPROPERTY(BlueprintReadOnly, Category = "CardList")
 	bool bIsHidden;
+
+	// 카드 선택 목적
+	UPROPERTY(BlueprintReadOnly, Category = "CardList")
+	ECardSelectPurpose CurrentCardSelectPurpose;
+
+	// 선택해야 할 카드 개수
+	UPROPERTY(BlueprintReadOnly, Category = "CardList")
+	int32 CardsToSelectCount;
 	
 	// 카드를 선택하는 함수
 	UFUNCTION(BlueprintCallable, Category = "CardList")
@@ -98,22 +128,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CardList")
 	void ClearCards();
 	
-	//컨트롤러에서 쓰는 함수
+	//******* 컨트롤러에서 쓰는 함수 *********
+	
 	// 카드를 추가하는 함수
 	UFUNCTION(BlueprintCallable, Category = "CardList")
 	UCard* AddCard(FSingleCard CardData);
 
+	// 캐릭터 카드추가
 	void AddCardToCharacterCardSlot(FSingleCard CardData);
+	
+	// 직업카드 추가
 	void AddCardToJobCardSlot(FSingleCard CardData);
 	
 	// 선택된 카드를 리스트에서 제거하는 함수
 	UFUNCTION(BlueprintCallable, Category = "CardList")
-	void RemoveSelectedCard();
-
-	// 선택된 카드를 반환
-	UFUNCTION(BlueprintCallable, Category = "CardList")
-	FSingleCard GetSelectedCard() const { return SelectedCard; }
-
+	void RemoveSelectedCard(FSingleCard RemoveCard);
 	
 	
 protected:

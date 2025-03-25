@@ -45,8 +45,9 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] Player Login"));
 
-
-	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap") || MapName.Contains("Hwang")|| MapName.Contains("Bong"))
+	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap")
+		|| MapName.Contains("Hwang")
+		|| MapName.Contains("Bong"))
 	{
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{
@@ -55,7 +56,6 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, BangPlayerController);
 		}
 	}
-	
 	//게임 시작버튼을 누르면 그때 Player위치 조정함수 사용
 	//현재는 테스트용 입니다 
 	//SpawnPlayers();
@@ -221,12 +221,28 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 	}
 }
 
-// 테스트용으로 쓰는중
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
+
 	Players.Players.Empty();
 
+	/*if (LobbyPlayers.Players.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LobbyPlayers 비어 있음 → 테스트용 플레이어 추가"));
+
+		FPlayerInformation TempPlayer;
+		TempPlayer.PlayerUniqueID = 0;
+		TempPlayer.PlayerName = TEXT("TestPlayer");
+		TempPlayer.CurrentHealth = 4;
+		TempPlayer.MaxHealth = 4;
+		TempPlayer.JobCardType = EJobType::Officer;
+		TempPlayer.CharacterCardType = ECharacterType::BartCassidy;
+
+		LobbyPlayers.Players.Add(TempPlayer);
+	}*/
+
+	// 기존 코드 계속 진행
 	for (int i = 0; i < LobbyPlayers.Players.Num(); ++i)
 	{
 		FPlayerInformation PlayerInformation;
@@ -244,17 +260,18 @@ void ABangGameMode::StartTest()
 			PlayerInformation.CharacterCardType = ECharacterType::BartCassidy;
 
 		}
+
 		PlayerInformation.MaxHealth = 4;
 		PlayerInformation.CurrentHealth = 4;
 		PlayerInformation.Range = 1;
 		PlayerInformation.CharacterRange = 0;
 		PlayerInformation.bIsMyTurn = false;
-		
+
 		Players.Players.Add(PlayerInformation);
 	}
 
 	CurrentGameState = EGameState::GamePlaying;
-	
+
 	UE_LOG(LogTemp, Warning, TEXT("Players created: %d"), Players.Players.Num());
 
 	TArray<EJobType> JobCards;
@@ -281,7 +298,7 @@ void ABangGameMode::StartTest()
 		FCardCollection Cards;
 		CardManager->HandCards(Health, Cards);
 		Players.Players[i].MyCards.AddCardCollectionToPlayerCards(Cards);
-		
+
 		if (JobCards[i] == EJobType::Officer)
 		{
 			CurrentTurnPlayerUniqeID = Players.Players[i].PlayerUniqueID;
@@ -301,22 +318,47 @@ void ABangGameMode::StartTest()
 
 	UE_LOG(LogTemp, Warning, TEXT("CurrentPlayerTurn: %d"), CurrentTurnPlayerUniqeID);
 
+	// PS 동기화
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
-		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
-
-		// 최초 등록 동기화
-		BangPlayerState->PlayerInfo = Players;
-		if (GetNetMode() == NM_ListenServer)
+		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			BangPlayerState->HandlePlayerInfoUpdated();
-		}
+			if (const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>())
+			{
+				// 최초 등록 동기화
+				BangPlayerState->PlayerInfo = Players;
+				if (GetNetMode() == NM_ListenServer)
+				{
+					BangPlayerState->HandlePlayerInfoUpdated();
+				}
 		
-		BangPlayerState->ForceNetUpdate();
+				BangPlayerState->ForceNetUpdate();
+			}
+		}
 	}
 
-	AdvanceGameTurn();
+	if (Players.Players.Num() > 0)
+	{
+		const FString& RealPlayerName = Players.Players[0].PlayerName;
+
+		FString ActiveCardText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)EActiveType::Bang);
+		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
+
+		FString LogMessageActive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *ActiveCardText);
+		FString LogMessagePassive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
+
+		if (ABangGameState* GS = GetGameState<ABangGameState>())
+		{
+			GS->BroadcastGameLogToClients(LogMessageActive);
+			//GS->BroadcastGameLogToClients(LogMessagePassive);
+		}
+
+		AdvanceGameTurn();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("플레이어가 생성되지 않았습니다. AdvanceGameTurn을 건너뜁니다."));
+	}
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
@@ -380,17 +422,21 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
-		const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>();
-
-		if (GetNetMode() == NM_ListenServer)
+		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			BangPlayerState->HandlePlayerInfoUpdated();
+			if (const TObjectPtr<ABangPlayerState> BangPlayerState = CastingController->GetPlayerState<ABangPlayerState>())
+			{
+				if (GetNetMode() == NM_ListenServer)
+				{
+					BangPlayerState->HandlePlayerInfoUpdated();
+				}
+		
+				// 최초 등록 동기화
+				BangPlayerState->PlayerInfo = Players;
+				BangPlayerState->ForceNetUpdate();
+			}
 		}
-		// 최초 등록 동기화
-		BangPlayerState->PlayerInfo = Players;
-		BangPlayerState->ForceNetUpdate();
-
+		
 		//플레이어 카드리스트 초기화
 		//CastingController->Client_UpdateCardList(); 
 		//UE_LOG(LogTemp, Log, TEXT("PlayerState synced for controller: %s"), *CastingController->GetName());
@@ -890,4 +936,33 @@ void ABangGameMode::CloseCamera()
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;
+}
+
+void ABangGameMode::DrawCardsAndNotifyClients(int32 CardCount)
+{
+	if (!CardManager) return;
+
+	FCardCollection Drawn;
+	CardManager->HandCards(CardCount, Drawn);
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("카드 전달: %d장 → %s"), Drawn.CardList.Num(), *PC->GetName());
+			PC->Client_ShowDrawnCards(Drawn.CardList);
+		}
+	}
+}
+
+void ABangGameMode::Test_DrawAndLogCards()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Test_DrawAndLogCards 호출됨"));
+	DrawCardsAndNotifyClients(3);
+}
+
+void ABangGameMode::ShowTableCardsToAll()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ShowTableCardsToAll 호출됨"));
+	DrawCardsAndNotifyClients(3);
 }

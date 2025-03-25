@@ -55,6 +55,7 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Card")
 	FOnCardClickedDelegate OnCardClicked;
 
+	//카드 초기화시 호출
 	UFUNCTION(BlueprintCallable, Category = "Card")
 	void InitializeWithCard(FSingleCard InCard);
 
