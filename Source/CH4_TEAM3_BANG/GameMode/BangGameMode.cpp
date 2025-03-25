@@ -42,17 +42,26 @@ void ABangGameMode::BeginPlay()
 void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-	if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
-	{
-		BangPlayerControllers.Add(BangPlayerController);
-	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] Player Login"));
 
 	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap"))
 	{
+		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
+		{
+			BangPlayerControllers.Add(BangPlayerController);
+			if (TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(BangPlayerController->PlayerState))
+			{
+				BangPlayerState->PlayerUniqueID = PlayerUniqueIndex++;
+				UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] PlayerUniqueIndex: %d"), PlayerUniqueIndex);
+			}
+		}
+		
 		for (const TObjectPtr BangPlayerController : BangPlayerControllers)
 		{
 			BangPlayerController->Init();
-			AddLobbyPlayer(BangPlayerController->GetUniqueID(), BangPlayerController->PlayerNickname);
+			
+			AddLobbyPlayer(PlayerUniqueIndex, BangPlayerController->PlayerNickname);
 		}
 	}
 	
@@ -81,10 +90,15 @@ void ABangGameMode::GetPlayerStatesByUniqueID(const int32& UniqueID, FBangSingle
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
-		if (CastingController->GetUniqueID() == UniqueID && CastingController)
+		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			PlayerState_.State = CastingController->GetPlayerState<ABangPlayerState>();
+			if (TObjectPtr<ABangPlayerState> PlayerState = Cast<ABangPlayerState>(CastingController->PlayerState))
+			{
+				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
+				{
+					PlayerState_.State = CastingController->GetPlayerState<ABangPlayerState>();
+				}
+			}
 		}
 	}
 }
@@ -93,10 +107,15 @@ void ABangGameMode::GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSi
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get());
-		if (CastingController->GetUniqueID() == UniqueID && CastingController)
+		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			PlayerController_.Controller = CastingController;
+			if (TObjectPtr<ABangPlayerState> PlayerState = Cast<ABangPlayerState>(CastingController->PlayerState))
+			{
+				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
+				{
+					PlayerController_.Controller = CastingController;
+				}
+			}
 		}
 	}
 }
@@ -202,13 +221,14 @@ void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
 	Players.Players.Empty();
+	int iiiiiindex = 0;
 
 	for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
 	{
 		if (BPC && BPC->PlayerState)
 		{
 			FPlayerInformation Player;
-			Player.PlayerUniqueID = BPC->GetUniqueID();
+			Player.PlayerUniqueID = ++iiiiiindex;
 
 			// 호스트 판별 조건 (서버 + 로컬)
 			if (BPC->HasAuthority() && BPC->IsLocalController())
