@@ -142,10 +142,6 @@ struct FPlayerInformation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FPlayerCardCollection EquippedCards;
 
-	//선택받아야할 카드
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	FPlayerCardCollection SelectableCards;
-
 	void GetAllCardList(FPlayerCardCollection& OutCardList_)
 	{
 		for (auto Card : MyCards.PlayerCards)
@@ -178,9 +174,14 @@ USTRUCT(BlueprintType)
 struct FPlayerCollection
 {
 	GENERATED_BODY()
-	
+
+	// 선수들 정보 배열
 	UPROPERTY()
 	TArray<FPlayerInformation> Players;
+
+	// 선수들이 카드를 선택해야할 상황이 오면 선택받아야할 카드 배열
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	FPlayerCardCollection SelectableCards;
 
 	bool operator==(const FPlayerCollection& Other) const
 	{

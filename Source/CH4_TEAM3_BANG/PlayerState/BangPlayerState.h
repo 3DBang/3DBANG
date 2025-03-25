@@ -27,6 +27,10 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerInfo)
 	FPlayerCollection PlayerInfo;
 
+	// 본인 UniqueID
+	UPROPERTY()
+	uint32 PlayerUniqueID = 0;
+
 	// 플레이어 Info가 서버에서 변경됐을떄 호출되는 함수
 	UFUNCTION()
 	void OnRep_PlayerInfo();
@@ -104,6 +108,10 @@ public:
 	// 카드 심볼 확인
 	UFUNCTION(Server, Reliable)
 	void Server_CheckCardSymbol(const uint32& FromUniqueID, const uint16& CardCount);
+	
+	// PlayerInfo 동기화 PlayerState에서 값 변경 후 호출해야함
+	UFUNCTION(Server, Reliable)
+	void Server_SetPlayerInfo(const FPlayerCollection& NewInfo);
 	
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)

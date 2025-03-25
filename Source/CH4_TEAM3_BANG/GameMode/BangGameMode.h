@@ -133,6 +133,9 @@ private:
 	UPROPERTY()
 	EPlayerTurnState CurrentPlayerTurnState;
 
+	UPROPERTY()
+	uint32 PlayerUniqueIndex = 0;
+
 	// 로비 플레이어 등록
 	UFUNCTION()
 	void AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName);
