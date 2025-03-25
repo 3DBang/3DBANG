@@ -68,3 +68,31 @@ void ABangPlayerHUD::ShowDrawCardUI(const TArray<FSingleCard>& Cards)
 	TableCardWidgetInstance->InitializeCardList(Cards);
 	UE_LOG(LogTemp, Warning, TEXT("TableCardWidgetInstance 생성 및 초기화 완료"));
 }
+
+void ABangPlayerHUD::SetupTurnCardSelection(ECardSelectPurpose Purpose, FText ButtonText, int32 NumCardsToSelect)
+{
+	if (!CardListWidgetInstance)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::SetupTurnCardSelection] : CardListWidgetInstance is null"));
+		return;
+	}
+
+	// 버튼 텍스트 설정
+	CardListWidgetInstance->UseInputButtonText->SetText(ButtonText);
+	CardListWidgetInstance->UseInputButton->SetVisibility(ESlateVisibility::Visible);
+
+	//이넘과 선택할 카드 개수
+	CardListWidgetInstance->CurrentCardSelectPurpose = Purpose;
+	CardListWidgetInstance->CardsToSelectCount = NumCardsToSelect;
+	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::SetupTurnCardSelection] : 카드 개수 설정 %d"), NumCardsToSelect);
+	if (Purpose == ECardSelectPurpose::UseCard)
+	{
+		CardListWidgetInstance->TurnEndButton->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		CardListWidgetInstance->TurnEndButton->SetVisibility(ESlateVisibility::Hidden);
+	}
+	
+	UE_LOG(LogTemp, Log, TEXT("SetupTurnCardSelection called for Purpose: %s, ButtonText: %s, CardsToSelectCount: %d"),	*UEnum::GetValueAsString(Purpose), *ButtonText.ToString(), NumCardsToSelect);
+}

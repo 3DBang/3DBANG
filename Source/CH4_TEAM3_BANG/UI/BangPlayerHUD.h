@@ -32,6 +32,9 @@ public:
 
 	void ShowDrawCardUI(const TArray<FSingleCard>& Cards);
 
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void SetupTurnCardSelection(ECardSelectPurpose Purpose = ECardSelectPurpose::UseCard, FText ButtonText = INVTEXT("사용하기"), int32 NumCardsToSelect = 1);
+	
 protected:
 	// === 클래스 설정들 ===
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
