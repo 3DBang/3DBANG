@@ -28,7 +28,7 @@ public:
 	FPlayerCollection PlayerInfo;
 
 	// 본인 UniqueID
-	UPROPERTY()
+	// UPROPERTY(Replicated)
 	uint32 PlayerUniqueID = 0;
 
 	// 플레이어 Info가 서버에서 변경됐을떄 호출되는 함수
