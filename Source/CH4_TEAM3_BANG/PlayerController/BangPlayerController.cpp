@@ -657,7 +657,15 @@ void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerColl
 		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %d"), PlayerInfo.PlayerUniqueID);
 		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %s"), *PlayerInfo.PlayerName);
 	}
+	for (FPlayerInformation PlayerInfo : FPlayerCollection.Players)
+	{
+		GetPlayerStateAtBeginTest(PlayerInfo.PlayerUniqueID);
+		UpdatePlayerInfo(PlayerInfo.PlayerUniqueID,
+			PlayerInfo.CurrentHealth,
+			PlayerInfo.CharacterRange
+		);
 
+	}
 	// 플레이어 인포가 바겼을떄 변경돼야 하는것들
 	// 카드정보, 플레이어 정보
 	// 선택시에 카드정보 동기화
@@ -793,17 +801,24 @@ void ABangPlayerController::TestButtonCLicked()
 //////////////////////////
 void ABangPlayerController::MouseClicked()
 {
+	if (!IsLocalController())
+	{
+		return;
+	}
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
 	{
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
 		
+		
 		if (HitChar && HitChar != GetPawn())
 		{
 
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
+				
+
 				CurrentMouseCursor = EMouseCursor::Hand;
 				if (bIsCameraMode)
 				{
@@ -820,18 +835,61 @@ void ABangPlayerController::MouseClicked()
 					// === 위젯 생성 및 표시 ===
 					if (InteractionWidgetClass)
 					{
-						//여기도 수정해야하나?
-						ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
+						
+						ABangPlayerController* PCTest = Cast<ABangPlayerController>(GetWorld()->GetFirstPlayerController());
+						if (PCTest && PCTest->PlayerState)
+						{
+							ABangPlayerState* PSTest = Cast<ABangPlayerState>(PCTest->PlayerState);
+							if (PSTest)
+							{
+								GEngine->AddOnScreenDebugMessage(
+									-1,                              // Key: -1 = auto‑generate a new message each call
+									5.0f,                            // Duration (seconds)
+									FColor::Yellow,                  // Text color
+									FString::Printf(TEXT("PS TEST PlayerUniqueID: %d"), PSTest->PlayerUniqueID)
+								);
+							}
+						}
 
+
+						ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
+						if (GEngine)
+						{
+							for (const auto &a : BangState->PlayerInfo.Players)
+							{
+								UE_LOG(LogTemp, Display, TEXT("Unique id %d"),a.PlayerUniqueID);
+								UE_LOG(LogTemp, Display, TEXT("Current Hea%d"), a.CurrentHealth);
+								UE_LOG(LogTemp, Display, TEXT("Range %d"), a.Range);
+								UE_LOG(LogTemp, Display, TEXT("Name is %s"),*a.PlayerName);
+								UE_LOG(LogTemp, Display, TEXT("====================="));
+							}
+							UE_LOG(LogTemp, Display, TEXT("====================="));
+							UE_LOG(LogTemp, Display, TEXT("State Start"))
+							
+							auto Information = BangState->PlayerInfo.GetPlayerInformation(BangState->PlayerUniqueID);
+							UE_LOG(LogTemp, Display, TEXT("Unique id %d"), Information->PlayerUniqueID);
+							UE_LOG(LogTemp, Display, TEXT("Current Hea%d"), Information-> CurrentHealth);
+							UE_LOG(LogTemp, Display, TEXT("Range %d"), Information->Range);
+							UE_LOG(LogTemp, Display, TEXT("Name is %s"), *Information->PlayerName);
+							UE_LOG(LogTemp, Display, TEXT("====================="));
+
+							GEngine->AddOnScreenDebugMessage(
+								-1,                              // Key: -1 = auto‑generate a new message each call
+								5.0f,                            // Duration (seconds)
+								FColor::Yellow,                  // Text color
+								FString::Printf(TEXT("PlayerUniqueID: %d"), BangState->PlayerUniqueID)
+							);
+						}
 						if (PlayerWidgets.Contains(BangState->PlayerUniqueID))
 						{
+							
 							//OtherPlayer->GetPlayerState()->GetPlayerId())
-							GEngine->AddOnScreenDebugMessage(
+							/*GEngine->AddOnScreenDebugMessage(
 								-1,
 								10.f,
 								FColor::Red,
 								TEXT("[Mouse Click ]HAS Player State")
-							);
+							);*/
 							//InteractionWidgetComponent = *PlayerWidgets.Find(OtherPlayer->GetPlayerState()->GetPlayerId());
 
 						}

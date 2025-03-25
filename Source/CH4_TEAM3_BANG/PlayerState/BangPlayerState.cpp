@@ -82,7 +82,7 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 	
 	if (const TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(GetPlayerController()))
 	{
-		BangPlayerController->PlayerUniqueID = PlayerUniqueID;
+		BangPlayerController->PlayerUniqueID = PlayerUniqueID; 
 		UE_LOG(LogTemp, Display, TEXT("Update UniqueID {%d}{%d}"), PlayerUniqueID, BangPlayerController->PlayerUniqueID);
 	}
 	
@@ -656,6 +656,7 @@ void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	// PlayerStat을 모든 클라에 복제하겠다는 뜻
 	DOREPLIFETIME(ABangPlayerState, PlayerInfo);
+	DOREPLIFETIME(ABangPlayerState, PlayerUniqueID);
 }
 
 // 카드매니저에서 카드정보 가져오기
@@ -704,3 +705,7 @@ FString ABangPlayerState::FPlayerCollectionToString(const FPlayerCollection& Col
 	return Output;
 }
 
+void ABangPlayerState::OnRep_PlayerUniqueID()
+{
+	Client_SetUniqueId(PlayerUniqueID);
+}

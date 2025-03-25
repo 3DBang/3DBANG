@@ -143,7 +143,8 @@ void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& Player
 	// PS에 전달
 	if (TObjectPtr<ABangPlayerState> BangPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
 	{
-		BangPlayerState->Client_SetUniqueId(UniqueID);
+		//BangPlayerState->Client_SetUniqueId(UniqueID);
+		BangPlayerState->PlayerUniqueID = UniqueID;
 		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::SetPlayerUniqueID] PlayerUniqueIndex: %d"), UniqueID);
 	}
 	
@@ -236,17 +237,30 @@ void ABangGameMode::StartTest()
 		{
 			PlayerInformation.JobCardType = EJobType::Officer;
 			PlayerInformation.CharacterCardType = ECharacterType::ElGringo;
+
+			PlayerInformation.MaxHealth = 4;
+		PlayerInformation.CurrentHealth = 4;
+		PlayerInformation.Range = 2;
+		PlayerInformation.CharacterRange = 0;
+		PlayerInformation.bIsMyTurn = false;
 		}
 		else
 		{
 			PlayerInformation.JobCardType = EJobType::Betrayer;
 			PlayerInformation.CharacterCardType = ECharacterType::BartCassidy;
+
+			PlayerInformation.MaxHealth = 6;
+			PlayerInformation.CurrentHealth = 1;
+			PlayerInformation.Range = 3;
+			PlayerInformation.CharacterRange = 0;
+			PlayerInformation.bIsMyTurn = false;
+
 		}
-		PlayerInformation.MaxHealth = 4;
+		/*PlayerInformation.MaxHealth = 4;
 		PlayerInformation.CurrentHealth = 4;
 		PlayerInformation.Range = 1;
 		PlayerInformation.CharacterRange = 0;
-		PlayerInformation.bIsMyTurn = false;
+		PlayerInformation.bIsMyTurn = false;*/
 		
 		Players.Players.Add(PlayerInformation);
 	}
