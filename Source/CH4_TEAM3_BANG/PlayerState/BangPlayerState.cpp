@@ -16,7 +16,7 @@ ABangPlayerState::ABangPlayerState()
 void ABangPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()))
 	{
 		FCardManagerInstance OutCardManager;
@@ -412,25 +412,26 @@ void ABangPlayerState::Server_CheckCardSymbol_Implementation(const uint32& FromU
 void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCardSymbol& SingleCard, const int32& ToUniqueID, const EActiveType& ActiveType, const EPassiveType& PassiveType)
 {
 	if (!CardManager) return;
-	
+
 	switch (ActiveType)
 	{
 	case EActiveType::None:
 		break;
 	case EActiveType::Bang:
+	{
+		FPlayerCollection PlayerCollection;
+		if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::SlabTheKiller)
 		{
-			FPlayerCollection PlayerCollection;
-			if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::SlabTheKiller)
-			{
-				// 빗나감 두개 써야 막아지도록 PC에서 설정	
-			}
-			else if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::Jourdonnais)
-			{
-				// 카드 펼치기 해야함
-				Server_CheckCardSymbol(ToUniqueID, 1);
-				return;
-			}
+			// 빗나감 두개 써야 막아지도록 PC에서 설정	
 		}
+		else if (PlayerCollection.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::Jourdonnais)
+		{
+			// 카드 펼치기 해야함
+			Server_CheckCardSymbol(ToUniqueID, 1);
+			return;
+		}
+		
+	}
 	case EActiveType::Missed:
 		break;
 	case EActiveType::Stagecoach:
@@ -542,7 +543,7 @@ void ABangPlayerState::Server_UseCard_Implementation(const int32 FromUniqueID, c
 
 void ABangPlayerState::UseCardToAll(const int32 FromUniqueID, FSingleCard SingleCard)
 {
-	
+
 }
 
 void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard)
@@ -562,6 +563,11 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 	
 	// 플레이어 턴으로 변경 및 인포에 카드 추가
 	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
+	if (!PlayerInformation)
+	{
+		UE_LOG(LogTemp, Error, TEXT("StartTurn: PlayerInformation is nullptr for ID: %d"), InPlayerUniqueID);
+		return;
+	}
 	PlayerInformation->bIsMyTurn = true;
 	PlayerInformation->MyCards.AddCardCollectionToPlayerCards(DrawCards);
 	ForceNetUpdate();
@@ -618,7 +624,7 @@ void ABangPlayerState::Server_PlayerDead_Implementation(const int32 FromUniqueID
 	const EJobType JobType = PlayerInfo.GetPlayerInformation(FromUniqueID)->JobCardType;
 	FPlayerCardCollection CardList;
 	PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
-	
+
 	GameMode->PlayerDead(FromUniqueID, PlayerCharacter, JobType, CardList);
 }
 
@@ -664,14 +670,14 @@ void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& O
 FCardCollection ABangPlayerState::GetCardListFromCardManager(const FPlayerInformation& Info) const
 {
 	FCardCollection CardCollection;
-	
+
 	for (auto [SymbolType, SymbolNumber] : Info.MyCards.PlayerCards)
 	{
 		FSingleCard OutFoundCard;
-		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber,OutFoundCard);
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
 		CardCollection.CardList.Add(OutFoundCard);
 	}
-	
+
 	return CardCollection;
 }
 
@@ -692,7 +698,7 @@ FString ABangPlayerState::FPlayerInformationToString(const FPlayerInformation& I
 	{
 		String += FString::Printf(TEXT(" Card: %s"), *CardList.Card->CardName.ToString());
 	}
-	
+
 	return String;
 }
 
@@ -705,4 +711,3 @@ FString ABangPlayerState::FPlayerCollectionToString(const FPlayerCollection& Col
 	}
 	return Output;
 }
-
