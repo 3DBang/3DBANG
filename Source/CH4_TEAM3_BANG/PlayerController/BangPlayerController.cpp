@@ -61,13 +61,6 @@ void ABangPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	bShowMouseCursor = true;*/
-
-	if (IsLocalController())
-	{
-		// 약간 딜레이를 줘서 GameMode, PlayerState가 준비되도록 함
-		FTimerHandle TimerHandle;
-		//GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ABangPlayerController::Test, 5.0f, false);
-	}
 	FTimerHandle InitDelayHandle;
 	GetWorld()->GetTimerManager().SetTimer(InitDelayHandle, this, &ABangPlayerController::InitPlayerUniqueID, 0.3f, false);
 }
@@ -99,7 +92,7 @@ void ABangPlayerController::InitPlayerUniqueID()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Init] PlayerState가 아직 초기화되지 않았습니다."));
+		UE_LOG(LogTemp, Warning, TEXT("[Init] not PlayerState"));
 	}
 }
 
@@ -166,6 +159,8 @@ void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 
 	FCardCollection MyCardCollection;
 	BangPlayerState->GetCard(PlayerUniqueID, MyCardCollection); // PS에서 카드 정보 가져오기
+	
+	
 	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_UpdateCardList_Implementation] Player ID: %d"), PlayerUniqueID);
 
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
@@ -173,7 +168,9 @@ void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
 		{
 			CardListWidget->ClearCards(); // 기존 카드 리스트 비우기
-
+			
+			//CardListWidget->AddCardToCharacterCardSlot();
+			
 			for (const FSingleCard& Card : MyCardCollection.CardList)
 			{
 				CardListWidget->AddCard(Card); // 카드 위젯 추가
@@ -281,25 +278,25 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection_INBang"));
 		if (!bCanUseBang)return;
 		if (Info->CharacterCardType == ECharacterType::WillyTheKid)
+			//|| PS->CheckIsCardAble(PlayerUniqueID, ))
 		{
-			Client_SelectTarget();
+			bCanUseBang = true;
+
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Bang!!Bang!!Bang!!Bang!!Bang!!"));
 			bCanUseBang = false;
-			Client_SelectTarget();
 		}
 	}
-	bool bNeedsTarget = (OutActiveType == EActiveType::Bang ||
-		OutActiveType == EActiveType::Robbery ||
+	bool bNeedsTarget = (OutActiveType == EActiveType::Robbery ||
 		OutActiveType == EActiveType::CatBalou ||
 		OutActiveType == EActiveType::Duel ||
 		OutActiveType == EActiveType::Jail);
 
 	if (bNeedsTarget)
 	{
-		Client_SelectTarget(); // 나중에 실제 대상 선택 구현 예정
+		Client_SelectTarget(SingleCard); // 나중에 실제 대상 선택 구현 예정
 
 		if (TargetPlayerID == 0)
 		{
@@ -342,7 +339,7 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	//PS->Server_EndTurn(UniqueID, MyInfo->CharacterCardType);
 }
 
-void ABangPlayerController::Test()
+void ABangPlayerController::JCH_Test()
 {
 	FCardCollection DummyCardList;
 
@@ -358,6 +355,11 @@ void ABangPlayerController::Test()
 
 	Client_RequestCardSelection(DummyCardList, 1, ECardSelectPurpose::UseCard);
 	Client_HandleCardSelection_Implementation(SingleCard);
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	if (PS)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerUniqueID : %d,"), PS->PlayerUniqueID);
+	}
 }
 
 void ABangPlayerController::Client_RequestCardSelection_Implementation(
@@ -437,8 +439,9 @@ void ABangPlayerController::OnCardSelectionComplete(
 	if (!MyInfo)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("NoInfo"));
-		//return;
+		return;
 	}
+
 	EActiveType OutActiveType;
 	EPassiveType OutPassiveType;
 
@@ -756,7 +759,8 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	Server_StartGame();
+	JCH_Test();
+	//Server_StartGame();
 }
 
 void ABangPlayerController::Server_StartTest_Implementation()
@@ -1136,12 +1140,13 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 	}
 }
 
-void ABangPlayerController::Client_SelectTarget_Implementation()
+void ABangPlayerController::Client_SelectTarget_Implementation(const FSingleCard& SingleCard)
 {
 	uint32 TargetPlayerID = 15;//GetSelectedTargetID(); // 상대 플레이어 ID를 가져옴 (레이 트레이싱 담당자에게 받아올 부분)
 
     if (TargetPlayerID > 0)
     {
+		Server_UseCard(SingleCard, TargetPlayerID);
 		UE_LOG(LogTemp, Warning, TEXT("The End"));
     }
 }

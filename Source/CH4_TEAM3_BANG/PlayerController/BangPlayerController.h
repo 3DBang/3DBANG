@@ -93,7 +93,7 @@ public:
 	void InitPlayerUniqueID();
 
 	UFUNCTION(BlueprintCallable)
-	void Test();
+	void JCH_Test();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FString PlayerNickname;
@@ -119,7 +119,7 @@ public:
 	void Client_SetControllerRotation(FRotator NewRotation);
 
 	UFUNCTION(Client, Reliable)
-	void Client_SelectTarget();
+	void Client_SelectTarget(const FSingleCard& SingleCard);
 
 	UFUNCTION(Client, Reliable)
 	void Client_RequestCardSelection(const FCardCollection& CardsToChooseFrom,
