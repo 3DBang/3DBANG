@@ -16,8 +16,6 @@ class CH4_TEAM3_BANG_API UCardDescriptionWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-
-	
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* TitleText;		//카드 제목을 설명할 텍스트 블록
 	
