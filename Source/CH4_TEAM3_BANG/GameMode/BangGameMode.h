@@ -154,7 +154,10 @@ private:
 	// UniqueID로 PlayerController 받아오기
 	UFUNCTION()
 	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSinglePlayerController& PlayerController_);
-
+	// 플레이어 유니크 아이디 설정
+	UFUNCTION()
+	void SetPlayerUniqueID();
+	
 	UFUNCTION(BlueprintCallable)
 	void SetUserHP();
 
