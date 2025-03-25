@@ -416,8 +416,6 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 				}
 			}
 			
-			
-			
 			//PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards.Contains();
 			break;
 		}
