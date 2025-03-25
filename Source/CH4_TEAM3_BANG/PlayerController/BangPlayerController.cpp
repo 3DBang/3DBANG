@@ -692,27 +692,6 @@ void ABangPlayerController::MouseClicked()
 		//CloseHuD 
 	}
 	CurrentMouseCursor = EMouseCursor::Default;
-
-	///////Test
-	/*AActor* HitActor = HitResult.GetActor();
-	if (HitActor)
-	{
-		ABangCharacter* HitPawn = Cast<ABangCharacter>(HitActor);
-		if (HitPawn)
-		{
-			ABangPlayerController* HitController = Cast<ABangPlayerController>(HitPawn->GetController());
-			if (HitController)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Controller IS valid ,"));
-			}
-			else
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Controller IS NULL"));
-			}
-		}
-	}*/
-
-	//////TestEnd
 }
 
 void ABangPlayerController::Client_OpenCamera_Implementation()
