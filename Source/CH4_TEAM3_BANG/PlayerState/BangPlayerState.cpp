@@ -26,6 +26,12 @@ void ABangPlayerState::BeginPlay()
 	}
 }
 
+void ABangPlayerState::Client_SetUniqueId_Implementation(const uint32& FromPlayerUniqueID)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Client_SetUniqueId: [%d]"), FromPlayerUniqueID);
+	PlayerUniqueID = FromPlayerUniqueID;
+}
+
 void ABangPlayerState::LoosePlayerHealth(const uint32& TargetUniqueID, int32 Amount)
 {
 	// Message::피 닳은거 알림
@@ -60,6 +66,12 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 
 	// 딜리게이트 뺴서 PC에서 GetCard 호출 UpdateCardList
 	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
+	
+	if (const TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(GetPlayerController()))
+	{
+		BangPlayerController->PlayerUniqueID = PlayerUniqueID;
+		UE_LOG(LogTemp, Display, TEXT("Update UniqueID {%d}{%d}"), PlayerUniqueID, BangPlayerController->PlayerUniqueID);
+	}
 	
 	//const FString Message = FPlayerCollectionToString(PlayerInfo);
 	//GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
@@ -124,6 +136,25 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 			UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
 			OutCardCollection.CardList.Add(OutFoundCard);
 		}
+	}
+}
+
+void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection, FPlayerCollection _PlayerInfo)
+{
+	if (InPlayerUniqueID == 0 || !CardManager) return;
+	
+	const FString UniqueNetId = GetUniqueId().GetUniqueNetId()->ToString();
+	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerState::GetCard] Player UniqueNetId: %s"), *UniqueNetId);
+	
+	FPlayerInformation* PlayerInformation = _PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
+	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] PlayerInformation: %d"), PlayerInformation->PlayerUniqueID);
+	
+	for (auto [SymbolType, SymbolNumber] : PlayerInformation->MyCards.PlayerCards)
+	{
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
+		OutCardCollection.CardList.Add(OutFoundCard);
 	}
 }
 
@@ -488,7 +519,7 @@ void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, FBangS
 		{
 			if (ABangPlayerState* OtherPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
 			{
-				if (OtherPlayerState != this && OtherPlayerState->GetPlayerController()->GetUniqueID() == TargetUniqueID)
+				if (OtherPlayerState != this && OtherPlayerState->PlayerUniqueID == TargetUniqueID)
 				{
 					OutPlayerState.State = OtherPlayerState;
 					return;
@@ -521,9 +552,9 @@ void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleC
 	Server_UseCard(FromUniqueID, SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, EDeckType::HandedCard);
 }
 
- 
 void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards)
 {
+	/*
 	const TObjectPtr<UWorld> World = GetWorld();
 	if (!World || InPlayerUniqueID == 0)
 	{
@@ -564,11 +595,12 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 		GameState->ReceiveMessage(ChatMessage, FromNickname, ReciverNickname);
 		
 		// 현재 플레이어 턴이면
-		if (PlayerController->GetUniqueID() == InPlayerUniqueID)
+		if (PlayerController->PlayerUniqueID == InPlayerUniqueID)
 		{
 			PlayerController->Client_OnTurnStart(DrawCards);
 		}
 	}
+	*/
 }
 
 // 턴 종료 모든 처리 끝나면 호출

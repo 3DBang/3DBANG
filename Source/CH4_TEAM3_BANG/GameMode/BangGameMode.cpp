@@ -45,23 +45,13 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] Player Login"));
 
-	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap"))
+	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap") || MapName.Contains("Hwang"))
 	{
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{
 			BangPlayerControllers.Add(BangPlayerController);
-			if (TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(BangPlayerController->PlayerState))
-			{
-				BangPlayerState->PlayerUniqueID = PlayerUniqueIndex++;
-				UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] PlayerUniqueIndex: %d"), PlayerUniqueIndex);
-			}
-		}
-		
-		for (const TObjectPtr BangPlayerController : BangPlayerControllers)
-		{
 			BangPlayerController->Init();
-			
-			AddLobbyPlayer(PlayerUniqueIndex, BangPlayerController->PlayerNickname);
+			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, BangPlayerController);
 		}
 	}
 	
@@ -80,7 +70,7 @@ void ABangGameMode::Logout(AController* Exiting)
 
 		BangPlayerControllers.Remove(BangPlayerController);
 
-		const uint32 UniqueID = BangPlayerController->GetUniqueID();
+		const uint32 UniqueID = BangPlayerController->PlayerUniqueID;
 		LobbyPlayers.RemovePlayer(UniqueID);
 		ForceUpdate_RemovePlayer(UniqueID);
 	}
@@ -92,7 +82,7 @@ void ABangGameMode::GetPlayerStatesByUniqueID(const int32& UniqueID, FBangSingle
 	{
 		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			if (TObjectPtr<ABangPlayerState> PlayerState = Cast<ABangPlayerState>(CastingController->PlayerState))
+			if (TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
 			{
 				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
 				{
@@ -109,7 +99,7 @@ void ABangGameMode::GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSi
 	{
 		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			if (TObjectPtr<ABangPlayerState> PlayerState = Cast<ABangPlayerState>(CastingController->PlayerState))
+			if (TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
 			{
 				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
 				{
@@ -127,7 +117,7 @@ void ABangGameMode::GetPlayerCollection(FPlayerCollection& OutPlayerCollection) 
 	OutPlayerCollection = Players;
 }
 
-void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName)
+void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const TObjectPtr<ABangPlayerController>& PlayerController)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
 
@@ -148,6 +138,14 @@ void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& Player
 		PlayerInfo.PlayerName = PlayerNickName;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::AddLobbyPlayer] Player ID: %u nickname: %s"), UniqueID, *PlayerNickName);
+
+	// PS에 전달
+	if (TObjectPtr<ABangPlayerState> BangPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
+	{
+		BangPlayerState->Client_SetUniqueId(UniqueID);
+		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::SetPlayerUniqueID] PlayerUniqueIndex: %d"), UniqueID);
+	}
+	
 	LobbyPlayers.Players.Add(PlayerInfo);
 }
 
@@ -220,39 +218,29 @@ void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
 	Players.Players.Empty();
-	int iiiiiindex = 0;
 
-	for (const TObjectPtr<ABangPlayerController> BPC : BangPlayerControllers)
+	for (int i = 0; i < LobbyPlayers.Players.Num(); ++i)
 	{
-		if (BPC && BPC->PlayerState)
+		FPlayerInformation PlayerInformation;
+		FString PlayerName = FString::Printf(TEXT("Player[%d]"), LobbyPlayers.Players[i].PlayerUniqueID);
+		PlayerInformation.PlayerName = PlayerName;
+		if (i == 0) // 보안관
 		{
-			FPlayerInformation Player;
-			Player.PlayerUniqueID = ++iiiiiindex;
-
-			// 호스트 판별 조건 (서버 + 로컬)
-			if (BPC->HasAuthority() && BPC->IsLocalController())
-			{
-				FString PlayerName = FString::Printf(TEXT("Host[%d]"), Player.PlayerUniqueID);
-				Player.PlayerName = PlayerName;
-				Player.JobCardType = EJobType::Officer;
-				Player.CharacterCardType = ECharacterType::BartCassidy;
-			}
-			else
-			{
-				FString PlayerName = FString::Printf(TEXT("Guest[%d]"), Player.PlayerUniqueID);
-				Player.PlayerName = PlayerName;
-				Player.JobCardType = EJobType::SubOfficer;
-				Player.CharacterCardType = ECharacterType::CalamityJanet;
-			}
-
-			Player.MaxHealth = 4;
-			Player.CurrentHealth = 4;
-			Player.Range = 1;
-			Player.CharacterRange = 0;
-			Player.bIsMyTurn = false;
-
-			Players.Players.Add(Player);
+			PlayerInformation.JobCardType = EJobType::Officer;
+			PlayerInformation.CharacterCardType = ECharacterType::ElGringo;
 		}
+		else
+		{
+			PlayerInformation.JobCardType = EJobType::Betrayer;
+			PlayerInformation.CharacterCardType = ECharacterType::BartCassidy;
+		}
+		PlayerInformation.MaxHealth = 4;
+		PlayerInformation.CurrentHealth = 4;
+		PlayerInformation.Range = 1;
+		PlayerInformation.CharacterRange = 0;
+		PlayerInformation.bIsMyTurn = false;
+		
+		Players.Players.Add(PlayerInformation);
 	}
 
 	CurrentGameState = EGameState::GamePlaying;
@@ -295,6 +283,7 @@ void ABangGameMode::StartTest()
 	for (FPlayerInformation Player : Players.Players)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s"), *Player.PlayerName);
+		UE_LOG(LogTemp, Warning, TEXT("PlayerUniqueID: %d"), Player.PlayerUniqueID);
 		UE_LOG(LogTemp, Warning, TEXT("JobCardType: %d"), Player.JobCardType);
 		UE_LOG(LogTemp, Warning, TEXT("MaxHealth: %d"), Player.MaxHealth);
 		UE_LOG(LogTemp, Warning, TEXT("CharacterCardType: %d"), Player.CharacterCardType);
