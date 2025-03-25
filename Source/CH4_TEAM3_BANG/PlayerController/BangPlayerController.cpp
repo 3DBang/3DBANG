@@ -20,6 +20,7 @@
 #include "UI/Card/CardList.h"
 #include "UI/Chat/BangInGameChattingWidget.h"
 #include "Data/PlayerInformation.h"
+#include "UI/PlayerInfo/BangInfoWidget.h"
 
 ABangPlayerController::ABangPlayerController()
 {}
@@ -77,7 +78,7 @@ void ABangPlayerController::BeginPlay()
 		//GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ABangPlayerController::Test, 5.0f, false);
 	}
 	FTimerHandle InitDelayHandle;
-	GetWorld()->GetTimerManager().SetTimer(InitDelayHandle, this, &ABangPlayerController::InitPlayerUniqueID, 0.3f, false);
+	GetWorld()->GetTimerManager().SetTimer(InitDelayHandle, this, &ABangPlayerController::InitPlayerUniqueID, 3.0f, false);
 }
 
 void ABangPlayerController::OnRep_PlayerState()
@@ -611,23 +612,22 @@ void ABangPlayerController::MouseClicked()
 				else
 				{
 					// === 위젯 생성 및 표시 ===
-					if (InteractionWidgetClass) 
+					if (InteractionWidgetClass)
 					{
 						//여기도 수정해야하나?
-						if (PlayerWidgets.Contains(OtherPlayer->GetPlayerState()->GetPlayerId()))
+						ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
+
+						if (PlayerWidgets.Contains(BangState->PlayerUniqueID))
 						{
+							//OtherPlayer->GetPlayerState()->GetPlayerId())
 							GEngine->AddOnScreenDebugMessage(
 								-1,
 								10.f,
 								FColor::Red,
 								TEXT("[Mouse Click ]HAS Player State")
 							);
-							InteractionWidgetComponent = *PlayerWidgets.Find(OtherPlayer->GetPlayerState()->GetPlayerId());
-							if (InteractionWidgetComponent)
-							{
-								InteractionWidgetComponent->SetVisibility(true);
-								InteractionWidgetComponent->SetHiddenInGame(false);
-							}
+							//InteractionWidgetComponent = *PlayerWidgets.Find(OtherPlayer->GetPlayerState()->GetPlayerId());
+
 						}
 						else
 						{
@@ -648,17 +648,17 @@ void ABangPlayerController::MouseClicked()
 							InteractionWidgetComponent->SetRelativeLocation(
 								FVector(0.f, 0.f, OtherPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f)
 							);
-							PlayerWidgets.Add(OtherPlayer->GetPlayerState()->GetPlayerId(), InteractionWidgetComponent); 
-						//
-						}
 
-						// 2. 위젯 표시
-						/*if (InteractionWidgetComponent)
+							PlayerWidgets.Add(BangState->PlayerUniqueID, InteractionWidgetComponent);
+
+						}
+						if (InteractionWidgetComponent)
 						{
 							InteractionWidgetComponent->SetVisibility(true);
 							InteractionWidgetComponent->SetHiddenInGame(false);
-						}*/
+						}
 					}
+				
 					/**Test*/
 					uint32 PlayerStateID = 0;
 					uint32 TestTemp = 0;
@@ -1057,11 +1057,22 @@ void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerColl
 {
 	for (FPlayerInformation PlayerInfo : FPlayerCollection.Players)
 	{
+		UE_LOG(LogTemp, Display, TEXT("[======================]"));
 		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent]"));
 		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %d"), PlayerInfo.PlayerUniqueID);
 		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %s"), *PlayerInfo.PlayerName);
+		UE_LOG(LogTemp, Display, TEXT("[======================]"));
 	}
 
+	for (FPlayerInformation PlayerInfo : FPlayerCollection.Players)
+	{
+		GetPlayerStateAtBeginTest(PlayerInfo.PlayerUniqueID);
+		UpdatePlayerInfo(PlayerInfo.PlayerUniqueID,
+			PlayerInfo.CurrentHealth,
+			PlayerInfo.CharacterRange
+		);
+
+	}
 	// 플레이어 인포가 바겼을떄 변경돼야 하는것들
 	// 카드정보, 플레이어 정보
 	// 선택시에 카드정보 동기화
@@ -1258,7 +1269,6 @@ void ABangPlayerController::GetPlayerStateAtBeginTest(uint32 BangPlayerStateID)
 	{
 		return;
 	}
-
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
 		UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
@@ -1287,11 +1297,11 @@ void ABangPlayerController::GetPlayerStateAtBeginTest(uint32 BangPlayerStateID)
 }
 void ABangPlayerController::Client_GetPlayerStateAtBeginTest_Implementation(uint32 BangPlayerStateID)
 {
-	GetPlayerStateAtBeginTest(BangPlayerStateID);
+	//GetPlayerStateAtBeginTest(BangPlayerStateID);
 }
 void ABangPlayerController::Client_RemoveBangPlayerState_Implementation(uint32 BangPlayerStateID)
 {
-	RemoveBangPlayerState(BangPlayerStateID);
+	//RemoveBangPlayerState(BangPlayerStateID);
 }
 void ABangPlayerController::RemoveBangPlayerState(uint32 BangPlayerStateID)
 {
@@ -1299,30 +1309,37 @@ void ABangPlayerController::RemoveBangPlayerState(uint32 BangPlayerStateID)
 	{
 		return;
 	}
-	if (!PlayerWidgets.Contains(BangPlayerStateID))
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			10.f,
-			FColor::Red,
-			TEXT("[Player Controller :: RemoveBangPlayerState Bug]")
-		);
-		return;
-	}
+
 	UWidgetComponent** WidgetPtr = PlayerWidgets.Find(BangPlayerStateID);
 	
-	ABangPlayerState* Test = Cast<ABangPlayerState>(PlayerState);
-	uint32 TestId = Test->PlayerUniqueID;
-	UE_LOG(LogTemp, Display, TEXT("BangPlayerStateID is %d"),TestId);
-
-	PlayerUniqueID = TestId;
-
-	UE_LOG(LogTemp, Display, TEXT("Saved ID is %d"), TestId);
-
 	if (WidgetPtr && *WidgetPtr)
 	{
 		UWidgetComponent* WidgetComp = *WidgetPtr;
 		WidgetComp->DestroyComponent();
 		PlayerWidgets.Remove(BangPlayerStateID);
 	}
+}
+void ABangPlayerController::UpdatePlayerInfo(uint32 BangUniqueID, int32 NewHP, int32 NewRange)
+{
+	UWidgetComponent** WidgetCompPtr = PlayerWidgets.Find(BangUniqueID);
+	if (!WidgetCompPtr)
+	{
+		return;
+	}
+
+	UWidgetComponent* WidgetComp = *WidgetCompPtr;
+	if (!WidgetComp)
+	{
+		return;
+	}
+
+	UBangInfoWidget* InfoWidget = Cast<UBangInfoWidget>(WidgetComp->GetUserWidgetObject());
+	if (!InfoWidget)
+	{
+		return;
+	}
+
+	InfoWidget->UpdateRange(NewRange);
+	InfoWidget->UpdateCurrentHealth(NewHP);
+
 }
