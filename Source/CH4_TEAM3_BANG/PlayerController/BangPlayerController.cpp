@@ -18,6 +18,7 @@
 #include "Components/CapsuleComponent.h"
 #include "UI/Card/CardList.h"
 #include "UI/Chat/BangInGameChattingWidget.h"
+#include "Data/PlayerInformation.h"
 
 ABangPlayerController::ABangPlayerController()
 {}
@@ -75,17 +76,20 @@ void ABangPlayerController::BeginPlay()
 void ABangPlayerController::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
-	
-	if (const TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(PlayerState))
-	{
-		BangPlayerState->FOnPlayerInfoUpdated.AddDynamic(this, &ABangPlayerController::PlayerInfoUpdatedEvent);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("ABangPlayerController::BeginPlay() PlayerState NULL"));
-	}
+	TryBindPlayerInfoUpdated();
 
 	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
+}
+
+void ABangPlayerController::TryBindPlayerInfoUpdated()
+{
+	if (const TObjectPtr<ABangPlayerState> BangPlayerState = Cast<ABangPlayerState>(PlayerState))
+	{
+		if (!BangPlayerState->FOnPlayerInfoUpdated.IsAlreadyBound(this, &ABangPlayerController::PlayerInfoUpdatedEvent))
+		{
+			BangPlayerState->FOnPlayerInfoUpdated.AddDynamic(this, &ABangPlayerController::PlayerInfoUpdatedEvent);
+		}
+	}
 }
 
 void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
@@ -933,8 +937,23 @@ void ABangPlayerController::SendMessageToServer(FString Message)
 	Server_SendMessage(Message, PlayerNickname, ToPlayerNickname);
 }
 
-void ABangPlayerController::PlayerInfoUpdatedEvent()
+// PlayerState에서 값이 갱신되면 호출
+void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerCollection)
 {
+	for (FPlayerInformation PlayerInfo : FPlayerCollection.Players)
+	{
+		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent]"));
+		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %d"), PlayerInfo.PlayerUniqueID);
+		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %s"), *PlayerInfo.PlayerName);
+	}
+
+	// 플레이어 인포가 바겼을떄 변경돼야 하는것들
+	// 카드정보, 플레이어 정보
+	// 선택시에 카드정보 동기화
+
+	// HUD에 접근해서 Map 데이터 갱신 + 플레이어 수도 맞춰야겠죠
+
+	// 상대 스테이터스 info 갱신
 	UpdateCardList();
 }
 

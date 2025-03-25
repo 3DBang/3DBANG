@@ -5,7 +5,6 @@
 #include "Data/PlayerInformation.h"
 #include "GameFramework/GameMode.h"
 #include "PlayerController/BangPlayerController.h"
-#include "PlayerState/BangPlayerState.h"
 #include "BangGameMode.generated.h"
 
 class UBangCardManager;
@@ -127,6 +126,9 @@ private:
 	// 현재 플레이어의 턴 상태
 	UPROPERTY()
 	EPlayerTurnState CurrentPlayerTurnState;
+
+	UPROPERTY()
+	uint32 PlayerUniqueIndex = 0;
 
 	// 로비 플레이어 등록
 	UFUNCTION()
