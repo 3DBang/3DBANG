@@ -825,11 +825,17 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
+			ControllerIDAtCameraMode = PC->GetUniqueID();
 			bool bIsTarget = (PC->GetUniqueID() == BangPlayerControllerID);
 
 			PC->Client_SetInputEnabled(bIsTarget);
 			PC->Client_OpenCamera();
 			PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
+			if (bIsTarget)
+			{
+				PC->Client_ToggleMappingContext();
+			}
+			//
 			/*if (PC->GetUniqueID() == BangPlayerControllerID)
 			{
 				PC->Client_SetInputEnabled(true);
@@ -855,8 +861,16 @@ void ABangGameMode::CloseCamera()
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
+			bool bIsTarget = (PC->GetUniqueID() == ControllerIDAtCameraMode);
 			PC->Client_CloseCamera();
 			PC->Client_SetInputEnabled(true);
+			if (bIsTarget)
+			{
+				PC->Client_ToggleMappingContext();
+				//PS Id 보내야함 //
+			}
+
+			//PC->Client_SetOutline(false, 0);
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;
