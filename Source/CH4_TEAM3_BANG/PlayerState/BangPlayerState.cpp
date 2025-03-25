@@ -383,7 +383,6 @@ bool ABangPlayerState::CheckIsCardAble(const int32 FromUniqueID, const FSingleCa
 	
 	for (auto [SymbolType, SymbolNumber] : PlayerInfo.GetPlayerInformation(FromUniqueID)->EquippedCards.PlayerCards)
 	{
-		// const ESymbolType SymbolType, const int32 SymbolNumber, FSingleCard& OutFoundCard
 		FSingleCard OutFoundCard;
 		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
 
