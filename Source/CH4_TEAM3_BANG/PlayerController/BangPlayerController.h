@@ -76,6 +76,17 @@ public:
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
+private:
+	UPROPERTY()
+	uint32 MyPlayerID = 0;
+
+public:
+	UFUNCTION(BlueprintCallable)
+	void InitPlayerUniqueID();
+
+	UFUNCTION(BlueprintCallable)
+	void Test();
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FString PlayerNickname;
 	
