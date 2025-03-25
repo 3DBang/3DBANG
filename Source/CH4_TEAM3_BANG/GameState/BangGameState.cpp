@@ -54,7 +54,9 @@ void ABangGameState::BroadcastPlayerListToClients()
 	{
 		if (ABangPlayerState* BPS = Cast<ABangPlayerState>(PS))
 		{
-			PlayerList.Append(BPS->PlayerInfo.Players);
+			// 한 번만 사용
+			PlayerList = BPS->PlayerInfo.Players;
+			break;
 		}
 	}
 

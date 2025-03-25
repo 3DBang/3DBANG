@@ -21,7 +21,7 @@
 #include "UI/Chat/BangInGameChattingWidget.h"
 #include "UI/Card/TableCard.h" 
 #include "UI/Chat/PlayerListGameLog.h"
-
+#include "UI/Card/CardDescriptionWidget.h"
 #include "Data/PlayerInformation.h"
 
 ABangPlayerController::ABangPlayerController()
@@ -1345,16 +1345,10 @@ void ABangPlayerController::GetPlayerStateAtBegin()
 	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
 }
 
-void ABangPlayerController::Server_RequestPlayerListBroadcast_Implementation()
-{
-	if (ABangGameState* GS = GetWorld()->GetGameState<ABangGameState>())
-	{
-		GS->BroadcastPlayerListToClients();
-	}
-}
 
 void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString& GameLogMessage)
 {
+
 	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
 		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
@@ -1364,8 +1358,19 @@ void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString&
 	}
 }
 
+void ABangPlayerController::Server_RequestPlayerListBroadcast_Implementation()
+{
+	if (ABangGameState* GS = GetWorld()->GetGameState<ABangGameState>())
+	{
+		GS->BroadcastPlayerListToClients();
+	}
+}
+
+
 void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArray<FPlayerInformation>& PlayerList)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Client] PlayerListUI 업데이트 호출됨 - 플레이어 수: %d"), PlayerList.Num());
+
 	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
 		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
@@ -1386,8 +1391,22 @@ void ABangPlayerController::Server_TestDrawCards_Implementation()
 
 void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FSingleCard>& DrawnCards)
 {
-	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+	for (const FSingleCard& Card : Cards)
 	{
-		HUD->ShowDrawCardUI(DrawnCards);
+		// 1. 위젯 생성
+		if (UCardDescriptionWidget* DescriptionWidget = CreateWidget<UCardDescriptionWidget>(this, CardDescriptionWidgetClass))
+		{
+			if (Card.Card) // 카드 객체 유효하면
+			{
+				// 2. 설명 텍스트 설정
+				FText Title = Card.Card->CardName;
+				FText Description = Card.Card->Description;
+
+				DescriptionWidget->SetDescriptionText(Title, Description);
+
+				// 3. 화면에 추가
+				DescriptionWidget->AddToViewport();
+			}
+		}
 	}
 }
