@@ -139,6 +139,25 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 	}
 }
 
+void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection, FPlayerCollection _PlayerInfo)
+{
+	if (InPlayerUniqueID == 0 || !CardManager) return;
+	
+	const FString UniqueNetId = GetUniqueId().GetUniqueNetId()->ToString();
+	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerState::GetCard] Player UniqueNetId: %s"), *UniqueNetId);
+	
+	FPlayerInformation* PlayerInformation = _PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
+	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] PlayerInformation: %d"), PlayerInformation->PlayerUniqueID);
+	
+	for (auto [SymbolType, SymbolNumber] : PlayerInformation->MyCards.PlayerCards)
+	{
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
+		OutCardCollection.CardList.Add(OutFoundCard);
+	}
+}
+
 void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& SingleCard, const int32 ToUniqueID)
 {
 	// 카드 각종 분기 처리 카드를 사용할 수 없는 경우에는 PC에 응답 후 리턴처리
