@@ -48,6 +48,12 @@ void ABangPlayerState::GainPlayerHealth(const uint32& TargetUniqueID, int32 Amou
 	}
 }
 
+void ABangPlayerState::Server_SetPlayerInfo_Implementation(const FPlayerCollection& NewInfo)
+{
+	PlayerInfo = NewInfo;
+	// OnRep_PlayerInfo() 호출
+}
+
 void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 {
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
@@ -109,15 +115,15 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 {
 	if (InPlayerUniqueID == 0 || !CardManager) return;
 
-	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
-	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] PlayerInformation: %d"), PlayerInformation->PlayerUniqueID);
-	
-	for (auto [SymbolType, SymbolNumber] : PlayerInformation->MyCards.PlayerCards)
+	if (FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID))
 	{
-		FSingleCard OutFoundCard;
-		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
-		OutCardCollection.CardList.Add(OutFoundCard);
+		for (auto [SymbolType, SymbolNumber] : PlayerInformation->MyCards.PlayerCards)
+		{
+			FSingleCard OutFoundCard;
+			CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+			UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
+			OutCardCollection.CardList.Add(OutFoundCard);
+		}
 	}
 }
 
