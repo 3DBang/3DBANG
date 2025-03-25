@@ -776,13 +776,6 @@ void ABangGameMode::CheckCardSymbol(const uint32& UniqueID, const uint16& CardCo
 	}
 }
 
-void ABangGameMode::SetUserHP()
-{
-	if (BangPlayerControllers.Num() == 0) return;
-	BangPlayerControllers[0]->SetInitializeHP(5);
-}
-
-
 void ABangGameMode::ForceUpdate_AdvancePlayerTurn()
 {
 	PlayerIndex++;
@@ -798,6 +791,13 @@ void ABangGameMode::ForceUpdate_AdvancePlayerTurn()
 	CurrentPlayerTurnState = EPlayerTurnState::DrawCard;
 	
 	AdvanceGameTurn();
+}
+
+// 원명 추가
+void ABangGameMode::SetUserHP()
+{
+	if (BangPlayerControllers.Num() == 0) return;
+	BangPlayerControllers[0]->SetInitializeHP(5);
 }
 
 void ABangGameMode::SpawnPlayers()
@@ -910,6 +910,7 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 		}
 	}
 }
+
 void ABangGameMode::CloseCamera()
 {
 	if (ControllerIDAtCameraMode == INDEX_NONE)

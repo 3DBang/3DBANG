@@ -29,7 +29,7 @@ public:
 	void BroadcastPlayerListToClients();
 
 	UFUNCTION()
-	void ReceivePlayerList(const TArray<FPlayerInformation>& InPlayerList);
+	void ReceivePlayerList(const TArray<FPlayerInformation>& InPlayerList) const;
 
 	UFUNCTION()
 	void OnRep_PlayerList();
@@ -57,7 +57,7 @@ public:
 	FString CurrentGameLog;
 
 	UFUNCTION()
-	void ReceiveGameLog(const FString& GameLogMessage);
+	void ReceiveGameLog(const FString& GameLogMessage) const;
 	virtual void AddPlayerState(APlayerState* NewPlayerState) override;
 	virtual void RemovePlayerState(APlayerState* PlayerState) override;
 
