@@ -487,7 +487,7 @@ void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, FBangS
 		{
 			if (ABangPlayerState* OtherPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
 			{
-				if (OtherPlayerState != this && OtherPlayerState->GetPlayerController()->GetUniqueID() == TargetUniqueID)
+				if (OtherPlayerState != this && OtherPlayerState->PlayerUniqueID == TargetUniqueID)
 				{
 					OutPlayerState.State = OtherPlayerState;
 					return;
@@ -558,7 +558,7 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 		GameState->ReceiveMessage(ChatMessage, FromNickname, ReciverNickname);
 		
 		// 현재 플레이어 턴이면
-		if (PlayerController->GetUniqueID() == InPlayerUniqueID)
+		if (PlayerController->PlayerUniqueID == InPlayerUniqueID)
 		{
 			PlayerController->Client_OnTurnStart(DrawCards);
 		}
