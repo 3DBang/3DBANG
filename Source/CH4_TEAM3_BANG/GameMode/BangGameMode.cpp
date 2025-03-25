@@ -80,7 +80,7 @@ void ABangGameMode::Logout(AController* Exiting)
 
 		BangPlayerControllers.Remove(BangPlayerController);
 
-		const uint32 UniqueID = BangPlayerController->GetUniqueID();
+		const uint32 UniqueID = BangPlayerController->PlayerUniqueID;
 		LobbyPlayers.RemovePlayer(UniqueID);
 		ForceUpdate_RemovePlayer(UniqueID);
 	}

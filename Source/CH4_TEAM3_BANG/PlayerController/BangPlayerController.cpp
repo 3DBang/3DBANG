@@ -62,7 +62,7 @@ void ABangPlayerController::BeginPlay()
 	{
 		// 약간 딜레이를 줘서 GameMode, PlayerState가 준비되도록 함
 		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ABangPlayerController::Test, 5.0f, false);
+		//GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ABangPlayerController::Test, 5.0f, false);
 	}
 	FTimerHandle InitDelayHandle;
 	GetWorld()->GetTimerManager().SetTimer(InitDelayHandle, this, &ABangPlayerController::InitPlayerUniqueID, 0.3f, false);
@@ -90,8 +90,8 @@ void ABangPlayerController::InitPlayerUniqueID()
 {
 	if (ABangPlayerState* PS = GetPlayerState<ABangPlayerState>())
 	{
-		MyPlayerID = PS->PlayerUniqueID;
-		UE_LOG(LogTemp, Log, TEXT("[Init] PlayerUniqueID 설정 완료: %d"), MyPlayerID);
+		PlayerUniqueID = PS->PlayerUniqueID;
+		UE_LOG(LogTemp, Log, TEXT("[Init] PlayerUniqueID 설정 완료: %d"), PlayerUniqueID);
 	}
 	else
 	{
@@ -251,14 +251,14 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS) return;
 
-	FPlayerInformation* Info = PS->PlayerInfo.GetPlayerInformation(MyPlayerID);
+	FPlayerInformation* Info = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
 	if (!Info)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection NONOinfo"));
 		return;
 	}
 
-	PS->GetCardType(MyPlayerID, SingleCard, OutActiveType, OutPassiveType);
+	PS->GetCardType(PlayerUniqueID, SingleCard, OutActiveType, OutPassiveType);
 	UE_LOG(LogTemp, Warning, TEXT("OutActiveType: %s, OutPassiveType: %s"),
 		*UEnum::GetValueAsString(OutActiveType),
 		*UEnum::GetValueAsString(OutPassiveType));
@@ -312,10 +312,10 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS)return;
 
-	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(MyPlayerID);
+	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
 	if (!MyInfo)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[Controller] PlayerInfo not found for ID: %d"), MyPlayerID);
+		UE_LOG(LogTemp, Error, TEXT("[Controller] PlayerInfo not found for ID: %d"), PlayerUniqueID);
 		return;
 	}
 
@@ -426,7 +426,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		UE_LOG(LogTemp, Warning, TEXT("NoPS"));
 		return;
 	}
-	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(MyPlayerID);
+	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
 	if (!MyInfo)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("NoInfo"));
@@ -460,11 +460,11 @@ void ABangPlayerController::OnCardSelectionComplete(
 		{
 			//보유 카드에서 제거 후 버린카드덱에 추가
 			MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
-			PS->RestoreCard(MyPlayerID, Card);
+			PS->RestoreCard(PlayerUniqueID, Card);
 		}
 
 		// 턴 종료 호출
-		PS->Server_EndTurn(MyPlayerID);
+		PS->Server_EndTurn(PlayerUniqueID);
 		break;
 	}
 
@@ -522,12 +522,12 @@ void ABangPlayerController::OnCardSelectionComplete(
 	}
 	case ECardSelectPurpose::RespondToDuel:
 	{// 결투 중 뱅 카드 선택
-		PS->GetCardType(MyPlayerID, SelectedCards[0], OutActiveType, OutPassiveType);
+		PS->GetCardType(PlayerUniqueID, SelectedCards[0], OutActiveType, OutPassiveType);
 		if(OutActiveType == EActiveType::Bang)
 		{
 			// 뱅 카드 사용(결투 반격 성공)
 			// 카드 지우기
-			PS->RestoreCard(MyPlayerID, SelectedCards[0]);
+			PS->RestoreCard(PlayerUniqueID, SelectedCards[0]);
 		}
 		else
 		{
@@ -537,11 +537,11 @@ void ABangPlayerController::OnCardSelectionComplete(
 	}
 	case ECardSelectPurpose::RespondToIndians:
 	{// 인디언 카드 대응 – 뱅 카드 선택
-		PS->GetCardType(MyPlayerID, SelectedCards[0], OutActiveType, OutPassiveType);
+		PS->GetCardType(PlayerUniqueID, SelectedCards[0], OutActiveType, OutPassiveType);
 		if (OutActiveType == EActiveType::Bang)
 		{
 			// 뱅 카드 사용(인디언 쫓아내기 성공)
-			PS->RestoreCard(MyPlayerID, SelectedCards[0]);
+			PS->RestoreCard(PlayerUniqueID, SelectedCards[0]);
 		}
 		else
 		{
@@ -552,11 +552,11 @@ void ABangPlayerController::OnCardSelectionComplete(
 
 	case ECardSelectPurpose::RespondToAttack:
 	{	// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
-		PS->GetCardType(MyPlayerID, SelectedCards[0], OutActiveType, OutPassiveType);
+		PS->GetCardType(PlayerUniqueID, SelectedCards[0], OutActiveType, OutPassiveType);
 		if (OutActiveType == EActiveType::Missed)
 		{
 			// 회피 카드 사용(회피 성공)
-			PS->RestoreCard(MyPlayerID, SelectedCards[0]);
+			PS->RestoreCard(PlayerUniqueID, SelectedCards[0]);
 		}
 		else
 		{
@@ -1087,14 +1087,14 @@ void ABangPlayerController::Server_RespondSelectCard_Implementation()
 }
 
 // 플레이어에게 카드 선택권 요구
-void ABangPlayerController::Client_RequestSelectCard_Implementation(const uint32& PlayerUniqueID, const FPlayerCardCollection DrawCards)
+void ABangPlayerController::Client_RequestSelectCard_Implementation(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards)
 {
 	if (DrawCards.PlayerCards.Num() == 0) return;
 
-	if (IsLocalController() && GetUniqueID() == PlayerUniqueID)
+	if (IsLocalController() && GetUniqueID() == FromUniqueID)
 	{
 		ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
-		BangPlayerState->GetCard(PlayerUniqueID, SelectCardCollection);
+		BangPlayerState->GetCard(FromUniqueID, SelectCardCollection);
 		
 		// 플레이어에게 카드 선택권 요구
 		

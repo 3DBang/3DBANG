@@ -558,7 +558,7 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 		GameState->ReceiveMessage(ChatMessage, FromNickname, ReciverNickname);
 		
 		// 현재 플레이어 턴이면
-		if (PlayerController->GetUniqueID() == InPlayerUniqueID)
+		if (PlayerController->PlayerUniqueID == InPlayerUniqueID)
 		{
 			PlayerController->Client_OnTurnStart(DrawCards);
 		}

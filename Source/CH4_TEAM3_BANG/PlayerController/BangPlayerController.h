@@ -76,11 +76,9 @@ public:
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
-private:
 	UPROPERTY()
-	uint32 MyPlayerID = 0;
-
-public:
+	uint32 PlayerUniqueID = 0;
+	
 	UFUNCTION(BlueprintCallable)
 	void InitPlayerUniqueID();
 
@@ -226,7 +224,7 @@ public:
 	
 	// 플레이어에게 카드 선택권 요구
 	UFUNCTION(Client, Reliable)
-	void Client_RequestSelectCard(const uint32& PlayerUniqueID, const FPlayerCardCollection DrawCards);
+	void Client_RequestSelectCard(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards);
 	
 	// 플레이어에게 카드 선택권 요구 응답
 	UFUNCTION(Server, Reliable)
