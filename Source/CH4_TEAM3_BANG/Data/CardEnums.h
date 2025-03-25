@@ -93,6 +93,7 @@ enum class ECharacterType : uint8
 UENUM(BlueprintType)
 enum class ECardSelectPurpose : uint8
 {
+	None					 UMETA(DisplayName = "None"),
 	UseCard               UMETA(DisplayName = "Use Card"),				   //카드 사용
 	DiscardCard           UMETA(DisplayName = "Discard by Overdraw"),      // 카드 수 > 체력
 	KitCarlsonDrawCard      UMETA(DisplayName = "Kit Carlson Draw Card"),  // 키트 칼슨 능력 - 카드 3장 중 2장 선택

@@ -85,6 +85,7 @@ void UCardList::AddCardToJobCardSlot(FSingleCard CardData)
 void UCardList::OnUseInputButtonClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("[UCardList::OnUseInputButtonClicked] Use Card Button 클릭!"));
+	//case 버리기 = OnCardSelectionComplete(유저가 선택한 카드, 버리는 목적)
 	OnUseCard.Broadcast(SelectedCard);
 }
 

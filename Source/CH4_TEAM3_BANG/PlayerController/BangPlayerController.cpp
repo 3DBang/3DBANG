@@ -380,6 +380,7 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 
 	case ECardSelectPurpose::DiscardCard:
 		// 보유 카드 수 > 체력, 초과분 만큼 버려야 함
+		//버튼을 버리기 버튼으로 바꿈 OnUseInputButtonClicked(ECardSelectPurpose::DiscardCard)
 		break;
 
 	case ECardSelectPurpose::GeneralStoreDraft:
@@ -468,6 +469,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 			//보유 카드에서 제거 후 버린카드덱에 추가
 			MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
 			PS->RestoreCard(PlayerUniqueID, Card);
+			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		}
 
 		// 턴 종료 호출
@@ -756,7 +758,7 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	JCH_Test();
+	//JCH_Test();
 	//Server_StartGame();
 }
 
