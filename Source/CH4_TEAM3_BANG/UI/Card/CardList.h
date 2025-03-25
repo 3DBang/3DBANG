@@ -56,7 +56,10 @@ public:
 	UButton* TurnEndButton;
 	
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
-	UCard* SelectedCardSlot;
+	UCard* JobCardSlot;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "CardList")
+	UCard* CharacterCardSlot;
 	
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UCard> CardWidgetClass;
@@ -90,14 +93,18 @@ public:
 	// TurnEndButton 클릭 이벤트에 바인딩될 함수
 	UFUNCTION()
 	void OnTurnEndButtonClicked();
-	
+
+	//카드 리스트와 직업, 캐릭터 카드를 초기화 하는 함수
 	UFUNCTION(BlueprintCallable, Category = "CardList")
 	void ClearCards();
-
+	
 	//컨트롤러에서 쓰는 함수
 	// 카드를 추가하는 함수
 	UFUNCTION(BlueprintCallable, Category = "CardList")
 	UCard* AddCard(FSingleCard CardData);
+
+	void AddCardToCharacterCardSlot(FSingleCard CardData);
+	void AddCardToJobCardSlot(FSingleCard CardData);
 	
 	// 선택된 카드를 리스트에서 제거하는 함수
 	UFUNCTION(BlueprintCallable, Category = "CardList")
