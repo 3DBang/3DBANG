@@ -58,10 +58,8 @@ void ABangGameState::BroadcastPlayerListToClients()
 		}
 	}
 
-	// 서버에서만 호출 (클라이언트 RPC 호출은 안 함)
 	OnRep_PlayerList();
 
-	// 명시적으로 클라이언트 RPC 호출
 	ReceivePlayerList(PlayerList);
 }
 
@@ -95,10 +93,7 @@ void ABangGameState::BroadcastGameLogToClients(const FString& GameLogMessage)
 {
 	CurrentGameLog = GameLogMessage;
 
-	// 서버용 로그만 찍음 (클라이언트 RPC 호출하지 않음)
 	OnRep_GameLog();
-
-	// 클라이언트에 명시적으로 RPC 호출
 	ReceiveGameLog(CurrentGameLog);
 }
 
@@ -115,6 +110,5 @@ void ABangGameState::ReceiveGameLog(const FString& GameLogMessage)
 
 void ABangGameState::OnRep_GameLog()
 {
-	// 서버에서 로그 확인용
 	UE_LOG(LogTemp, Log, TEXT("[GameLog]: %s"), *CurrentGameLog);
 }

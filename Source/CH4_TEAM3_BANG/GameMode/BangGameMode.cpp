@@ -225,8 +225,7 @@ void ABangGameMode::StartTest()
 
 	Players.Players.Empty();
 
-	// ✅ 임시로 플레이어 강제 추가
-	if (LobbyPlayers.Players.Num() == 0)
+	/*if (LobbyPlayers.Players.Num() == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("LobbyPlayers 비어 있음 → 테스트용 플레이어 추가"));
 
@@ -239,7 +238,7 @@ void ABangGameMode::StartTest()
 		TempPlayer.CharacterCardType = ECharacterType::BartCassidy;
 
 		LobbyPlayers.Players.Add(TempPlayer);
-	}
+	}*/
 
 	// 기존 코드 계속 진행
 	for (int i = 0; i < LobbyPlayers.Players.Num(); ++i)

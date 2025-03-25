@@ -595,6 +595,7 @@ void ABangPlayerController::Client_DisplayBangUI_Implementation()
 	}	
 }
 
+
 void ABangPlayerController::NotifyHUDLoaded()
 {
 	Server_HUDLoaded();
@@ -781,6 +782,8 @@ void ABangPlayerController::TestButtonCLicked()
 	// 로직 작성
 	
 	Server_StartTest();
+	Server_RequestPlayerListBroadcast();
+	Server_TestDrawCards();
 }
 
 
@@ -1196,214 +1199,6 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 ///////////////////////////
 //// 찬호 추가 
 //////////////////////////
-void ABangPlayerController::Client_DisplayBangUI_Implementation()
-{
-	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-	{
-		BangHUD->ChattingWidgetInstance->AddMessage(
-			FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
-			FSlateColor(FLinearColor::Green)
-		);
-	}
-}
-
-void ABangPlayerController::NotifyHUDLoaded()
-{
-	Server_HUDLoaded();
-	if (!HasAuthority())
-	{
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-		{
-			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
-		}
-	}
-}
-
-void ABangPlayerController::Server_HUDLoaded_Implementation()
-{
-	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (!GameMode)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
-		return;
-	}
-
-	GameMode->UpdatePlayerHUD();
-}
-
-void ABangPlayerController::SendMessageToServer(FString Message)
-{
-	if (Message.IsEmpty()) return;
-
-	FString ToPlayerNickname = "";
-
-	// 귓속말의 경우 /{플레이어 아이디} {채팅내용}
-	if (Message[0] == '/')
-	{
-		// 귓속말
-		FString RawContent = Message.RightChop(1);
-
-		FString TargetIDString;
-		FString ChatContent;
-
-		if (RawContent.Split(TEXT(" "), &TargetIDString, &ChatContent))
-		{
-			ToPlayerNickname = TargetIDString;
-		}
-	}
-
-	// 전체챗팅
-	Server_SendMessage(Message, PlayerNickname, ToPlayerNickname);
-}
-
-// PlayerState에서 값이 갱신되면 호출
-void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerCollection)
-{
-	for (FPlayerInformation PlayerInfo : FPlayerCollection.Players)
-	{
-		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent]"));
-		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %d"), PlayerInfo.PlayerUniqueID);
-		UE_LOG(LogTemp, Display, TEXT("[PlayerInfoUpdatedEvent] %s"), *PlayerInfo.PlayerName);
-	}
-
-	// 플레이어 인포가 바겼을떄 변경돼야 하는것들
-	// 카드정보, 플레이어 정보
-	// 선택시에 카드정보 동기화
-
-	// HUD에 접근해서 Map 데이터 갱신 + 플레이어 수도 맞춰야겠죠
-
-	// 상대 스테이터스 info 갱신
-	UpdateCardList(FPlayerCollection);
-}
-
-// 플레이어에게 카드 선택권 요구 응답
-void ABangPlayerController::Server_RespondSelectCard_Implementation()
-{
-	FPlayerCardCollection PlayerCardCollection;
-	for (auto [Card] : SelectCardCollection.CardList)
-	{
-		FPlayerCardSymbol SingleCard;
-		SingleCard.SymbolNumber = Card->SymbolNumber;
-		SingleCard.SymbolType = Card->SymbolType;
-		PlayerCardCollection.PlayerCards.Add(SingleCard);
-	}
-
-	SelectCardCollection.CardList.Empty();
-
-	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (!GameMode)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
-		return;
-	}
-
-	GameMode->RefundCards(PlayerCardCollection);
-}
-
-// 플레이어에게 카드 선택권 요구
-void ABangPlayerController::Client_RequestSelectCard_Implementation(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards)
-{
-	if (DrawCards.PlayerCards.Num() == 0) return;
-
-	if (IsLocalController() && GetUniqueID() == FromUniqueID)
-	{
-		ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
-		BangPlayerState->GetCard(FromUniqueID, SelectCardCollection);
-		
-		// 플레이어에게 카드 선택권 요구
-
-
-		// 선택한 카드 배열에서 지우기
-		// SelectCardCollection
-	}
-}
-
-void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
-{
-	if (Message.IsEmpty()) return;
-
-	if (FromNickname.IsEmpty())
-	{
-		// 전역
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-		{
-			BangHUD->ChattingWidgetInstance->AddMessage(
-				FText::FromString(FString::Printf(TEXT("%s: %s"), *FromNickname, *Message)),
-				FSlateColor(FLinearColor::White)
-			);
-		}
-	}
-	else
-	{
-		// 특정
-		if (PlayerNickname == FromNickname)
-		{
-			if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-			{
-				BangHUD->ChattingWidgetInstance->AddMessage(
-					FText::FromString(FString::Printf(TEXT("%s: %s"), *FromNickname, *Message)),
-					FSlateColor(FLinearColor::Red)
-				);
-			}
-		}
-	}
-}
-
-void ABangPlayerController::Server_SendMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
-{
-	if (ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>())
-	{
-		BangGameState->BroadcastChatMessage(Message, FromNickname, ToPlayerNickname);
-	}
-}
-
-void ABangPlayerController::Server_StartGame_Implementation()
-{
-	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (!GameMode)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
-		return;
-	}
-
-	GameMode->ForceUpdate_StartGame_Real();
-}
-
-void ABangPlayerController::StartButtonCLicked()
-{
-	Server_StartGame();
-}
-
-void ABangPlayerController::Server_StartTest_Implementation()
-{
-	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (!GameMode)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController] BeginPlay Controller GameMode is NULL!"));
-		return;
-	}
-
-	GameMode->StartTest();
-}
-
-void ABangPlayerController::TestButtonCLicked()
-{
-	UE_LOG(LogTemp, Error, TEXT("TestButtonCLicked"));
-	Server_StartTest();
-	Server_RequestPlayerListBroadcast(); 
-	Server_TestDrawCards();
-}
-
-void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArray<FPlayerInformation>& PlayerList)
-{
-	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
-	{
-		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
-		{
-			StatusWidget->UpdatePlayerList(PlayerList); 
-		}
-	}
-}
 
 void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 {
@@ -1427,25 +1222,6 @@ void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 				Subsys->AddMappingContext(CameraMappingContext, 0);
 			}
 			bIsCameraContextActive = !bIsCameraContextActive;
-		}
-	}
-}
-
-void ABangPlayerController::Server_RequestPlayerListBroadcast_Implementation()
-{
-	if (ABangGameState* GS = GetWorld()->GetGameState<ABangGameState>())
-	{
-		GS->BroadcastPlayerListToClients();
-	}
-}
-
-void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString& GameLogMessage)
-{
-	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
-	{
-		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance) 
-		{
-			StatusWidget->AddGameLog(GameLogMessage); 
 		}
 	}
 }
@@ -1561,6 +1337,36 @@ void ABangPlayerController::GetPlayerStateAtBegin()
 		}
 	}
 	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
+}
+
+void ABangPlayerController::Server_RequestPlayerListBroadcast_Implementation()
+{
+	if (ABangGameState* GS = GetWorld()->GetGameState<ABangGameState>())
+	{
+		GS->BroadcastPlayerListToClients();
+	}
+}
+
+void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString& GameLogMessage)
+{
+	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
+		{
+			StatusWidget->AddGameLog(GameLogMessage);
+		}
+	}
+}
+
+void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArray<FPlayerInformation>& PlayerList)
+{
+	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+	{
+		if (UPlayerListGameLog* StatusWidget = HUD->PlayerListGameLogInstance)
+		{
+			StatusWidget->UpdatePlayerList(PlayerList);
+		}
+	}
 }
 
 void ABangPlayerController::Server_TestDrawCards_Implementation()
