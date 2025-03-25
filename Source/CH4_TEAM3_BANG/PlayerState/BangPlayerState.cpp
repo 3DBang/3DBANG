@@ -53,11 +53,11 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
 
 	// 딜리게이트 뺴서 PC에서 GetCard 호출 UpdateCardList
-	FOnPlayerInfoUpdated.Broadcast();
+	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
 	
+	//const FString Message = FPlayerCollectionToString(PlayerInfo);
+	//GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
 	/*
-	const FString Message = FPlayerCollectionToString(PlayerInfo);
-	GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
 	for (int32 i = 0; i < PlayerInfo.Players.Num(); ++i)
 	{
 		const FPlayerInformation& Info = PlayerInfo.Players[i];
@@ -110,6 +110,8 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 	if (InPlayerUniqueID == 0 || !CardManager) return;
 
 	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
+	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] PlayerInformation: %d"), PlayerInformation->PlayerUniqueID);
+	
 	for (auto [SymbolType, SymbolNumber] : PlayerInformation->MyCards.PlayerCards)
 	{
 		FSingleCard OutFoundCard;

@@ -7,7 +7,7 @@
 #include "BangPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTurnStartDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerInfoUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerInfoUpdated, FPlayerCollection, PlayerCollection);
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerState : public APlayerState

@@ -245,9 +245,11 @@ public:
 	void Server_RespondSelectCard();
 
 	UFUNCTION()
-	void PlayerInfoUpdatedEvent();
+	void PlayerInfoUpdatedEvent(FPlayerCollection FPlayerCollection);
 
-
+	UFUNCTION()
+	void TryBindPlayerInfoUpdated();
+	
 
 	///////////////////////////
 	//// 원명 추가 
