@@ -1402,22 +1402,6 @@ void ABangPlayerController::Server_TestDrawCards_Implementation()
 
 void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FSingleCard>& DrawnCards)
 {
-	for (const FSingleCard& Card : Cards)
-	{
-		// 1. 위젯 생성
-		if (UCardDescriptionWidget* DescriptionWidget = CreateWidget<UCardDescriptionWidget>(this, CardDescriptionWidgetClass))
-		{
-			if (Card.Card) // 카드 객체 유효하면
-			{
-				// 2. 설명 텍스트 설정
-				FText Title = Card.Card->CardName;
-				FText Description = Card.Card->Description;
-
-				DescriptionWidget->SetDescriptionText(Title, Description);
-
-				// 3. 화면에 추가
-				DescriptionWidget->AddToViewport();
-			}
-		}
-	}
+	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+		HUD->ShowDrawCardUI(DrawnCards);
 }
