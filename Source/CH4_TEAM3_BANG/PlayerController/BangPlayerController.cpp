@@ -178,9 +178,8 @@ void ABangPlayerController::MouseClicked()
 
 				else
 				{
-
 					// === 위젯 생성 및 표시 ===
-					if (InteractionWidgetClass) // InteractionWidgetClass가 유효한지 확인
+					if (InteractionWidgetClass) 
 					{
 						if (PlayerWidgets.Contains(OtherPlayer->GetPlayerState()->GetPlayerId()))
 						{
@@ -195,11 +194,11 @@ void ABangPlayerController::MouseClicked()
 							InteractionWidgetComponent->InitWidget();
 
 							InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
-							InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200)); // 예시 크기
+							InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200));
 							InteractionWidgetComponent->SetRelativeLocation(
 								FVector(0.f, 0.f, OtherPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f)
 							);
-							PlayerWidgets.Add(OtherPlayer->GetPlayerState()->GetPlayerId(), InteractionWidgetComponent); // 맵에 저장
+							PlayerWidgets.Add(OtherPlayer->GetPlayerState()->GetPlayerId(), InteractionWidgetComponent); 
 						//
 						}
 
@@ -222,7 +221,8 @@ void ABangPlayerController::MouseClicked()
 					if (OtherPlayer->GetPlayerState())
 					{
 						PlayerStateID = OtherPlayer->GetPlayerState()->GetPlayerId();
-						printf("");
+						UE_LOG(LogTemp, Log, TEXT("PlayerStateID = %d"), PlayerStateID);
+						
 						ABangPlayerState* PlayerBangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
 						if (PlayerBangState)
 						{
@@ -793,7 +793,6 @@ void ABangPlayerController::GetPlayerStateAtBegin()
 		if (APlayerState* PS = BangPlayer->GetPlayerState())
 		{
 			uint32 ID = PS->GetPlayerId();
-
 			//UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer, UWidgetComponent::StaticClass(), TEXT("InteractionWidget"));
 			UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
 			WidgetComp->SetupAttachment(BangPlayer->GetRootComponent());
