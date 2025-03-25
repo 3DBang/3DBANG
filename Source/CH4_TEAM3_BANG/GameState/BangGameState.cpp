@@ -1,7 +1,6 @@
 
 #include "BangGameState.h"
 #include "PlayerState/BangPlayerState.h"
-
 #include "Net/UnrealNetwork.h"
 #include "PlayerController/BangPlayerController.h"
 
@@ -111,4 +110,34 @@ void ABangGameState::ReceiveGameLog(const FString& GameLogMessage)
 void ABangGameState::OnRep_GameLog()
 {
 	UE_LOG(LogTemp, Log, TEXT("[GameLog]: %s"), *CurrentGameLog);
+}
+void ABangGameState::AddPlayerState(APlayerState* NewPlayerState)
+{
+	Super::AddPlayerState(NewPlayerState);
+
+	UWorld* World = GetWorld();
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			// 모든 클라이언트에 RPC 호출
+			uint32 NewPlayerStateID = NewPlayerState->GetPlayerId();
+			PC->Client_GetPlayerStateAtBeginTest(NewPlayerStateID);
+		}
+	}
+}
+void ABangGameState::RemovePlayerState(APlayerState* NewPlayerState)
+{
+	Super::RemovePlayerState(NewPlayerState);
+
+	UWorld* World = GetWorld();
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			// 모든 클라이언트에 RPC 호출
+			uint32 NewPlayerStateID = NewPlayerState->GetPlayerId();
+			PC->Client_RemoveBangPlayerState(NewPlayerStateID);
+		}
+	}
 }

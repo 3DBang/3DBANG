@@ -46,6 +46,7 @@ public:
 	UFUNCTION()
 	void ReceiveMessage(const FString& ChatMessage, const FString& FromNickname, const FString& ReciverNickname);
 
+
 	UFUNCTION()
 	void BroadcastGameLogToClients(const FString& GameLogMessage);
 
@@ -57,6 +58,7 @@ public:
 
 	UFUNCTION()
 	void ReceiveGameLog(const FString& GameLogMessage);
-
+	virtual void AddPlayerState(APlayerState* NewPlayerState) override;
+	virtual void RemovePlayerState(APlayerState* PlayerState) override;
 
 };
