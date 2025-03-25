@@ -113,17 +113,24 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SelectCard();
 
+	//내 턴 카드 사용 처리
 	UFUNCTION(Client, Reliable)
 	void Client_HandleCardSelection(const FSingleCard& SingleCard);
 
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
 
+	//기본 사정거리 상대 선택
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget(const FSingleCard& SingleCard);
 
+	//뱅 상대 선택
+	UFUNCTION(Client, Reliable)
+	void Client_BangSelectTarget(const FSingleCard& SingleCard);
+
+	//강탈하기
 	//UFUNCTION(Client, Reliable)
-	//void Client_BangSelectTarget(const FSingleCard& SingleCard);
+	//void StealFromOpponent(const FSingleCard& SingleCard);
 
 	// 호출 시점을 위젯에서 카드 보일때
 	UFUNCTION()

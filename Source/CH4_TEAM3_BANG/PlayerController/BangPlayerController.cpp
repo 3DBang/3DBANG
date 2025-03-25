@@ -284,20 +284,9 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	}
 	if (OutActiveType == EActiveType::Bang)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection_INBang"));
-		if (!bCanUseBang)return;
-		if (Info->CharacterCardType == ECharacterType::WillyTheKid)
-			//|| PS->CheckIsCardAble(PlayerUniqueID, ))
-		{
-			bCanUseBang = true;
-
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Bang!!Bang!!Bang!!Bang!!Bang!!"));
-			bCanUseBang = false;
-		}
+		Client_BangSelectTarget(SingleCard);
 	}
+
 	bool bNeedsTarget = (OutActiveType == EActiveType::Robbery ||
 		OutActiveType == EActiveType::CatBalou ||
 		OutActiveType == EActiveType::Duel ||
@@ -305,18 +294,10 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 
 	if (bNeedsTarget)
 	{
-		Client_SelectTarget(SingleCard); // 나중에 실제 대상 선택 구현 예정
-
-		if (TargetPlayerID == 0)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Target required but not selected"));
-			return;
-		}
+		Client_SelectTarget(SingleCard);
 	}
 	else
 	{
-
-		// 카드 사용
 		Server_UseCard(SingleCard, TargetPlayerID);
 	}
 }
@@ -343,9 +324,10 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 		Client_RequestCardSelection(CardCount-CurrentHealth, ECardSelectPurpose::DiscardCard);
 		return;
 	}
-
-	// 턴 종료 요청
-	//PS->Server_EndTurn(UniqueID, MyInfo->CharacterCardType);
+	else
+	{
+		PS->Server_EndTurn(PlayerUniqueID);
+	}
 }
 
 void ABangPlayerController::JCH_Test()
@@ -467,9 +449,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 			PS->RestoreCard(PlayerUniqueID, Card);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		}
-
-		// 턴 종료 호출
-		PS->Server_EndTurn(PlayerUniqueID);
+		Server_EndTurn();
 		break;
 	}
 
@@ -562,6 +542,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		{
 			// 회피 카드 사용(회피 성공)
 			PS->RestoreCard(PlayerUniqueID, SelectedCards[0]);
+			MyInfo->MyCards.RemoveCard(SelectedCards[0].Card->SymbolType, SelectedCards[0].Card->SymbolNumber);
 		}
 		else
 		{
@@ -1140,14 +1121,56 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 
 void ABangPlayerController::Client_SelectTarget_Implementation(const FSingleCard& SingleCard)
 {
-	uint32 TargetPlayerID = 15;//GetSelectedTargetID(); // 상대 플레이어 ID를 가져옴 (레이 트레이싱 담당자에게 받아올 부분)
+	uint32 TargetPlayerID = 0;//GetSelectedTargetID(); // 상대 플레이어 ID를 가져옴 (레이 트레이싱 담당자에게 받아올 부분)
+	
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	if (!PS) return;
+	FPlayerInformation* Myinfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
 
-    if (TargetPlayerID > 0)
-    {
+	if (PS->PlayerInfo.IsDistanceAble(PlayerUniqueID, TargetPlayerID))
+	{
 		Server_UseCard(SingleCard, TargetPlayerID);
-		UE_LOG(LogTemp, Warning, TEXT("The End"));
-    }
+		PS->RestoreCard(PlayerUniqueID, SingleCard);
+		PS->Server_SetPlayerInfo(PS->PlayerInfo);
+		Myinfo->MyCards.RemoveCard(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber);
+	}
+
 }
+
+void ABangPlayerController::Client_BangSelectTarget_Implementation(const FSingleCard& SingleCard)
+{
+	uint32 TargetPlayerID = 0;
+
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	if (!PS) return;
+	FPlayerInformation* Myinfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
+
+	if (PS->PlayerInfo.IsBangDistanceAble(PlayerUniqueID, TargetPlayerID) || TargetPlayerID < 0)
+	{
+		if (PS->CheckIsCardAbleByPassive(PlayerUniqueID, EPassiveType::Volcanic))
+		{
+			bCanUseBang = true;
+			Server_UseCard(SingleCard, TargetPlayerID);
+			PS->RestoreCard(PlayerUniqueID, SingleCard);
+			PS->Server_SetPlayerInfo(PS->PlayerInfo);
+			Myinfo->MyCards.RemoveCard(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber);
+		}
+		else
+		{
+			bCanUseBang = false;
+			Server_UseCard(SingleCard, TargetPlayerID);
+			PS->RestoreCard(PlayerUniqueID, SingleCard);
+			PS->Server_SetPlayerInfo(PS->PlayerInfo);
+			Myinfo->MyCards.RemoveCard(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber);
+		}
+	}
+	else
+	{
+		//OnUseInputButtonClicked(선택, 1, dddd::UseCard)
+		//[사거리가 닿지 않습니다.]
+	}
+}
+
 
 void ABangPlayerController::Server_UseCard_Implementation(const FSingleCard& SingleCard, int32 TargetID)
 {
