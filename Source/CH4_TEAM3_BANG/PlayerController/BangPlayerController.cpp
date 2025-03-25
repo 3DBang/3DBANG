@@ -1,4 +1,5 @@
 #include "BangPlayerController.h"
+#include "Card/ActiveCard/BangActiveCard.h"
 #include "EnhancedInputSubsystems.h"
 #include "Data/CardEnums.h"
 #include "GameMode/BangGameMode.h"
@@ -46,6 +47,7 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
+
 	if (IsLocalController())
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
@@ -55,6 +57,15 @@ void ABangPlayerController::BeginPlay()
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	bShowMouseCursor = true;*/
+
+	if (IsLocalController())
+	{
+		// 약간 딜레이를 줘서 GameMode, PlayerState가 준비되도록 함
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ABangPlayerController::Test, 5.0f, false);
+	}
+	FTimerHandle InitDelayHandle;
+	GetWorld()->GetTimerManager().SetTimer(InitDelayHandle, this, &ABangPlayerController::InitPlayerUniqueID, 0.3f, false);
 }
 
 void ABangPlayerController::OnRep_PlayerState()
@@ -73,6 +84,18 @@ void ABangPlayerController::TryBindPlayerInfoUpdated()
 		{
 			BangPlayerState->FOnPlayerInfoUpdated.AddDynamic(this, &ABangPlayerController::PlayerInfoUpdatedEvent);
 		}
+	}
+}
+void ABangPlayerController::InitPlayerUniqueID()
+{
+	if (ABangPlayerState* PS = GetPlayerState<ABangPlayerState>())
+	{
+		MyPlayerID = PS->PlayerUniqueID;
+		UE_LOG(LogTemp, Log, TEXT("[Init] PlayerUniqueID 설정 완료: %d"), MyPlayerID);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Init] PlayerState가 아직 초기화되지 않았습니다."));
 	}
 }
 
@@ -221,17 +244,26 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 {
     uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
 	if (!SingleCard.Card)return;
-
+	UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection"));
 	EActiveType OutActiveType;
 	EPassiveType OutPassiveType;
 
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS) return;
 
-	FPlayerInformation* Info = PS->PlayerInfo.GetPlayerInformation(GetUniqueID());
-	if (!Info) return;
+	FPlayerInformation* Info = PS->PlayerInfo.GetPlayerInformation(MyPlayerID);
+	if (!Info)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection NONOinfo"));
+		return;
+	}
 
-	PS->GetCardType(GetUniqueID(), SingleCard, OutActiveType, OutPassiveType);
+	PS->GetCardType(MyPlayerID, SingleCard, OutActiveType, OutPassiveType);
+	UE_LOG(LogTemp, Warning, TEXT("OutActiveType: %s, OutPassiveType: %s"),
+		*UEnum::GetValueAsString(OutActiveType),
+		*UEnum::GetValueAsString(OutPassiveType));
+	OutActiveType = EActiveType::Bang;
+	OutPassiveType = EPassiveType::None;
 
 	if (OutActiveType == EActiveType::Missed)
 	{
@@ -240,6 +272,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	}
 	if (OutActiveType == EActiveType::Bang)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection_INBang"));
 		if (!bCanUseBang)return;
 		if (Info->CharacterCardType == ECharacterType::WillyTheKid)
 		{
@@ -247,6 +280,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		}
 		else
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Bang!!Bang!!Bang!!Bang!!Bang!!"));
 			bCanUseBang = false;
 			Client_SelectTarget();
 		}
@@ -278,11 +312,10 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS)return;
 
-	const uint32 UniqueID = GetUniqueID();
-	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(UniqueID);
+	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(MyPlayerID);
 	if (!MyInfo)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[Controller] PlayerInfo not found for ID: %d"), UniqueID);
+		UE_LOG(LogTemp, Error, TEXT("[Controller] PlayerInfo not found for ID: %d"), MyPlayerID);
 		return;
 	}
 
@@ -300,17 +333,42 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	//PS->Server_EndTurn(UniqueID, MyInfo->CharacterCardType);
 }
 
+void ABangPlayerController::Test()
+{
+	FCardCollection DummyCardList;
+
+	UBangActiveCard* DummyCard = NewObject<UBangActiveCard>();
+	DummyCard->ActiveType = EActiveType::Bang;
+	DummyCard->SymbolType = ESymbolType::Heart;
+	DummyCard->SymbolNumber = 1;
+
+	FSingleCard SingleCard;
+	SingleCard.Card = DummyCard;
+
+	DummyCardList.CardList.Add(SingleCard);
+
+	Client_RequestCardSelection(DummyCardList, 1, ECardSelectPurpose::UseCard);
+	Client_HandleCardSelection_Implementation(SingleCard);
+}
+
+
 
 void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	const FCardCollection& CardsToChooseFrom,
 	int32 RequiredSelectCount,
 	ECardSelectPurpose Purpose)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[TEST] Client_RequestCardSelection_Implementation called"));
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
-		// 내 턴에서 카드 사용 (자유롭게 선택)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[TEST] Use_called"));
+		TArray<FSingleCard> SelectedCards;
+		SelectedCards.Add(CardsToChooseFrom.CardList[0]);
+		OnCardSelectionComplete(CardsToChooseFrom, SelectedCards, RequiredSelectCount, ECardSelectPurpose::UseCard);// 내 턴에서 카드 사용 (자유롭게 선택)
 		break;
+	}
 
 	case ECardSelectPurpose::DiscardCard:
 		// 보유 카드 수 > 체력, 초과분 만큼 버려야 함
@@ -359,12 +417,24 @@ void ABangPlayerController::OnCardSelectionComplete(
 	int32 RequiredSelectCount,                      // 선택해야 할 개수
 	ECardSelectPurpose Purpose)                     // 선택 목적
 {
+	UE_LOG(LogTemp, Warning, TEXT("SelectedCards.Num(): %d, RequiredCount: %d"), SelectedCards.Num(), RequiredSelectCount);
+	UE_LOG(LogTemp, Warning, TEXT("Purpose: %s"), *UEnum::GetValueAsString(Purpose));
 
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
-	//if (!PS || !PS->CardManager)return;
+	if (!PS)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NoPS"));
+		return;
+	}
+	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(MyPlayerID);
+	if (!MyInfo)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("NoInfo"));
+		//return;
+	}
+	EActiveType OutActiveType;
+	EPassiveType OutPassiveType;
 
-	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(GetUniqueID());
-	if (!MyInfo)return;
 
 	bool bAllowEmptySelection = (
 		Purpose == ECardSelectPurpose::RespondToDuel ||
@@ -380,6 +450,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 	case ECardSelectPurpose::UseCard:
 	{
 		//카드 사용하기
+		UE_LOG(LogTemp, Warning, TEXT("[TEST]OnCardSelectionComplete UseCard"));
 		Client_HandleCardSelection(SelectedCards[0]);
 		break;
 	}
@@ -389,11 +460,11 @@ void ABangPlayerController::OnCardSelectionComplete(
 		{
 			//보유 카드에서 제거 후 버린카드덱에 추가
 			MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
-			PS->RestoreCard(GetUniqueID(), Card);
+			PS->RestoreCard(MyPlayerID, Card);
 		}
 
 		// 턴 종료 호출
-		PS->Server_EndTurn(GetUniqueID());
+		PS->Server_EndTurn(MyPlayerID);
 		break;
 	}
 
@@ -403,25 +474,96 @@ void ABangPlayerController::OnCardSelectionComplete(
 		break;
 
 	case ECardSelectPurpose::KitCarlsonDrawCard:
+	{
 		// 키트 칼슨 능력 – 카드 3장 중 2장 선택
-		// 안뽑은 1장을 뽑을카드더미에 올리기
+		// 안뽑은 카드 걸러내기
+		TArray<FSingleCard> NotChosenCards;
+		for (const FSingleCard& Card : CardsToChooseFrom.CardList)
+		{
+			if (!SelectedCards.Contains(Card))
+			{
+				NotChosenCards.Add(Card);
+			}
+		}
+
+		FCardCollection SelectedCardCollection;
+		SelectedCardCollection.CardList = SelectedCards;
+		MyInfo->MyCards.AddCardCollectionToPlayerCards(SelectedCardCollection);
+
+		// 선택되지 않은 카드들 제거를 위해 변환
+		FPlayerCardCollection RefundCards;
+		for (const FSingleCard& Card : NotChosenCards)
+		{
+			FPlayerCardSymbol Symbol;
+			Symbol.SymbolNumber = Card.Card->SymbolNumber;
+			Symbol.SymbolType = Card.Card->SymbolType;
+			RefundCards.PlayerCards.Add(Symbol);
+		}
+
+		// GameMode로 카드 돌려보내기
+		if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
+		{
+			GM->RefundCards(RefundCards);
+		}
+
+		// 선택되지 않은 카드들을 MyInfo에서도 제거 (혹시 들어가있을 수 있으니)
+		for (const FPlayerCardSymbol& RefundCard : RefundCards.PlayerCards)
+		{
+			MyInfo->MyCards.RemoveCard(RefundCard.SymbolType, RefundCard.SymbolNumber);
+		}
 		break;
+	}
 
 	case ECardSelectPurpose::StealFromOpponent:
-		// 상대의 보유 카드 중 1장을 선택 (정보가 안 보일 수 있음)
+	{// 상대의 보유 카드 중 1장을 선택 
+		// 상대 카드 중 1장 없애기
+		// 내 카드 덱에 1장 추가하기
 		break;
-
+	}
 	case ECardSelectPurpose::RespondToDuel:
-		// 결투 중 뱅 카드 선택
+	{// 결투 중 뱅 카드 선택
+		PS->GetCardType(MyPlayerID, SelectedCards[0], OutActiveType, OutPassiveType);
+		if(OutActiveType == EActiveType::Bang)
+		{
+			// 뱅 카드 사용(결투 반격 성공)
+			// 카드 지우기
+			PS->RestoreCard(MyPlayerID, SelectedCards[0]);
+		}
+		else
+		{
+			//잘못된 카드 사용 처리
+		}
 		break;
-
+	}
 	case ECardSelectPurpose::RespondToIndians:
-		// 인디언 카드 대응 – 뱅 카드 선택
+	{// 인디언 카드 대응 – 뱅 카드 선택
+		PS->GetCardType(MyPlayerID, SelectedCards[0], OutActiveType, OutPassiveType);
+		if (OutActiveType == EActiveType::Bang)
+		{
+			// 뱅 카드 사용(인디언 쫓아내기 성공)
+			PS->RestoreCard(MyPlayerID, SelectedCards[0]);
+		}
+		else
+		{
+			//잘못된 카드 사용 처리
+		}
 		break;
+	}
 
 	case ECardSelectPurpose::RespondToAttack:
-		// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
+	{	// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
+		PS->GetCardType(MyPlayerID, SelectedCards[0], OutActiveType, OutPassiveType);
+		if (OutActiveType == EActiveType::Missed)
+		{
+			// 회피 카드 사용(회피 성공)
+			PS->RestoreCard(MyPlayerID, SelectedCards[0]);
+		}
+		else
+		{
+			//잘못된 카드 사용 처리
+		}
 		break;
+	}
 
 	default:
 		break;
@@ -791,7 +933,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation()
 
     if (TargetPlayerID > 0)
     {
-
+		UE_LOG(LogTemp, Warning, TEXT("The End"));
     }
 }
 
