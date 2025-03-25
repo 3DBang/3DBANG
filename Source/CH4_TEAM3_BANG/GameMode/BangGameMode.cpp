@@ -662,16 +662,18 @@ void ABangGameMode::DrawCard(const uint16 CardCount)
 	FBangSinglePlayerState PlayerState;
 	GetPlayerStatesByUniqueID(CurrentTurnPlayerUniqeID, PlayerState);
 
-	for (FPlayerInformation Player : PlayerState.State->PlayerInfo.Players)
+	FPlayerCollection PlayerCollection = PlayerState.State->PlayerInfo;
+	FPlayerCardCollection PlayerCardCollection;
+
+	for (auto [Card] : DrawCards.CardList)
 	{
-		for (auto [Card] : DrawCards.CardList)
-		{
-			FPlayerCardSymbol PlayerCard;
-			PlayerCard.SymbolNumber = Card->SymbolNumber;
-			PlayerCard.SymbolType = Card->SymbolType;
-			Player.SelectableCards.PlayerCards.Add(PlayerCard);
-		}
+		FPlayerCardSymbol PlayerCard;
+		PlayerCard.SymbolNumber = Card->SymbolNumber;
+		PlayerCard.SymbolType = Card->SymbolType;
+		PlayerCardCollection.PlayerCards.Add(PlayerCard);
 	}
+
+	PlayerState.State->PlayerInfo.SelectableCards = PlayerCardCollection;
 	PlayerState.State->ForceNetUpdate();
 }
 
