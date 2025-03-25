@@ -1311,6 +1311,14 @@ void ABangPlayerController::RemoveBangPlayerState(uint32 BangPlayerStateID)
 	}
 	UWidgetComponent** WidgetPtr = PlayerWidgets.Find(BangPlayerStateID);
 	
+	ABangPlayerState* Test = Cast<ABangPlayerState>(PlayerState);
+	uint32 TestId = Test->PlayerUniqueID;
+	UE_LOG(LogTemp, Display, TEXT("BangPlayerStateID is %d"),TestId);
+
+	PlayerUniqueID = TestId;
+
+	UE_LOG(LogTemp, Display, TEXT("Saved ID is %d"), TestId);
+
 	if (WidgetPtr && *WidgetPtr)
 	{
 		UWidgetComponent* WidgetComp = *WidgetPtr;
