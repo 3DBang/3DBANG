@@ -13,6 +13,7 @@ class ABangUIActor;
 class UTextRenderComponent;
 class ABangHPActor;
 class APlayerStart;
+class UWidgetComponent;
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMouseClicked);
 
 UCLASS()
@@ -89,6 +90,8 @@ public:
 private:
 	int32 HP = 5;
 	FVector FlagLocation = FVector::Zero();
+	bool bFirstPersonMode = false;
+
 protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	APlayerStart* GetFlaggedActor();
@@ -103,5 +106,23 @@ public:
 	const FTransform& GetInitialBoomTransform() const;
 
 	const FTransform& GetInitialCameraTransform() const;
+
+public:
+	bool GetFirstPersonMode();
+
+	UFUNCTION()
+	void OnCursorBegin(UPrimitiveComponent* MouseComp);
+
+	UFUNCTION()
+	void OnCursorEnd(UPrimitiveComponent* MouseComp);
+
+	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	UWidgetComponent* InteractionWidgetComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> InteractionWidgetClass;*/
+
+public:
+	void SetWidgetVisible(bool bVisible);
 
 };

@@ -12,6 +12,7 @@ class ABangPlayerState;
 class ABangCharacter;
 class ABangGameMode;
 class UCameraComponent;
+class UWidgetComponent;
 
 enum class EJobType : uint8;
 enum class ECharacterType : uint8;
@@ -51,6 +52,7 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnRep_PlayerState() override; // PS가 다 생성되고 난 뒤에 호출
 	
 ///////////////////////////
 ////서버 관련 로직 작성란
@@ -109,8 +111,9 @@ public:
 		int32 RequiredSelectCount,
 		ECardSelectPurpose Purpose);
 
-	UFUNCTION(Client, Reliable)
-	void Client_UpdateCardList();
+	// 호출 시점을 위젯에서 카드 보일때
+	UFUNCTION()
+	void UpdateCardList();
 	
 	UFUNCTION(Client, Reliable)
 	void Client_OnTurnStart(const FCardCollection& DrawCards);
@@ -221,7 +224,36 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_RespondSelectCard();
 
-	
+	UFUNCTION()
+	void PlayerInfoUpdatedEvent();
+
+
+
+	///////////////////////////
+	//// 원명 추가 
+	//////////////////////////
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleMappingContext();
+
+	//void SetWidgetVisibility(uint32 PlayerID, bool bVisible);
+	//플레이어 스테이트에 유저에 대한 정보가 있는지 확인 
+	void SetWidgetVisibility(uint32 PlayerID, bool bVisible);
+	void GetUserInformationUI(uint32 BangPlayerStateID);
+
+	void GetPlayerStateAtBegin();
+private:
+	bool bIsCameraContextActive;
+
+	TMap<uint32, UWidgetComponent*> PlayerWidgets;
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	UWidgetComponent* InteractionWidgetComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> InteractionWidgetClass;
+
+	uint32 ControllerPlayerStateID = INDEX_NONE;
+
 };
 
 

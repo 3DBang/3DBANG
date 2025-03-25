@@ -7,6 +7,7 @@
 #include "BangPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTurnStartDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerInfoUpdated);
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerState : public APlayerState
@@ -17,6 +18,10 @@ public:
 	ABangPlayerState();
 
 	virtual void BeginPlay() override;
+
+	// Delegate
+	UPROPERTY(BlueprintAssignable, Category = "Delegate|Event")
+	FOnPlayerInfoUpdated FOnPlayerInfoUpdated;
 
 	// PlayerState에서 사용하는 플레이어 정보 저장용
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerInfo)
@@ -54,7 +59,6 @@ public:
 	// 컨트롤러가 카드 버릴때 호출
 	UFUNCTION()
 	void RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard);
-
 	
 	// 턴 시작
 	UFUNCTION()
