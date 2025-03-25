@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Card/BangCardManager.h"
+#include "Data/PlayerInformation.h"
 #include "GameFramework/PlayerController.h"
 #include "BangPlayerController.generated.h"
 
@@ -8,11 +10,12 @@ class UInputMappingContext;
 class UInputAction;
 class ABangPlayerState;
 class ABangCharacter;
-enum class EJobType : uint8;
-enum class ECharacterType : uint8;
 class ABangGameMode;
 class UCameraComponent;
 class UWidgetComponent;
+
+enum class EJobType : uint8;
+enum class ECharacterType : uint8;
 
 UCLASS()
 class CH4_TEAM3_BANG_API ABangPlayerController : public APlayerController
@@ -47,20 +50,28 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction = nullptr;
 	
-
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnRep_PlayerState() override; // PS가 다 생성되고 난 뒤에 호출
+	
 ///////////////////////////
 ////서버 관련 로직 작성란
 //////////////////////////
-	
-public:
-//서버에 턴 종료 요청 
-	/*UFUNCTION(Server, Reliable)
-	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
+public:	
+	UPROPERTY()
+	bool bCanUseBang;
+
+	UPROPERTY()
+	TObjectPtr<class ABangPlayerState> BangMyPlayerState;
 
 	UFUNCTION(Server, Reliable)
-	void Server_UseCard(EActiveType SelectedCard, uint32 TargetPlayerID);*/
+	void Server_UseCard(const FSingleCard& SingleCard, int32 TargetID);
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseCardReturn(bool IsAble);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_EndTurn();
 
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
@@ -71,13 +82,19 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Init")
 	void Init();
 	
+	UFUNCTION()
+	void OnCardSelectionComplete(
+		const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
+		const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
+		int32 RequiredSelectCount,                      // 선택해야 할 개수
+		ECardSelectPurpose Purpose                      // 선택 목적
+	);
 	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
 	UFUNCTION(Client, Reliable)
 	void Client_SelectCard();
 	
 	UFUNCTION(Client, Reliable)
-	void Client_HandleCardSelection(EActiveType SelectedCard);
-
+	void Client_HandleCardSelection(const FSingleCard& SingleCard);
 
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
@@ -85,45 +102,37 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget();
 
+	UFUNCTION(Client, Reliable)
 
-	UFUNCTION(Server, Reliable)
-	void Server_UseCard(EActiveType SelectedCard, uint32 TargetPlayerID);
+	void Client_RequestCardSelection(const FCardCollection& CardsToChooseFrom,
+		int32 RequiredSelectCount,
+		ECardSelectPurpose Purpose);
 
-
-	UFUNCTION(Server, Reliable)
-	void Server_UseCardReturn(bool IsAble);
-
-
-	UFUNCTION(Server, Reliable)
-	void Server_EndTurn(const uint32 UniqueID, ECharacterType PlayerCharacter);
-
-
-
+	// 호출 시점을 위젯에서 카드 보일때
+	UFUNCTION()
+	void UpdateCardList();
+	
+	UFUNCTION(Client, Reliable)
+	void Client_OnTurnStart(const FCardCollection& DrawCards);
+	
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
-
-public:
-
 	void UpdatePlayerUI(FName& NewText);
 	void UpdatePlayerHP(int32 NewHP);
 	void SetInitializeHP(int32 NewHP);
-
+	
 private:
 	TObjectPtr<ABangCharacter> OtherPlayers;
-
-
-
+	
 	//id의 값을 PlayerState ->
 
 public:
 	void MouseClicked();
-public:
 	FName TestPlayerController;
 
 	UFUNCTION(Client, Reliable)
 	void Client_OpenCamera(); // 여기에 추가적으로 PlayerStateID 들어가야함 
-
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetInputEnabled(bool IsAttacker);
@@ -141,6 +150,7 @@ public:
 	void Client_SetOutline(bool bEnable, int32 StencilValue);
 
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
+	
 private:
 	float CameraBlendElapsed = 0.f;
 	FTimerHandle CameraBlendHandle;
@@ -152,21 +162,27 @@ private:
 	FTimerHandle CameraCloseBlendTimerHandle;
 
 	// 지목 모드 타이머핸들
-	FTimerHandle BangModeTimerHandle; 
+	FTimerHandle BangModeTimerHandle;
+	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	TObjectPtr<UInputMappingContext> CameraMappingContext = nullptr;
+	
 private:
-
 	FTransform CachedBangCameraTransform;
-
-
 
 	///////////////////////////
 	//// 찬호 추가 
 	//////////////////////////
-
 public:
+	// 현재 들고있는 카드 배열
+	UPROPERTY()
+	FCardCollection CurrentCardCollection;
+
+	UPROPERTY() // 유저가 카드고를수있는 카드컬렉션,
+	//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
+	FCardCollection SelectCardCollection;
+	
 	UFUNCTION(Client, Reliable)
 	void Client_DisplayBangUI();
 
@@ -196,6 +212,7 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
@@ -223,5 +240,20 @@ protected:
 	uint32 ControllerPlayerStateID = INDEX_NONE;
 protected:
 	virtual void OnRep_PlayerState() override;
+
+	
+	// 플레이어에게 카드 선택권 요구
+	UFUNCTION(Client, Reliable)
+	void Client_RequestSelectCard(const uint32& PlayerUniqueID, const FPlayerCardCollection DrawCards);
+	
+	// 플레이어에게 카드 선택권 요구 응답
+	UFUNCTION(Server, Reliable)
+	void Server_RespondSelectCard();
+
+	UFUNCTION()
+	void PlayerInfoUpdatedEvent();
+
 };
+
+
 

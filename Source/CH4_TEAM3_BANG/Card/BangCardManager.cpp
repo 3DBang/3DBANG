@@ -191,6 +191,19 @@ void UBangCardManager::ReorderAvailCards(const FSingleCard HandedCard)
 	}
 }
 
+void UBangCardManager::CheckCardSymbolFromAvailCards(const int32 CardCounts, FCardCollection& OutCards)
+{
+	if (AvailCards.CardList.Num() <= CardCounts || AvailCards.CardList.Num() == 0)
+	{
+		ReorderCards();
+	}
+
+	for (int16 i = 0; i < CardCounts; i++)
+	{
+		OutCards.CardList.Add(AvailCards.CardList[i]);
+	}
+}
+
 // 모든 카드를 가져온다.
 void UBangCardManager::GetAllCards()
 {

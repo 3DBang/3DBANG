@@ -56,8 +56,6 @@ struct FCardCollection
 	{
 		return CardList == Other.CardList;
 	}
-
-	
 };
 
 // 덱 종류
@@ -114,6 +112,10 @@ public:
 	// 건내준 카드를 다시 사용할 카드 덱에 넣는다
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void ReorderAvailCards(const FSingleCard HandedCard);
+
+	// n장의 카드 심볼 확인
+	UFUNCTION(BlueprintCallable, Category = "Card Manager")
+	void CheckCardSymbolFromAvailCards(const int32 CardCounts, FCardCollection& OutCards);
 
 	// 캐릭터의 고유 채력 받아오기
 	UFUNCTION()

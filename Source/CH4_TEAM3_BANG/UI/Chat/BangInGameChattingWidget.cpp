@@ -29,7 +29,7 @@ void UBangInGameChattingWidget::NativeConstruct()
 
 void UBangInGameChattingWidget::AddMessage(const FText& Message, const FSlateColor& Color)
 {
-	if (!IsValid(ChatScrollBox)) return;
+	if (ChatScrollBox) return;
 
 	if (const TObjectPtr<UTextBlock> NewMessage = NewObject<UTextBlock>(this))
 	{
