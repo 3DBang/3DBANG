@@ -273,11 +273,22 @@ public:
 	void SetWidgetVisibility(uint32 PlayerID, bool bVisible);
 	void GetUserInformationUI(uint32 BangPlayerStateID);
 
-	void GetPlayerStateAtBegin();
+	//void GetPlayerStateAtBegin();
+
+	void GetPlayerStateAtBeginTest(uint32 BangPlayerStateID);
+
+	void RemoveBangPlayerState(uint32 BangPlayerStateID);
+
+	UFUNCTION(Client, Reliable)
+	void Client_GetPlayerStateAtBeginTest(uint32 BangPlayerStateID);
+
+	UFUNCTION(Client, Reliable)
+	void Client_RemoveBangPlayerState(uint32 BangPlayerStateID);
 private:
 	bool bIsCameraContextActive;
 
 	TMap<uint32, UWidgetComponent*> PlayerWidgets;
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	UWidgetComponent* InteractionWidgetComponent;
@@ -287,6 +298,8 @@ protected:
 
 	uint32 ControllerPlayerStateID = INDEX_NONE;
 
+public:
+	void UpdatePlayerInfo(uint32 BangUniqueID,int32 HP, int32 Range);
 };
 
 
