@@ -47,6 +47,9 @@ public:
 	UFUNCTION()
 	void GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
 
+	UFUNCTION() 
+	void GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard);
+	
 	// 컨트롤러가 카드타입 조회
 	UFUNCTION()
 	void GetCardType(const int32 InPlayerUniqueID, const FSingleCard& Card, EActiveType& OutActiveType, EPassiveType& OutPassiveType);

@@ -139,6 +139,11 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 	}
 }
 
+void ABangPlayerState::GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard)
+{
+	//if (CharacterType == CharacterType || !CardManager) return;
+}
+
 void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& SingleCard, const int32 ToUniqueID)
 {
 	// 카드 각종 분기 처리 카드를 사용할 수 없는 경우에는 PC에 응답 후 리턴처리
