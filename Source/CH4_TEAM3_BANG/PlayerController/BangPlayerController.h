@@ -12,6 +12,7 @@ class ABangPlayerState;
 class ABangCharacter;
 class ABangGameMode;
 class UCameraComponent;
+class UWidgetComponent;
 
 enum class EJobType : uint8;
 enum class ECharacterType : uint8;
@@ -211,6 +212,35 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+
+///////////////////////////
+//// 원명 추가 
+//////////////////////////
+public:
+	UFUNCTION(Client, Reliable)
+	void Client_ToggleMappingContext();
+
+	//void SetWidgetVisibility(uint32 PlayerID, bool bVisible);
+	//플레이어 스테이트에 유저에 대한 정보가 있는지 확인 
+	void SetWidgetVisibility(uint32 PlayerID, bool bVisible);
+	void GetUserInformationUI(uint32 BangPlayerStateID);
+
+	void GetPlayerStateAtBegin();
+private:
+	bool bIsCameraContextActive;
+
+	TMap<uint32, UWidgetComponent*> PlayerWidgets;
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	UWidgetComponent* InteractionWidgetComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> InteractionWidgetClass;
+
+	uint32 ControllerPlayerStateID = INDEX_NONE;
+protected:
+	virtual void OnRep_PlayerState() override;
+
 	
 	// 플레이어에게 카드 선택권 요구
 	UFUNCTION(Client, Reliable)
@@ -222,6 +252,7 @@ public:
 
 	UFUNCTION()
 	void PlayerInfoUpdatedEvent();
+
 };
 
 
