@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -16,16 +14,13 @@ class USizeBox;
 
 // 카드 클릭 이벤트 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardClickedDelegate, UCard*, ClickedCard);
-/**
- * 
- */
+
 UCLASS()
 class CH4_TEAM3_BANG_API UCard : public UUserWidget
 {
 	GENERATED_BODY()
 	
 public:
-
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite, Category = "Card")
 	USizeBox* SizeBox;
 
@@ -84,7 +79,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Card")
     void UpdateCardDisplay();
-
 
 protected:
 	virtual void NativeConstruct() override;
