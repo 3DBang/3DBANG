@@ -237,11 +237,17 @@ public:
 	void SetWidgetVisibility(uint32 PlayerID, bool bVisible);
 	void GetUserInformationUI(uint32 BangPlayerStateID);
 
-	void GetPlayerStateAtBegin();
+	//void GetPlayerStateAtBegin();
+
+	void GetPlayerStateAtBeginTest(APlayerState* PS);
+	UFUNCTION(Client, Reliable)
+	void Client_GetPlayerStateAtBeginTest(APlayerState* PS);
+
 private:
 	bool bIsCameraContextActive;
 
 	TMap<uint32, UWidgetComponent*> PlayerWidgets;
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	UWidgetComponent* InteractionWidgetComponent;

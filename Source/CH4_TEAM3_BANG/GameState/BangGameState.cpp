@@ -51,3 +51,17 @@ void ABangGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	DOREPLIFETIME(ABangGameState, FromPlayerNickname);
 	DOREPLIFETIME(ABangGameState, ToPlayerNickname);
 }
+void ABangGameState::AddPlayerState(APlayerState* NewPlayerState)
+{
+	Super::AddPlayerState(NewPlayerState);
+
+	UWorld* World = GetWorld();
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			// 모든 클라이언트에 RPC 호출
+			PC->Client_GetPlayerStateAtBeginTest(NewPlayerState);
+		}
+	}
+}

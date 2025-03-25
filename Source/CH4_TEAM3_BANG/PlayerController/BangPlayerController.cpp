@@ -45,10 +45,26 @@ void ABangPlayerController::BeginPlay()
 			}
 		}
 	}
-	if (IsLocalController())
+	if (!IsLocalController())
 	{
-		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
+		return;
 	}
+	//if (auto* GS = GetWorld()->GetGameState<ABangGameState>())
+	//{
+	//	// 이미 있는 PlayerState 처리
+	//	for (APlayerState* PS : GS->PlayerArray)
+	//	{
+	//		GetPlayerStateAtBeginTest(PS);
+	//	}
+
+	//	// 이후 추가될 PlayerState 처리
+	////	GS->OnPlayerStateAdded.AddUObject(this, &ABangPlayerController::CreateWidgetForPlayerState);
+	//}
+
+	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
+	
+
+
 	/*FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	InputMode.SetHideCursorDuringCapture(false);
@@ -458,7 +474,18 @@ void ABangPlayerController::MouseClicked()
 					{
 						if (PlayerWidgets.Contains(OtherPlayer->GetPlayerState()->GetPlayerId()))
 						{
+							GEngine->AddOnScreenDebugMessage(
+								-1,
+								10.f,
+								FColor::Red,
+								TEXT("[Mouse Click ]HAS Player State")
+							);
 							InteractionWidgetComponent = *PlayerWidgets.Find(OtherPlayer->GetPlayerState()->GetPlayerId());
+							if (InteractionWidgetComponent)
+							{
+								InteractionWidgetComponent->SetVisibility(true);
+								InteractionWidgetComponent->SetHiddenInGame(false);
+							}
 						}
 						else
 						{
@@ -478,11 +505,11 @@ void ABangPlayerController::MouseClicked()
 						}
 
 						// 2. 위젯 표시
-						if (InteractionWidgetComponent)
+						/*if (InteractionWidgetComponent)
 						{
 							InteractionWidgetComponent->SetVisibility(true);
 							InteractionWidgetComponent->SetHiddenInGame(false);
-						}
+						}*/
 					}
 					/**Test*/
 					uint32 PlayerStateID = 0;
@@ -1076,82 +1103,116 @@ void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 }
 void ABangPlayerController::GetUserInformationUI(uint32 BangPlayerStateID)
 {
-	
+	//
 }
 
-void ABangPlayerController::GetPlayerStateAtBegin()
+//void ABangPlayerController::GetPlayerStateAtBegin()
+//{
+//	UE_LOG(LogTemp, Error, TEXT("GetBegin시작"));
+//	if (!IsLocalController())
+//	{
+//		GEngine->AddOnScreenDebugMessage(
+//			-1,
+//			10.f,
+//			FColor::Red,
+//			TEXT("Local에서 걸림 ")
+//		);
+//		UE_LOG(LogTemp, Error, TEXT("로컬에서 걸림요 "));
+//		return;
+//	}
+//	UE_LOG(LogTemp, Error, TEXT("스테이트 시작"));
+//	if (ABangPlayerState* MyPS = GetPlayerState<ABangPlayerState>())
+//	{
+//		ControllerPlayerStateID = MyPS->GetPlayerId();
+//		FString Msg = FString::Printf(TEXT("Local Controller PlayerStateID = %d"), ControllerPlayerStateID);
+//		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, Msg); 
+//		UE_LOG(LogTemp, Error, TEXT("스테이트 있습니다"));
+//	}
+//	UE_LOG(LogTemp, Error, TEXT("플레이어 스테이트 액터 이터레이터 시작  "));
+//
+//	for (TActorIterator<ABangCharacter> It(GetWorld()); It; ++It)
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("플레이어 스테이트 액터 이터레이터 시작 내부 "));
+//		ABangCharacter* BangPlayer = *It;
+//		if (!BangPlayer)
+//		{
+//			GEngine->AddOnScreenDebugMessage(
+//				-1,
+//				10.f,
+//				FColor::Red,
+//				TEXT("No Player")
+//			);
+//			UE_LOG(LogTemp, Error, TEXT("플레이어 없습니다 "));
+//		}
+//		if (APlayerState* PS = BangPlayer->GetPlayerState())
+//		{
+//			uint32 ID = PS->GetPlayerId();
+//			//UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer, UWidgetComponent::StaticClass(), TEXT("InteractionWidget"));
+//			UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
+//			WidgetComp->SetupAttachment(BangPlayer->GetRootComponent());
+//			WidgetComp->RegisterComponent();
+//
+//			WidgetComp->SetWidgetClass(InteractionWidgetClass);
+//			WidgetComp->InitWidget();
+//
+//			WidgetComp->SetWidgetSpace(EWidgetSpace::World);
+//			WidgetComp->SetDrawSize(FVector2D(400, 200));
+//			WidgetComp->SetRelativeLocation(
+//				FVector(0.f, 0.f, BangPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f)
+//			);
+//
+//			WidgetComp->SetVisibility(false);
+//			WidgetComp->SetHiddenInGame(true);
+//			WidgetComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+//			WidgetComp->SetGenerateOverlapEvents(false);
+//			WidgetComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+//			PlayerWidgets.Add(ID, WidgetComp);
+//			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, TEXT("위젯 저장 완료"));
+//			UE_LOG(LogTemp, Error, TEXT("위젯 저장 완료"));
+//		}
+//		else
+//		{
+//			GEngine->AddOnScreenDebugMessage(
+//				-1,
+//				10.f,
+//				FColor::Red,
+//				TEXT("No Player State")
+//			);
+//		}
+//	}
+//	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
+//}
+
+void ABangPlayerController::GetPlayerStateAtBeginTest(APlayerState* PS)
 {
-	UE_LOG(LogTemp, Error, TEXT("GetBegin시작"));
-	if (!IsLocalController())
+	if (!PS) return;
+
+	const uint32 ID = PS->GetPlayerId();
+	if (PlayerWidgets.Contains(ID)) return;
+
+	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(PS->GetPawn()))
 	{
+		UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
+		WidgetComp->SetupAttachment(BangPlayer->GetRootComponent());
+		WidgetComp->RegisterComponent();
+
+		WidgetComp->SetWidgetClass(InteractionWidgetClass);
+		WidgetComp->InitWidget();
+		WidgetComp->SetWidgetSpace(EWidgetSpace::World);
+		WidgetComp->SetDrawSize({ 400, 200 });
+		WidgetComp->SetRelativeLocation({ 0,0,BangPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f });
+		WidgetComp->SetVisibility(false);
+		WidgetComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		GEngine->AddOnScreenDebugMessage(
 			-1,
 			10.f,
 			FColor::Red,
-			TEXT("Local에서 걸림 ")
+			TEXT("HAS Player State")
 		);
-		UE_LOG(LogTemp, Error, TEXT("로컬에서 걸림요 "));
-		return;
+		PlayerWidgets.Add(ID, WidgetComp);
 	}
-	UE_LOG(LogTemp, Error, TEXT("스테이트 시작"));
-	if (ABangPlayerState* MyPS = GetPlayerState<ABangPlayerState>())
-	{
-		ControllerPlayerStateID = MyPS->GetPlayerId();
-		FString Msg = FString::Printf(TEXT("Local Controller PlayerStateID = %d"), ControllerPlayerStateID);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, Msg); 
-		UE_LOG(LogTemp, Error, TEXT("스테이트 있습니다"));
-	}
-	UE_LOG(LogTemp, Error, TEXT("플레이어 스테이트 액터 이터레이터 시작  "));
-
-	for (TActorIterator<ABangCharacter> It(GetWorld()); It; ++It)
-	{
-		UE_LOG(LogTemp, Error, TEXT("플레이어 스테이트 액터 이터레이터 시작 내부 "));
-		ABangCharacter* BangPlayer = *It;
-		if (!BangPlayer)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				10.f,
-				FColor::Red,
-				TEXT("No Player")
-			);
-			UE_LOG(LogTemp, Error, TEXT("플레이어 없습니다 "));
-		}
-		if (APlayerState* PS = BangPlayer->GetPlayerState())
-		{
-			uint32 ID = PS->GetPlayerId();
-			//UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer, UWidgetComponent::StaticClass(), TEXT("InteractionWidget"));
-			UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
-			WidgetComp->SetupAttachment(BangPlayer->GetRootComponent());
-			WidgetComp->RegisterComponent();
-
-			WidgetComp->SetWidgetClass(InteractionWidgetClass);
-			WidgetComp->InitWidget();
-
-			WidgetComp->SetWidgetSpace(EWidgetSpace::World);
-			WidgetComp->SetDrawSize(FVector2D(400, 200));
-			WidgetComp->SetRelativeLocation(
-				FVector(0.f, 0.f, BangPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f)
-			);
-
-			WidgetComp->SetVisibility(false);
-			WidgetComp->SetHiddenInGame(true);
-			WidgetComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			WidgetComp->SetGenerateOverlapEvents(false);
-			WidgetComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-			PlayerWidgets.Add(ID, WidgetComp);
-			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, TEXT("위젯 저장 완료"));
-			UE_LOG(LogTemp, Error, TEXT("위젯 저장 완료"));
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				10.f,
-				FColor::Red,
-				TEXT("No Player State")
-			);
-		}
-	}
-	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
+}
+void ABangPlayerController::Client_GetPlayerStateAtBeginTest_Implementation(APlayerState* PS)
+{
+	GetPlayerStateAtBeginTest(PS);
 }
