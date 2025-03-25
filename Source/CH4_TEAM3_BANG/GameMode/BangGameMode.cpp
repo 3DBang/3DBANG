@@ -225,6 +225,7 @@ void ABangGameMode::StartTest()
 		FPlayerInformation PlayerInformation;
 		FString PlayerName = FString::Printf(TEXT("Player[%d]"), LobbyPlayers.Players[i].PlayerUniqueID);
 		PlayerInformation.PlayerName = PlayerName;
+		PlayerInformation.PlayerUniqueID = LobbyPlayers.Players[i].PlayerUniqueID;
 		if (i == 0) // 보안관
 		{
 			PlayerInformation.JobCardType = EJobType::Officer;

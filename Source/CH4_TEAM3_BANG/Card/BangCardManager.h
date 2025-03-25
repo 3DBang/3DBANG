@@ -136,6 +136,14 @@ public:
 	// DataAsset에서 카드 심볼과 번호로 카드 타입 받기 (서버에서 호출하면 안됨)
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void GetCardTypeFromDataAsset(const ESymbolType SymbolType, const int32 SymbolNumber, EActiveType& OutActiveType, EPassiveType& OutPassiveType) const;
+
+	// DataAsset에서 Character 타입 받기 (서버에서 호출하면 안됨)
+	UFUNCTION(BlueprintCallable, Category = "Card Manager")
+	void GetCardByCharacterTypeFromDataAsset(const ECharacterType CharacterType, FSingleCard& OutSingleCard) const;
+
+	// DataAsset에서 Job 타입 받기 (서버에서 호출하면 안됨)
+	UFUNCTION(BlueprintCallable, Category = "Card Manager")
+	void GetCardByJobTypeFromDataAsset(const EJobType JobType, FSingleCard& OutSingleCard) const;
 	
 	// 최상위 단일 케릭터 카드 추출
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
