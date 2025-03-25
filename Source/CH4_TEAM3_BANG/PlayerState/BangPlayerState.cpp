@@ -152,23 +152,9 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 	}
 }
 
-void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection, FPlayerCollection _PlayerInfo)
+void ABangPlayerState::GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard)
 {
-	if (InPlayerUniqueID == 0 || !CardManager) return;
-	
-	const FString UniqueNetId = GetUniqueId().GetUniqueNetId()->ToString();
-	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerState::GetCard] Player UniqueNetId: %s"), *UniqueNetId);
-	
-	FPlayerInformation* PlayerInformation = _PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
-	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] PlayerInformation: %d"), PlayerInformation->PlayerUniqueID);
-	
-	for (auto [SymbolType, SymbolNumber] : PlayerInformation->MyCards.PlayerCards)
-	{
-		FSingleCard OutFoundCard;
-		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
-		OutCardCollection.CardList.Add(OutFoundCard);
-	}
+	//if (CharacterType == CharacterType || !CardManager) return;
 }
 
 void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& SingleCard, const int32 ToUniqueID)

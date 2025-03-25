@@ -74,12 +74,12 @@ UCard* UCardList::AddCard(FSingleCard CardData)
 
 void UCardList::AddCardToCharacterCardSlot(FSingleCard CardData)
 {
-	CharacterCardSlot->Border->SetBrushFromTexture(CardData.Card->CardIcon);
+	CharacterCardSlot->InitializeWithCard(CardData);
 }
 
 void UCardList::AddCardToJobCardSlot(FSingleCard CardData)
 {
-	JobCardSlot->Border->SetBrushFromTexture(CardData.Card->CardIcon);
+	JobCardSlot->InitializeWithCard(CardData);
 }
 
 void UCardList::OnUseInputButtonClicked()
