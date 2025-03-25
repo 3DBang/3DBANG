@@ -460,7 +460,8 @@ void ABangPlayerController::MouseClicked()
 				CurrentMouseCursor = EMouseCursor::Hand;
 				if (bIsCameraMode)
 				{
-					uint32 GetUID = GetUniqueID();
+					//uint32 GetUID = GetUniqueID();
+					//여기를 수정해야함 
 					//SendToServer And Send CloseCamera Request
 					//TODO : SendToServerMethod()
 					Server_CloseCamera();
@@ -472,6 +473,7 @@ void ABangPlayerController::MouseClicked()
 					// === 위젯 생성 및 표시 ===
 					if (InteractionWidgetClass) 
 					{
+						//여기도 수정해야하나?
 						if (PlayerWidgets.Contains(OtherPlayer->GetPlayerState()->GetPlayerId()))
 						{
 							GEngine->AddOnScreenDebugMessage(
@@ -489,6 +491,12 @@ void ABangPlayerController::MouseClicked()
 						}
 						else
 						{
+							GEngine->AddOnScreenDebugMessage(
+								-1,
+								10.f,
+								FColor::Red,
+								TEXT("[Mouse Click ] No Player State")
+							);
 							InteractionWidgetComponent = NewObject<UWidgetComponent>(OtherPlayer);
 							InteractionWidgetComponent->SetupAttachment(OtherPlayer->GetRootComponent());
 							InteractionWidgetComponent->RegisterComponent();
@@ -681,7 +689,9 @@ void ABangPlayerController::Server_OpenCamera_Implementation()
 	{
 		return;
 	}
+	//여기도 바꿔야하네 
 	uint32 BangUID= GetUniqueID();
+	//게임모드에서도 바꿔야하고 이거 
 	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (GM)
 	{
@@ -691,8 +701,7 @@ void ABangPlayerController::Server_OpenCamera_Implementation()
 
 void ABangPlayerController::Server_CloseCamera_Implementation()
 {
-	//왜 HasAuthority를 사용했는가? ->서버의 컨트롤러에서만 하게하려고 
-	//아니라면 이야기해주세요 -원명
+
 	if (!HasAuthority())
 	{
 		return;
@@ -846,7 +855,8 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 	if (!IsLocalController())
 		return;
 
-
+	//이거 그냥 동기화말고 서버에서 뿌려줘서 해당하는 애 찾아버리자 
+	//추가 제거함수 
 	APawn* MyPawn = GetPawn();
 	if (!MyPawn) return;
 
@@ -1096,92 +1106,12 @@ void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 		UWidgetComponent* Comp = *CompPtr;
 		Comp->SetVisibility(bVisible);
 		Comp->SetHiddenInGame(!bVisible);
-		//UUserWidget* BangUserWidget = Cast<UUserWidget>((*CompPtr)->GetUserWidgetObject());
-		//BangUserWidget->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-		//BangUserWidget->SetHiddenInGame(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 }
 void ABangPlayerController::GetUserInformationUI(uint32 BangPlayerStateID)
 {
 	//
 }
-
-//void ABangPlayerController::GetPlayerStateAtBegin()
-//{
-//	UE_LOG(LogTemp, Error, TEXT("GetBegin시작"));
-//	if (!IsLocalController())
-//	{
-//		GEngine->AddOnScreenDebugMessage(
-//			-1,
-//			10.f,
-//			FColor::Red,
-//			TEXT("Local에서 걸림 ")
-//		);
-//		UE_LOG(LogTemp, Error, TEXT("로컬에서 걸림요 "));
-//		return;
-//	}
-//	UE_LOG(LogTemp, Error, TEXT("스테이트 시작"));
-//	if (ABangPlayerState* MyPS = GetPlayerState<ABangPlayerState>())
-//	{
-//		ControllerPlayerStateID = MyPS->GetPlayerId();
-//		FString Msg = FString::Printf(TEXT("Local Controller PlayerStateID = %d"), ControllerPlayerStateID);
-//		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, Msg); 
-//		UE_LOG(LogTemp, Error, TEXT("스테이트 있습니다"));
-//	}
-//	UE_LOG(LogTemp, Error, TEXT("플레이어 스테이트 액터 이터레이터 시작  "));
-//
-//	for (TActorIterator<ABangCharacter> It(GetWorld()); It; ++It)
-//	{
-//		UE_LOG(LogTemp, Error, TEXT("플레이어 스테이트 액터 이터레이터 시작 내부 "));
-//		ABangCharacter* BangPlayer = *It;
-//		if (!BangPlayer)
-//		{
-//			GEngine->AddOnScreenDebugMessage(
-//				-1,
-//				10.f,
-//				FColor::Red,
-//				TEXT("No Player")
-//			);
-//			UE_LOG(LogTemp, Error, TEXT("플레이어 없습니다 "));
-//		}
-//		if (APlayerState* PS = BangPlayer->GetPlayerState())
-//		{
-//			uint32 ID = PS->GetPlayerId();
-//			//UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer, UWidgetComponent::StaticClass(), TEXT("InteractionWidget"));
-//			UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
-//			WidgetComp->SetupAttachment(BangPlayer->GetRootComponent());
-//			WidgetComp->RegisterComponent();
-//
-//			WidgetComp->SetWidgetClass(InteractionWidgetClass);
-//			WidgetComp->InitWidget();
-//
-//			WidgetComp->SetWidgetSpace(EWidgetSpace::World);
-//			WidgetComp->SetDrawSize(FVector2D(400, 200));
-//			WidgetComp->SetRelativeLocation(
-//				FVector(0.f, 0.f, BangPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f)
-//			);
-//
-//			WidgetComp->SetVisibility(false);
-//			WidgetComp->SetHiddenInGame(true);
-//			WidgetComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-//			WidgetComp->SetGenerateOverlapEvents(false);
-//			WidgetComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-//			PlayerWidgets.Add(ID, WidgetComp);
-//			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, TEXT("위젯 저장 완료"));
-//			UE_LOG(LogTemp, Error, TEXT("위젯 저장 완료"));
-//		}
-//		else
-//		{
-//			GEngine->AddOnScreenDebugMessage(
-//				-1,
-//				10.f,
-//				FColor::Red,
-//				TEXT("No Player State")
-//			);
-//		}
-//	}
-//	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
-//}
 
 void ABangPlayerController::GetPlayerStateAtBeginTest(uint32 BangPlayerStateID)
 {
@@ -1198,6 +1128,10 @@ void ABangPlayerController::GetPlayerStateAtBeginTest(uint32 BangPlayerStateID)
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
 		UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
+		if (!WidgetComp)
+		{
+			return;
+		}
 		WidgetComp->SetupAttachment(BangPlayer->GetRootComponent());
 		WidgetComp->RegisterComponent();
 
