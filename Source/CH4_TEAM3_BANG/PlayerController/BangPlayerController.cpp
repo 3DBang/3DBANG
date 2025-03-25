@@ -1183,14 +1183,19 @@ void ABangPlayerController::GetUserInformationUI(uint32 BangPlayerStateID)
 //	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
 //}
 
-void ABangPlayerController::GetPlayerStateAtBeginTest(APlayerState* PS)
+void ABangPlayerController::GetPlayerStateAtBeginTest(uint32 BangPlayerStateID)
 {
-	if (!PS) return;
+	
+	if (!IsLocalController())
+	{
+		return;
+	}
+	if (PlayerWidgets.Contains(BangPlayerStateID))
+	{
+		return;
+	}
 
-	const uint32 ID = PS->GetPlayerId();
-	if (PlayerWidgets.Contains(ID)) return;
-
-	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(PS->GetPawn()))
+	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
 		UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
 		WidgetComp->SetupAttachment(BangPlayer->GetRootComponent());
@@ -1209,10 +1214,39 @@ void ABangPlayerController::GetPlayerStateAtBeginTest(APlayerState* PS)
 			FColor::Red,
 			TEXT("HAS Player State")
 		);
-		PlayerWidgets.Add(ID, WidgetComp);
+		PlayerWidgets.Add(BangPlayerStateID, WidgetComp);
 	}
 }
-void ABangPlayerController::Client_GetPlayerStateAtBeginTest_Implementation(APlayerState* PS)
+void ABangPlayerController::Client_GetPlayerStateAtBeginTest_Implementation(uint32 BangPlayerStateID)
 {
-	GetPlayerStateAtBeginTest(PS);
+	GetPlayerStateAtBeginTest(BangPlayerStateID);
+}
+void ABangPlayerController::Client_RemoveBangPlayerState_Implementation(uint32 BangPlayerStateID)
+{
+	RemoveBangPlayerState(BangPlayerStateID);
+}
+void ABangPlayerController::RemoveBangPlayerState(uint32 BangPlayerStateID)
+{
+	if (!IsLocalController())
+	{
+		return;
+	}
+	if (!PlayerWidgets.Contains(BangPlayerStateID))
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			10.f,
+			FColor::Red,
+			TEXT("[Player Controller :: RemoveBangPlayerState Bug]")
+		);
+		return;
+	}
+	UWidgetComponent** WidgetPtr = PlayerWidgets.Find(BangPlayerStateID);
+	
+	if (WidgetPtr && *WidgetPtr)
+	{
+		UWidgetComponent* WidgetComp = *WidgetPtr;
+		WidgetComp->DestroyComponent();
+		PlayerWidgets.Remove(BangPlayerStateID);
+	}
 }

@@ -239,10 +239,15 @@ public:
 
 	//void GetPlayerStateAtBegin();
 
-	void GetPlayerStateAtBeginTest(APlayerState* PS);
-	UFUNCTION(Client, Reliable)
-	void Client_GetPlayerStateAtBeginTest(APlayerState* PS);
+	void GetPlayerStateAtBeginTest(uint32 BangPlayerStateID);
 
+	void RemoveBangPlayerState(uint32 BangPlayerStateID);
+
+	UFUNCTION(Client, Reliable)
+	void Client_GetPlayerStateAtBeginTest(uint32 BangPlayerStateID);
+
+	UFUNCTION(Client, Reliable)
+	void Client_RemoveBangPlayerState(uint32 BangPlayerStateID);
 private:
 	bool bIsCameraContextActive;
 

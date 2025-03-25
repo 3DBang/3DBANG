@@ -33,4 +33,5 @@ public:
 	void ReceiveMessage(const FString& ChatMessage, const FString& FromNickname, const FString& ReciverNickname);
 	
 	virtual void AddPlayerState(APlayerState* NewPlayerState) override;
+	virtual void RemovePlayerState(APlayerState* PlayerState) override;
 };
