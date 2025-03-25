@@ -147,12 +147,16 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 
 void ABangPlayerState::GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard)
 {
-	if (CharacterType == CharacterType || !CardManager) return;
-	
+	if (CharacterType == ECharacterType::None || !CardManager) return;
+
+	CardManager->GetCardByCharacterTypeFromDataAsset(CharacterType, OutCard);
 }
 
-void ABangPlayerState::GetCardByJobType(const EJobType JobType, FSingleCard& OutSingleCard)
+void ABangPlayerState::GetCardByJobType(const EJobType JobType, FSingleCard& OutCard)
 {
+	if (JobType == EJobType::None  || !CardManager) return;
+
+	CardManager->GetCardByJobTypeFromDataAsset(JobType, OutCard);
 }
 
 void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& SingleCard, const int32 ToUniqueID)
