@@ -94,6 +94,8 @@ public:
 	UFUNCTION()
 	void ShowTableCardsToAll();
 
+	void DrawCardsAndNotifyClients(int32 CardCount);
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;

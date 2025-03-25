@@ -49,12 +49,22 @@ void ABangPlayerHUD::BeginPlay()
 
 void ABangPlayerHUD::ShowDrawCardUI(const TArray<FSingleCard>& Cards)
 {
-	if (!TableCardWidgetClass) return;
+	UE_LOG(LogTemp, Warning, TEXT("ShowDrawCardUI 호출됨! 카드 수: %d"), Cards.Num());
+
+	if (!TableCardWidgetClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("TableCardWidgetClass is NULL"));
+		return;
+	}
 
 	TableCardWidgetInstance = CreateWidget<UTableCard>(GetWorld(), TableCardWidgetClass);
-	if (TableCardWidgetInstance)
+	if (!TableCardWidgetInstance)
 	{
-		TableCardWidgetInstance->AddToViewport();
-		TableCardWidgetInstance->InitializeCardList(Cards);
+		UE_LOG(LogTemp, Error, TEXT("TableCardWidgetInstance 생성 실패"));
+		return;
 	}
+
+	TableCardWidgetInstance->AddToViewport();
+	TableCardWidgetInstance->InitializeCardList(Cards);
+	UE_LOG(LogTemp, Warning, TEXT("TableCardWidgetInstance 생성 및 초기화 완료"));
 }

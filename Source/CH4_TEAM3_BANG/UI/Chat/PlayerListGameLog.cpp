@@ -5,7 +5,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "UObject/ConstructorHelpers.h"
-#include "Data/PlayerInformation.h" // ✅ 필수!
+#include "Data/PlayerInformation.h" //  필수!
 #include "PlayerState/BangPlayerState.h"
 
 UPlayerListGameLog::UPlayerListGameLog(const FObjectInitializer& ObjectInitializer)
@@ -28,7 +28,6 @@ UPlayerListGameLog::UPlayerListGameLog(const FObjectInitializer& ObjectInitializ
 void UPlayerListGameLog::NativeConstruct()
 {
 	Super::NativeConstruct();
-	// FObjectFinder는 여기 쓰면 안 됨 ❌
 }
 
 void UPlayerListGameLog::AddGameLog(const FString& LogText)

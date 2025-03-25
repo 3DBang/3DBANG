@@ -217,14 +217,33 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
+
 	Players.Players.Empty();
 
+	// ✅ 임시로 플레이어 강제 추가
+	if (LobbyPlayers.Players.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LobbyPlayers 비어 있음 → 테스트용 플레이어 추가"));
+
+		FPlayerInformation TempPlayer;
+		TempPlayer.PlayerUniqueID = 0;
+		TempPlayer.PlayerName = TEXT("TestPlayer");
+		TempPlayer.CurrentHealth = 4;
+		TempPlayer.MaxHealth = 4;
+		TempPlayer.JobCardType = EJobType::Officer;
+		TempPlayer.CharacterCardType = ECharacterType::BartCassidy;
+
+		LobbyPlayers.Players.Add(TempPlayer);
+	}
+
+	// 기존 코드 계속 진행
 	for (int i = 0; i < LobbyPlayers.Players.Num(); ++i)
 	{
 		FPlayerInformation PlayerInformation;
-		FString PlayerName = FString::Printf(TEXT("Player[%d]"), LobbyPlayers.Players[i].PlayerUniqueID);
-		PlayerInformation.PlayerName = PlayerName;
-		if (i == 0) // 보안관
+		PlayerInformation.PlayerName = LobbyPlayers.Players[i].PlayerName;
+		PlayerInformation.PlayerUniqueID = LobbyPlayers.Players[i].PlayerUniqueID;
+
+		if (i == 0)
 		{
 			PlayerInformation.JobCardType = EJobType::Officer;
 			PlayerInformation.CharacterCardType = ECharacterType::ElGringo;
@@ -234,12 +253,13 @@ void ABangGameMode::StartTest()
 			PlayerInformation.JobCardType = EJobType::Betrayer;
 			PlayerInformation.CharacterCardType = ECharacterType::BartCassidy;
 		}
+
 		PlayerInformation.MaxHealth = 4;
 		PlayerInformation.CurrentHealth = 4;
 		PlayerInformation.Range = 1;
 		PlayerInformation.CharacterRange = 0;
 		PlayerInformation.bIsMyTurn = false;
-		
+
 		Players.Players.Add(PlayerInformation);
 	}
 
@@ -893,37 +913,31 @@ void ABangGameMode::CloseCamera()
 	ControllerIDAtCameraMode = INDEX_NONE;
 }
 
-void ABangGameMode::Test_DrawAndLogCards()
+void ABangGameMode::DrawCardsAndNotifyClients(int32 CardCount)
 {
 	if (!CardManager) return;
 
 	FCardCollection Drawn;
-	CardManager->HandCards(3, Drawn);
-	UE_LOG(LogTemp, Warning, TEXT(" Test_DrawAndLogCards() → 카드 수: %d"), Drawn.CardList.Num());
+	CardManager->HandCards(CardCount, Drawn);
 
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			UE_LOG(LogTemp, Warning, TEXT(" 클라이언트에 카드 전달 중"));
-
+			UE_LOG(LogTemp, Warning, TEXT("카드 전달: %d장 → %s"), Drawn.CardList.Num(), *PC->GetName());
 			PC->Client_ShowDrawnCards(Drawn.CardList);
 		}
 	}
 }
 
+void ABangGameMode::Test_DrawAndLogCards()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Test_DrawAndLogCards 호출됨"));
+	DrawCardsAndNotifyClients(3);
+}
+
 void ABangGameMode::ShowTableCardsToAll()
 {
-	if (!CardManager) return;
-
-	FCardCollection Drawn;
-	CardManager->HandCards(3, Drawn);
-
-	for (const TObjectPtr<ABangPlayerController> BangPlayerController : BangPlayerControllers)
-	{
-		if (BangPlayerController)
-		{
-			BangPlayerController->Client_ShowDrawnCards(Drawn.CardList);
-		}
-	}
+	UE_LOG(LogTemp, Warning, TEXT("ShowTableCardsToAll 호출됨"));
+	DrawCardsAndNotifyClients(3);
 }
