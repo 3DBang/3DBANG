@@ -18,6 +18,7 @@
 #include "Components/CapsuleComponent.h"
 #include "UI/Card/CardList.h"
 #include "UI/Chat/BangInGameChattingWidget.h"
+#include "UI/Card/TableCard.h" // 
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -1022,6 +1023,7 @@ void ABangPlayerController::TestButtonCLicked()
 	UE_LOG(LogTemp, Error, TEXT("TestButtonCLicked"));
 	Server_StartTest();
 	Server_RequestPlayerListBroadcast(); 
+	Server_TestDrawCards();
 }
 
 void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArray<FPlayerInformation>& PlayerList)
@@ -1078,6 +1080,7 @@ void ABangPlayerController::Client_UpdateGameLogUI_Implementation(const FString&
 			ChatWidget->AddGameLog(GameLogMessage);
 		}
 	}
+}
 //void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 {
@@ -1189,4 +1192,27 @@ void ABangPlayerController::GetPlayerStateAtBegin()
 		}
 	}
 	UE_LOG(LogTemp, Error, TEXT("GetPlayerStateAtBegin 함수 종료  "));
+}
+
+void ABangPlayerController::Server_TestDrawCards_Implementation()
+{
+	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
+	{
+		GM->Test_DrawAndLogCards(); //  올바른 GameMode 함수 호출
+	}
+}
+
+void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FSingleCard>& DrawnCards)
+{
+	if (!IsLocalController()) return;
+
+	if (TableCard)
+	{
+		UTableCard* Card = CreateWidget<UTableCard>(this, TableCard);
+		if (Card)
+		{
+			Card->AddToViewport();
+			Card->InitializeCardList(DrawnCards);
+		}
+	}
 }

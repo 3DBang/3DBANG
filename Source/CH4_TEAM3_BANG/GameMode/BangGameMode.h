@@ -89,6 +89,8 @@ public:
 	UFUNCTION()
 	void EndTurn(const uint32 UniqueID);
 	
+	void Test_DrawAndLogCards();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;

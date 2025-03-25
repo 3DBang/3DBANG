@@ -13,6 +13,7 @@ class ABangCharacter;
 class ABangGameMode;
 class UCameraComponent;
 class UWidgetComponent;
+class UTableCard;
 
 enum class EJobType : uint8;
 enum class ECharacterType : uint8;
@@ -52,6 +53,7 @@ public:
 
 	UPROPERTY()
 	TObjectPtr<UBangCardManager> CardManager;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnRep_PlayerState() override; // PS가 다 생성되고 난 뒤에 호출
@@ -87,11 +89,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Init")
 	void Init();
 
-	//정빈
-	UFUNCTION(Client, Reliable)
-	void Client_UpdateGameLogUI(const FString& GameLogMessage);
-
-	
 	UFUNCTION()
 	void OnCardSelectionComplete(
 		const FCardCollection& CardsToChooseFrom,       // 원래 주어진 카드 목록
@@ -121,10 +118,20 @@ public:
 	UFUNCTION()
 	void UpdateCardList();
 	
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateGameLogUI(const FString& GameLogMessage);
 
 	UFUNCTION(Client, Reliable)
 	void Client_UpdatePlayerListUI(const TArray<FPlayerInformation>& PlayerList);
 
+	UFUNCTION(Server, Reliable)
+	void Server_TestDrawCards();
+	// 정빈
+	UFUNCTION(Client, Reliable)
+	void Client_ShowDrawnCards(const TArray<FSingleCard>& DrawnCards);
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UTableCard> TableCard;
 	///////////////////////////
 	//// 원명 추가 
 	//////////////////////////

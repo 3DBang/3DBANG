@@ -875,3 +875,26 @@ void ABangGameMode::CloseCamera()
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;
 }
+
+void ABangGameMode::Test_DrawAndLogCards()
+{
+	if (!CardManager)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[Test_DrawAndLogCards] CardManager is NULL"));
+		return;
+	}
+
+	FCardCollection DrawnCards;
+	CardManager->HandCards(3, DrawnCards); // 카드 3장 뽑기
+
+	UE_LOG(LogTemp, Warning, TEXT("[Test_DrawAndLogCards] Drawn Cards:"));
+
+	for (const FSingleCard& Card : DrawnCards.CardList)
+	{
+		const FString CardName = Card.Card ? Card.Card->CardName.ToString() : TEXT("NULL");
+		const FString SymbolType = StaticEnum<ESymbolType>()->GetNameStringByValue((int64)Card.Card->SymbolType);
+		const int32 SymbolNumber = Card.Card->SymbolNumber;
+
+		UE_LOG(LogTemp, Warning, TEXT("  - %s | %s %d"), *CardName, *SymbolType, SymbolNumber);
+	}
+}
