@@ -392,6 +392,27 @@ bool ABangPlayerState::CheckIsCardAble(const int32 FromUniqueID, const FSingleCa
 	return true;
 }
 
+bool ABangPlayerState::CheckIsCardAbleByPassive(const int32 FromUniqueID, const EPassiveType PassiveType)
+{
+	if (!CardManager) return false;
+
+	for (auto [SymbolType, SymbolNumber] : PlayerInfo.GetPlayerInformation(FromUniqueID)->EquippedCards.PlayerCards)
+	{
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+
+		if (const TObjectPtr<UBangPassiveCard> BangPassiveCard = Cast<UBangPassiveCard>(OutFoundCard.Card))
+		{
+			if (PassiveType == BangPassiveCard->PassiveType)
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 void ABangPlayerState::Server_CheckCardSymbol_Implementation(const uint32& FromUniqueID, const uint16& CardCount)
 {
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
