@@ -49,10 +49,10 @@ void UCard::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent&
 	UE_LOG(LogTemp, Log, TEXT("[UCard::NativeOnMouseEnter] 마우스 진입: %s, Timer Start"), *GetName()); // 로그 추가 - 타이머 시작 알림
 
 	CardHoverHighlights->SetVisibility(ESlateVisibility::Visible);
-	// 3초 딜레이 타이머 시작, 타이머 만료 시 ShowDescriptionWidgetDelayed 함수 호출
+	// 1.3초 딜레이 타이머 시작, 타이머 만료 시 ShowDescriptionWidgetDelayed 함수 호출
 	FTimerDelegate TimerDelegate;
 	TimerDelegate.BindUFunction(this, FName("ShowDescriptionWidgetDelayed")); // 딜레이 후 호출할 함수 지정 (ShowDescriptionWidgetDelayed)
-	GetWorld()->GetTimerManager().SetTimer(DescriptionDelayTimerHandle, TimerDelegate, 3.0f, false); // 3초 딜레이, 루프 X (false)
+	GetWorld()->GetTimerManager().SetTimer(DescriptionDelayTimerHandle, TimerDelegate, 1.1f, false); // 1.3초 딜레이, 루프 X (false)
 }
 
 void UCard::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
