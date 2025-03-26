@@ -811,6 +811,9 @@ void ABangGameMode::SpawnPlayers()
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = BangPlayerControllers[i];
         SpawnParams.Instigator = BangPlayerControllers[i]->GetPawn();
+		
+		PlayersTransfrom.Add(BangPlayerControllers[i], TPair<FVector, FRotator>(SpawnLocation, SpawnRotation));
+
         ABangCharacter* Player = GetWorld()->SpawnActor<ABangCharacter>(DefaultPawnClass, SpawnLocation, SpawnRotation, SpawnParams);
         if (Player)
         {
@@ -958,3 +961,28 @@ void ABangGameMode::SendGameLog(AController* Controller)
 	}
 }
 
+void ABangGameMode::ReSpawnPlayerAtTurn()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			if (TPair<FVector, FRotator>* SpawnData = PlayersTransfrom.Find(PC))
+			{
+				if (APawn* Pawn = PC->GetPawn())
+				{
+					Pawn->SetActorLocationAndRotation(SpawnData->Key, SpawnData->Value);
+					PC->Client_SetControllerRotation(SpawnData->Value);
+				}
+			}
+		}
+	}
+}
+void ABangGameMode::ReSpawnPlayerAtRestart()
+{
+	//
+}
+void ABangGameMode::ReSpawnPlayerAtRestartBluePrint()
+{
+	ReSpawnPlayerAtTurn();
+}

@@ -804,6 +804,8 @@ void ABangPlayerController::MouseClicked()
 		return;
 	}
 	//문제점1. 이러면 유저가 자기턴이 아닐경우에는 다른 유저를 클릭해 정보를 볼 수 없다.
+	//정보는 탑뷰에서만 막는다 
+
 	/*if (!Information->bIsMyTurn) 
 	{
 		return;
@@ -1022,7 +1024,6 @@ void ABangPlayerController::Server_CloseCamera_Implementation()
 			FColor::Red,
 			TEXT("Duration End")
 		);
-
 	}
 	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (GM)

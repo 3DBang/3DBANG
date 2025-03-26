@@ -174,6 +174,17 @@ public:
 	UFUNCTION()
 	void CloseCamera();
 
+	TMap<TObjectPtr<ABangPlayerController>, TPair<FVector, FRotator>> PlayersTransfrom;
+
+	UFUNCTION()
+	void ReSpawnPlayerAtTurn();
+
+	UFUNCTION()
+	void ReSpawnPlayerAtRestart();
+	
+	UFUNCTION(BlueprintCallable)
+	void ReSpawnPlayerAtRestartBluePrint();
 private:
-	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum	
+	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum
+
 };
