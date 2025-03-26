@@ -346,9 +346,7 @@ void ABangGameMode::StartTest()
 		if (ABangGameState* GS = GetGameState<ABangGameState>())
 		{
 			GS->BroadcastGameLogToClients(LogMessageActive);
-			//GS->BroadcastGameLogToClients(LogMessagePassive);
 		}
-
 
 		AdvanceGameTurn();
 	}
@@ -362,10 +360,7 @@ void ABangGameMode::StartTest()
 void ABangGameMode::ForceUpdate_StartGame_Real()
 {
 	UE_LOG(LogTemp, Warning, TEXT("StartGame [%d]"), LobbyPlayers.Players.Num());
-	if (!CardManager)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("CardManager NULL"));
-	}
+	if (!CardManager) return;
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager) return;
 	if (LobbyPlayers.Players.Num() < 4 || LobbyPlayers.Players.Num() > 7) return;
 
@@ -383,10 +378,12 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 	{
 		Players.Players[i].JobCardType = JobCards[i];
 		Players.Players[i].CharacterCardType = CardManager->GetCharacterCard();
+		// 로즈 둘란 사거리 증가
 		if (Players.Players[i].CharacterCardType == ECharacterType::RoseDoolan)
 		{
 			Players.Players[i].Range++;
 		}
+		// 폴리그렛 상대사거리 증가
 		else if (Players.Players[i].CharacterCardType == ECharacterType::PaulRegret)
 		{
 			Players.Players[i].CharacterRange++;
@@ -405,14 +402,6 @@ void ABangGameMode::ForceUpdate_StartGame_Real()
 			Players.Players[i].bIsMyTurn = true;
 			PlayerIndex = i;
 		}
-	}
-
-	for (FPlayerInformation Player : Players.Players)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s"), *Player.PlayerName);
-		UE_LOG(LogTemp, Warning, TEXT("JobCardType: %d"), Player.JobCardType);
-		UE_LOG(LogTemp, Warning, TEXT("MaxHealth: %d"), Player.MaxHealth);
-		UE_LOG(LogTemp, Warning, TEXT("CharacterCardType: %d"), Player.CharacterCardType);
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("CurrentPlayerTurn: %d"), CurrentTurnPlayerUniqeID);
@@ -517,7 +506,6 @@ void ABangGameMode::AdvanceGameTurn()
 				break;
 			}
 		}
-
 		
 		FBangSinglePlayerState CurrentPlayerState;
 		GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
@@ -654,6 +642,8 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID,
 			break;
 		}
 	case EJobType::Betrayer:
+		break;
+	case EJobType::None:
 		break;
 	}
 

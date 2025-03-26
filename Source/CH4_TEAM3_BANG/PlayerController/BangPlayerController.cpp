@@ -780,7 +780,6 @@ void ABangPlayerController::TestButtonCLicked()
 	Server_TestDrawCards();
 }
 
-
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
@@ -790,20 +789,21 @@ void ABangPlayerController::MouseClicked()
 	{
 		return;
 	}
+
+	// 탑뷰 기준은 컨트롤러에서 bIsTopView (?) 이런걸로 들고있으면 됩니다.
+	// 탑뷰 일때만
+	// PS 찾아서 자기 key값으로 PlayerInfo 조회해서 bIsMyTurn true면 아래 로직 타고 아니면 return;
+	
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
 	{
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
 		
-		
 		if (HitChar && HitChar != GetPawn())
 		{
-
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
-				
-
 				CurrentMouseCursor = EMouseCursor::Hand;
 				if (bIsCameraMode)
 				{
@@ -812,15 +812,12 @@ void ABangPlayerController::MouseClicked()
 					//SendToServer And Send CloseCamera Request
 					//TODO : SendToServerMethod()
 					Server_CloseCamera();
-
 				}
-
 				else
 				{
 					// === 위젯 생성 및 표시 ===
 					if (InteractionWidgetClass)
 					{
-						
 						ABangPlayerController* PCTest = Cast<ABangPlayerController>(GetWorld()->GetFirstPlayerController());
 						if (PCTest && PCTest->PlayerState)
 						{
@@ -836,17 +833,17 @@ void ABangPlayerController::MouseClicked()
 							}
 						}
 
-
 						ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
-						if (GEngine)
-						{
-							auto Information = BangState->PlayerInfo.GetPlayerInformation(BangState->PlayerUniqueID);
-							UE_LOG(LogTemp, Display, TEXT("Unique id %d"), Information->PlayerUniqueID);
-							UE_LOG(LogTemp, Display, TEXT("Current Hea%d"), Information-> CurrentHealth);
-							UE_LOG(LogTemp, Display, TEXT("Range %d"), Information->Range);
-							UE_LOG(LogTemp, Display, TEXT("Name is %s"), *Information->PlayerName);
-							UE_LOG(LogTemp, Display, TEXT("====================="));
-						}
+						
+						auto Information = BangState->PlayerInfo.GetPlayerInformation(BangState->PlayerUniqueID);
+						UE_LOG(LogTemp, Display, TEXT("Unique id %d"), Information->PlayerUniqueID);
+						UE_LOG(LogTemp, Display, TEXT("Current Hea%d"), Information-> CurrentHealth);
+						UE_LOG(LogTemp, Display, TEXT("Range %d"), Information->Range);
+						UE_LOG(LogTemp, Display, TEXT("Name is %s"), *Information->PlayerName);
+						UE_LOG(LogTemp, Display, TEXT("====================="));
+
+						// GetHUD() 캐스팅해서 셋 함수에 담아주고 viserbility 토글
+						
 						if (PlayerWidgets.Contains(BangState->PlayerUniqueID))
 						{
 							
@@ -929,8 +926,6 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	{
 		return;
 	}
-
-
 
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
@@ -1260,10 +1255,6 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
 	}
 }
-
-///////////////////////////
-//// 찬호 추가 
-//////////////////////////
 
 void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 {
