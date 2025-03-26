@@ -189,7 +189,7 @@ public:
 	void NewPossessCharacter(AController* PlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation);
 
 	UFUNCTION()
-	void PlayerDie();
+	void AtPlayerDie(AController* DeadPlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation);
 
 private:
 	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum

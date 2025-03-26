@@ -1002,9 +1002,11 @@ void ABangGameMode::NewPossessCharacter(AController* PlayerController, const FVe
 	{
 		return;
 	}
+
 	APawn* BeforePawn = PlayerController->GetPawn();
 	if (BeforePawn)
 	{
+		PlayerController->UnPossess();
 		BeforePawn->Destroy();
 	}
 
@@ -1028,7 +1030,28 @@ void ABangGameMode::NewPossessCharacter(AController* PlayerController, const FVe
 	}
 	
 }
-void ABangGameMode::PlayerDie()
-{
 
+void ABangGameMode::AtPlayerDie(AController* DeadPlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation)
+{
+	if (ABangPlayerController* PC = Cast<ABangPlayerController>(DeadPlayerController))
+	{
+		APawn* CurrentPawn = PC->GetPawn();
+		if (CurrentPawn)
+		{
+			PC->UnPossess();
+			CurrentPawn->Destroy();
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = PC;
+			//여기에서 새로운 액터를 만들든 아니면 매시를바꾸든 하면될것 같습니다 
+			// 위에있는 PlayerDead에서 이 함수 호출하면 될것 같습니다
+			// Controller배열에서 빼주기 , 
+			// 만일 매시를 바꾸게된다면 IsDead라는 변수가 하나 필요합니다 
+			//APawn* NewPawn = GetWorld()->SpawnActor<APawn>(NewPawnClass, SpawnLocation, SpawnRotation, SpawnParams);
+
+		/*	if (NewPawn)
+			{
+				PC->Possess(NewPawn);
+			}*/
+		}
+	}
 }
