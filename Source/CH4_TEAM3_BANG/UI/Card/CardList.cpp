@@ -257,7 +257,7 @@ void UCardList::NativeConstruct()
 	bIsHidden = true;
 	ScrollBox->SetVisibility(ESlateVisibility::Hidden);
 	HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 보이기")));
-	UseInputButton->SetVisibility(ESlateVisibility::Visible);
+	UseInputButton->SetVisibility(ESlateVisibility::Hidden);
 	TurnEndButton->SetVisibility(ESlateVisibility::Hidden);
 	
 	UseInputButton->OnClicked.AddDynamic(this, &UCardList::OnUseInputButtonClicked);

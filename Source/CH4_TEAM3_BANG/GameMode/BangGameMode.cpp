@@ -523,7 +523,7 @@ void ABangGameMode::AdvanceGameTurn()
 		GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
 		// 주석 나중에 풀어줘야함
 		//PlayerStete로 전달
-		//CurrentPlayerState.State->StartTurn(CurrentTurnPlayerUniqeID, DrawCards);
+		CurrentPlayerState.State->StartTurn(CurrentTurnPlayerUniqeID, DrawCards);
 		
 		CurrentPlayerTurnState = EPlayerTurnState::UseCard;
 	}

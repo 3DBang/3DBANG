@@ -574,13 +574,18 @@ void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleC
 
 void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards)
 {
-	/*
+	
 	const TObjectPtr<UWorld> World = GetWorld();
 	if (!World || InPlayerUniqueID == 0)
 	{
 		return;
 	}
-	
+
+	if (PlayerInfo.Players.Num() == 0)
+	{
+		return;
+	}
+		
 	// 플레이어 턴으로 변경 및 인포에 카드 추가
 	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
 	if (!PlayerInformation)
@@ -620,7 +625,7 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 			PlayerController->Client_OnTurnStart(DrawCards);
 		}
 	}
-	*/
+	
 }
 
 // 턴 종료 모든 처리 끝나면 호출
