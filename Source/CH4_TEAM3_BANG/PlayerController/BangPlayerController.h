@@ -122,8 +122,11 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget(const FSingleCard& SingleCard);
 
+	UFUNCTION(Client, Reliable)
+	void Client_BangSelectTarget(const FSingleCard& SingleCard);
+
 	//UFUNCTION(Client, Reliable)
-	//void Client_BangSelectTarget(const FSingleCard& SingleCard);
+	//void StealFromOpponent(const FSingleCard& SingleCard);
 
 	// 호출 시점을 위젯에서 카드 보일때
 	UFUNCTION()
@@ -243,6 +246,9 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+
+	UFUNCTION(Server, Reliable)
+	void Server_RequestSendGameLog();
 
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);

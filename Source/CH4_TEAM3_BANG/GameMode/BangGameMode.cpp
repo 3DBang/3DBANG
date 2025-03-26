@@ -227,21 +227,6 @@ void ABangGameMode::StartTest()
 
 	Players.Players.Empty();
 
-	/*if (LobbyPlayers.Players.Num() == 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("LobbyPlayers 비어 있음 → 테스트용 플레이어 추가"));
-
-		FPlayerInformation TempPlayer;
-		TempPlayer.PlayerUniqueID = 0;
-		TempPlayer.PlayerName = TEXT("TestPlayer");
-		TempPlayer.CurrentHealth = 4;
-		TempPlayer.MaxHealth = 4;
-		TempPlayer.JobCardType = EJobType::Officer;
-		TempPlayer.CharacterCardType = ECharacterType::BartCassidy;
-
-		LobbyPlayers.Players.Add(TempPlayer);
-	}*/
-
 	// 기존 코드 계속 진행
 	for (int i = 0; i < LobbyPlayers.Players.Num(); ++i)
 	{
@@ -339,20 +324,6 @@ void ABangGameMode::StartTest()
 
 	if (Players.Players.Num() > 0)
 	{
-		const FString& RealPlayerName = Players.Players[0].PlayerName;
-
-		FString ActiveCardText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)EActiveType::Bang);
-		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
-
-		FString LogMessageActive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *ActiveCardText);
-		FString LogMessagePassive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
-
-		if (ABangGameState* GS = GetGameState<ABangGameState>())
-		{
-			GS->BroadcastGameLogToClients(LogMessageActive);
-			//GS->BroadcastGameLogToClients(LogMessagePassive);
-		}
-
 		AdvanceGameTurn();
 	}
 	else
@@ -956,3 +927,21 @@ void ABangGameMode::ShowTableCardsToAll()
 	UE_LOG(LogTemp, Warning, TEXT("ShowTableCardsToAll 호출됨"));
 	DrawCardsAndNotifyClients(3);
 }
+void ABangGameMode::SendGameLog(AController* Controller)
+{
+	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(Controller))
+	{
+		uint32 UniqueID = BangPC->PlayerUniqueID;
+
+		FString RealPlayerName = FString::Printf(TEXT("Player[%d]"), UniqueID);
+
+		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
+		FString LogMessage = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
+
+		if (ABangGameState* GS = GetGameState<ABangGameState>())
+		{
+			GS->BroadcastGameLogToClients(LogMessage);
+		}
+	}
+}
+
