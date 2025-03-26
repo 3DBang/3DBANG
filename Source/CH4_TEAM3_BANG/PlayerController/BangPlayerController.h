@@ -171,7 +171,12 @@ private:
 	//id의 값을 PlayerState ->
 
 public:
+
+	// 마우스 클릭하면 호출 되는 함수
+
+	UFUNCTION()
 	void MouseClicked();
+	
 	FName TestPlayerController;
 
 	UFUNCTION(Client, Reliable)
@@ -223,8 +228,8 @@ public:
 	FCardCollection CurrentCardCollection;
 
 	UPROPERTY() // 유저가 카드고를수있는 카드컬렉션,
-		//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
-		FCardCollection SelectCardCollection;
+	//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
+	FCardCollection SelectCardCollection;
 
 	UFUNCTION(Client, Reliable)
 	void Client_DisplayBangUI();

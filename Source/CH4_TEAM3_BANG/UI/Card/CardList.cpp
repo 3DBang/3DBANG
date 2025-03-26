@@ -146,11 +146,15 @@ void UCardList::OnUseInputButtonClicked()
 		}
 		// 선택된 카드 리스트를 델리게이트로 브로드캐스트 (리스트 전체 전달)
 		OnUseCard.Broadcast(SelectedCardList, CurrentCardSelectPurpose);
+	} 
+	else if (SelectedCardList.CardList.Num() == 0)
+	{
+		OnUseCard.Broadcast(SelectedCardList, CurrentCardSelectPurpose);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[UCardList::OnUseInputButtonClicked] 선택할 카드가 부족합니다"));
-		// 선택된 카드가 없을 때의 처리 (예: 경고 메시지 표시)
+        		// 선택된 카드가 없을 때의 처리 (예: 경고 메시지 표시)
 	}
 }
 
