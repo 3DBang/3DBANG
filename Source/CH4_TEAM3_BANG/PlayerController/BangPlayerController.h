@@ -83,6 +83,14 @@ public:
 ///////////////////////////
 ////클라이언트 관련 로직 작성란
 //////////////////////////
+private:
+	//사용중인 특정 카드
+	FSingleCard UsingCard;
+	//사용중인 카드 타입
+	EActiveType UsingActiveType;
+	//사용중인 카드들 초기화
+	void InitializUsingCard();
+public:
 	UPROPERTY()
 	uint32 PlayerUniqueID = 0;
 
@@ -100,13 +108,11 @@ public:
 	void Init();
 
 	UFUNCTION(Client, Reliable)
-	void Client_RequestCardSelection(int32 RequiredSelectCount,
-		ECardSelectPurpose Purpose);
+	void Client_RequestCardSelection(int32 RequiredSelectCount,	ECardSelectPurpose Purpose);
 
 	UFUNCTION()
 	void OnCardSelectionComplete(
-		const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
-		int32 RequiredSelectCount,                      // 선택해야 할 개수
+		FCardCollection SelectedCards,       // 플레이어가 실제로 선택한 카드들
 		ECardSelectPurpose Purpose                      // 선택 목적
 	);
 	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
@@ -120,7 +126,7 @@ public:
 	void Client_SetControllerRotation(FRotator NewRotation);
 
 	UFUNCTION(Client, Reliable)
-	void Client_SelectTarget(const FSingleCard& SingleCard);
+	void Client_SelectTarget(const uint32 TargetPlayerID);
 
 	UFUNCTION(Client, Reliable)
 	void Client_BangSelectTarget(const FSingleCard& SingleCard);
@@ -184,7 +190,7 @@ public:
 	void Client_CloseCamera();
 
 	UFUNCTION(Client, Reliable)
-	void Client_SetOutline(bool bEnable, int32 StencilValue);
+	void Client_SetOutline(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue);
 
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
 	
@@ -246,6 +252,9 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
+
+	UFUNCTION(Server, Reliable)
+	void Server_RequestSendGameLog();
 
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);

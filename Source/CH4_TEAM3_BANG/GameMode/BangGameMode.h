@@ -96,6 +96,8 @@ public:
 
 	void DrawCardsAndNotifyClients(int32 CardCount);
 
+	void SendGameLog(AController* Controller);
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;
@@ -173,6 +175,5 @@ public:
 	void CloseCamera();
 
 private:
-	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum
-	
+	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum	
 };

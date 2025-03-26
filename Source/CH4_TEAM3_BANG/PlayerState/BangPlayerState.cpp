@@ -76,7 +76,7 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 		BangPlayerController->PlayerUniqueID = PlayerUniqueID; 
 		UE_LOG(LogTemp, Display, TEXT("Update UniqueID {%d}{%d}"), PlayerUniqueID, BangPlayerController->PlayerUniqueID);
 	}
-	
+	//GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, TEXT("ONRepPlayerInfo"));
 	//const FString Message = FPlayerCollectionToString(PlayerInfo);
 	//GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
 	/*
@@ -572,13 +572,18 @@ void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleC
 
 void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards)
 {
-	/*
+	
 	const TObjectPtr<UWorld> World = GetWorld();
 	if (!World || InPlayerUniqueID == 0)
 	{
 		return;
 	}
-	
+
+	if (PlayerInfo.Players.Num() == 0)
+	{
+		return;
+	}
+		
 	// 플레이어 턴으로 변경 및 인포에 카드 추가
 	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
 	if (!PlayerInformation)
@@ -618,7 +623,7 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 			PlayerController->Client_OnTurnStart(DrawCards);
 		}
 	}
-	*/
+	
 }
 
 // 턴 종료 모든 처리 끝나면 호출

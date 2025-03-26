@@ -71,6 +71,7 @@ void ABangPlayerController::BeginPlay()
 	bShowMouseCursor = true;*/
 	FTimerHandle InitDelayHandle;
 	GetWorld()->GetTimerManager().SetTimer(InitDelayHandle, this, &ABangPlayerController::InitPlayerUniqueID, 3.0f, false);
+
 }
 
 void ABangPlayerController::OnRep_PlayerState()
@@ -126,7 +127,7 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 	bCanUseBang = true;
 	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: It's my turn! Controller Name: %s"), *GetName());
 	ABangPlayerState* BangPlayerState= GetPlayerState<ABangPlayerState>();
-	if (!PlayerState)
+	if (!BangPlayerState)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: PlayerState is null!"));
 		return;
@@ -134,15 +135,13 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
 	{
+		BangHUD->SetupTurnCardSelection();
 		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
 		{
 			for (const FSingleCard& Card : DrawCards.CardList)
 			{
 				CardListWidget->AddCard(Card); // 카드 위젯 추가
 			}
-
-			// 허드에 있는 카드 사용 버튼 활성화
-			// 턴종료 버튼 만들어서 활성화
 		}
 		else
 		{
@@ -285,30 +284,30 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	UE_LOG(LogTemp, Warning, TEXT("OutActiveType: %s, OutPassiveType: %s"),
 		*UEnum::GetValueAsString(OutActiveType),
 		*UEnum::GetValueAsString(OutPassiveType));
-	OutActiveType = EActiveType::Bang;
-	OutPassiveType = EPassiveType::None;
+	//사용할 카드와 카드 타입 정리
+	UsingCard = SingleCard;
+	UsingActiveType = OutActiveType;
 
 	if (OutActiveType == EActiveType::Missed)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Missed card cannot be used on your own turn"));
 		return;
 	}
-	if (OutActiveType == EActiveType::Bang)
-	{
-		Client_BangSelectTarget(SingleCard);
-	}
-	bool bNeedsTarget = (OutActiveType == EActiveType::Robbery ||
+	bool bNeedsTarget = (OutActiveType == EActiveType::Bang ||
+		OutActiveType == EActiveType::Robbery ||
 		OutActiveType == EActiveType::CatBalou ||
 		OutActiveType == EActiveType::Duel ||
 		OutActiveType == EActiveType::Jail);
 
 	if (bNeedsTarget)
 	{
-		Client_SelectTarget(SingleCard); // 나중에 실제 대상 선택 구현 예정
+
 	}
 	else
 	{
+		//사용후 초기화
 		Server_UseCard(SingleCard, TargetPlayerID);
+		InitializUsingCard();
 	}
 }
 
@@ -353,13 +352,16 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	int32 RequiredSelectCount,
 	ECardSelectPurpose Purpose)
 {
+	FText ButtonText = FText::FromString(TEXT("선택"));
+	int32 SelectCount = 0;
+
 	UE_LOG(LogTemp, Warning, TEXT("[TEST] Client_RequestCardSelection_Implementation called"));
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
 	{
-		//카드 사용하기
-		//OnUseInputButtonClicked(사용하기, 1,  ECardSelectPurpose::UseCard:)
+		ButtonText = FText::AsCultureInvariant(L"사용하기");
+		SelectCount = 1;
 		break;
 	}
 
@@ -367,6 +369,8 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		// 보유 카드 수 > 체력, 초과분 만큼 버려야 함
 		//버튼을 버리기 버튼으로 바꿈 
 		//OnUseInputButtonClicked(버리기, 보유카드 - 현재체력, ECardSelectPurpose::DiscardCard)
+		ButtonText = FText::AsCultureInvariant(L"버리기");
+		SelectCount = RequiredSelectCount;
 		break;
 
 	case ECardSelectPurpose::GeneralStoreDraft:
@@ -387,32 +391,56 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		// 결투 중 뱅 카드 선택
 		// 보유 카드 띄우기 1장 선택(뱅만)
 		//OnUseInputButtonClicked(응수하기, 1, ECardSelectPurpose::RespondToDuel:)
+		ButtonText = FText::AsCultureInvariant(L"응수하기");
+		SelectCount = 1;
 		break;
 
 	case ECardSelectPurpose::RespondToIndians:
 		// 인디언 카드 대응 – 뱅 카드 선택
 		// 보유 카드 중 1장 선택(뱅만)
 		//OnUseInputButtonClicked(쫓아내기, 1, ECardSelectPurpose::RespondToIndians:)
+		ButtonText = FText::AsCultureInvariant(L"쫓아내기");
+		SelectCount = 1;
 		break;
 
 	case ECardSelectPurpose::RespondToAttack:
 		// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
 		// 보유카드 중 1장 선택(Missed)만
 		//OnUseInputButtonClicked(피하기, 1, ECardSelectPurpose::RespondToAttack:)
+		ButtonText = FText::AsCultureInvariant(L"회피하기");
+		SelectCount = 1;
 		break;
 
 	default:
-		UE_LOG(LogTemp, Warning, TEXT("Unknown Card Select Purpose"));
+		ButtonText = FText::AsCultureInvariant(TEXT("선택"));
 		break;
 	}
+	bool bMyCardCollection =
+			(Purpose == ECardSelectPurpose::UseCard) ||
+			(Purpose == ECardSelectPurpose::DiscardCard) ||
+			(Purpose == ECardSelectPurpose::RespondToDuel) ||
+			(Purpose == ECardSelectPurpose::RespondToIndians) ||
+			(Purpose == ECardSelectPurpose::RespondToAttack);
+
+	if (bMyCardCollection)
+	{
+		if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			BangHUD->SetupTurnCardSelection(Purpose, ButtonText, SelectCount);
+		}
+	}
+}
+void ABangPlayerController::InitializUsingCard()
+{
+	//UsingCard = nullptr;
+	UsingActiveType = EActiveType::None;
 }
 
 void ABangPlayerController::OnCardSelectionComplete(
-	const TArray<FSingleCard>& SelectedCards,       // 플레이어가 실제로 선택한 카드들
-	int32 RequiredSelectCount,                      // 선택해야 할 개수
-	ECardSelectPurpose Purpose)                     // 선택 목적
+	FCardCollection SelectedCards,       // 플레이어가 실제로 선택한 카드들  
+	ECardSelectPurpose Purpose)          // 선택 목적
 {
-	UE_LOG(LogTemp, Warning, TEXT("SelectedCards.Num(): %d, RequiredCount: %d"), SelectedCards.Num(), RequiredSelectCount);
+	UE_LOG(LogTemp, Warning, TEXT("SelectedCards.Num(): %d"), SelectedCards.CardList.Num());
 	UE_LOG(LogTemp, Warning, TEXT("Purpose: %s"), *UEnum::GetValueAsString(Purpose));
 
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
@@ -432,27 +460,18 @@ void ABangPlayerController::OnCardSelectionComplete(
 	EPassiveType OutPassiveType;
 
 
-	bool bAllowEmptySelection = (
-		Purpose == ECardSelectPurpose::RespondToDuel ||
-		Purpose == ECardSelectPurpose::RespondToIndians ||
-		Purpose == ECardSelectPurpose::RespondToAttack
-		);
-
-	if (!bAllowEmptySelection && SelectedCards.Num() != RequiredSelectCount)return;
-
-
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
 	{
 		//카드 사용하기
 		UE_LOG(LogTemp, Warning, TEXT("[TEST]OnCardSelectionComplete UseCard"));
-		Client_HandleCardSelection(SelectedCards[0]);
+		Client_HandleCardSelection(SelectedCards.CardList[0]);
 		break;
 	}
 	case ECardSelectPurpose::DiscardCard:
 	{
-		for (const FSingleCard& Card : SelectedCards)
+		for (const FSingleCard& Card : SelectedCards.CardList)
 		{
 			//보유 카드에서 제거 후 버린카드덱에 추가
 			MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
@@ -480,9 +499,9 @@ void ABangPlayerController::OnCardSelectionComplete(
 				NotChosenCards.Add(Card);
 			}
 		}*/
-
+		/*
 		FCardCollection SelectedCardCollection;
-		SelectedCardCollection.CardList = SelectedCards;
+		SelectedCardCollection.CardList = SelectedCards.CardList;
 		MyInfo->MyCards.AddCardCollectionToPlayerCards(SelectedCardCollection);
 
 		// 선택되지 않은 카드들 제거를 위해 변환
@@ -505,7 +524,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		for (const FPlayerCardSymbol& RefundCard : RefundCards.PlayerCards)
 		{
 			MyInfo->MyCards.RemoveCard(RefundCard.SymbolType, RefundCard.SymbolNumber);
-		}
+		}*/
 		break;
 	}
 
@@ -517,12 +536,12 @@ void ABangPlayerController::OnCardSelectionComplete(
 	}
 	case ECardSelectPurpose::RespondToDuel:
 	{// 결투 중 뱅 카드 선택
-		PS->GetCardType(PlayerUniqueID, SelectedCards[0], OutActiveType, OutPassiveType);
+		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if(OutActiveType == EActiveType::Bang)
 		{
 			// 뱅 카드 사용(결투 반격 성공)
 			// 카드 지우기
-			PS->RestoreCard(PlayerUniqueID, SelectedCards[0]);
+			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
 		}
 		else
 		{
@@ -532,11 +551,11 @@ void ABangPlayerController::OnCardSelectionComplete(
 	}
 	case ECardSelectPurpose::RespondToIndians:
 	{// 인디언 카드 대응 – 뱅 카드 선택
-		PS->GetCardType(PlayerUniqueID, SelectedCards[0], OutActiveType, OutPassiveType);
+		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if (OutActiveType == EActiveType::Bang)
 		{
 			// 뱅 카드 사용(인디언 쫓아내기 성공)
-			PS->RestoreCard(PlayerUniqueID, SelectedCards[0]);
+			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
 		}
 		else
 		{
@@ -547,12 +566,12 @@ void ABangPlayerController::OnCardSelectionComplete(
 
 	case ECardSelectPurpose::RespondToAttack:
 	{	// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
-		PS->GetCardType(PlayerUniqueID, SelectedCards[0], OutActiveType, OutPassiveType);
+		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if (OutActiveType == EActiveType::Missed)
 		{
 			// 회피 카드 사용(회피 성공)
-			PS->RestoreCard(PlayerUniqueID, SelectedCards[0]);
-			MyInfo->MyCards.RemoveCard(SelectedCards[0].Card->SymbolType, SelectedCards[0].Card->SymbolNumber);
+			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
+			MyInfo->MyCards.RemoveCard(SelectedCards.CardList[0].Card->SymbolType, SelectedCards.CardList[0].Card->SymbolNumber);
 		}
 		else
 		{
@@ -754,6 +773,9 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
+	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
+	BangPlayerHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
+	Client_RequestCardSelection(2, ECardSelectPurpose::DiscardCard);
 	//JCH_Test();
 	//Server_StartGame();
 }
@@ -778,6 +800,9 @@ void ABangPlayerController::TestButtonCLicked()
 	Server_StartTest();
 	Server_RequestPlayerListBroadcast();
 	Server_TestDrawCards();
+
+	Server_RequestSendGameLog();
+
 }
 
 ///////////////////////////
@@ -789,134 +814,76 @@ void ABangPlayerController::MouseClicked()
 	{
 		return;
 	}
+	ABangPlayerState* ThisBangState = Cast<ABangPlayerState>(PlayerState);
+	if (!ThisBangState)
+	{
+		return;
+	}
+	auto InformationThis = ThisBangState->PlayerInfo.GetPlayerInformation(ThisBangState->PlayerUniqueID);
+	if (!InformationThis)
+	{
+		return;
+	}
+	//문제점1. 이러면 유저가 자기턴이 아닐경우에는 다른 유저를 클릭해 정보를 볼 수 없다.
+	/*if (!Information->bIsMyTurn) 
+	{
+		return;
+	}*/
 
-	// 탑뷰 기준은 컨트롤러에서 bIsTopView (?) 이런걸로 들고있으면 됩니다.
-	// 탑뷰 일때만
-	// PS 찾아서 자기 key값으로 PlayerInfo 조회해서 bIsMyTurn true면 아래 로직 타고 아니면 return;
 	
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
 	{
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
-		
+
+
 		if (HitChar && HitChar != GetPawn())
 		{
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
+
+
 				CurrentMouseCursor = EMouseCursor::Hand;
 				if (bIsCameraMode)
 				{
-					//uint32 GetUID = GetUniqueID();
-					//여기를 수정해야함 
-					//SendToServer And Send CloseCamera Request
-					//TODO : SendToServerMethod()
 					Server_CloseCamera();
 				}
 				else
 				{
-					// === 위젯 생성 및 표시 ===
-					if (InteractionWidgetClass)
+					ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
+					if (!BangState) return;
+					if (auto Information = BangState->PlayerInfo.GetPlayerInformation(BangState->PlayerUniqueID))
 					{
-						ABangPlayerController* PCTest = Cast<ABangPlayerController>(GetWorld()->GetFirstPlayerController());
-						if (PCTest && PCTest->PlayerState)
-						{
-							ABangPlayerState* PSTest = Cast<ABangPlayerState>(PCTest->PlayerState);
-							if (PSTest)
-							{
-								GEngine->AddOnScreenDebugMessage(
-									-1,                              // Key: -1 = auto‑generate a new message each call
-									5.0f,                            // Duration (seconds)
-									FColor::Yellow,                  // Text color
-									FString::Printf(TEXT("PS TEST PlayerUniqueID: %d"), PSTest->PlayerUniqueID)
-								);
-							}
-						}
-
-						ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
-						
-						auto Information = BangState->PlayerInfo.GetPlayerInformation(BangState->PlayerUniqueID);
-						UE_LOG(LogTemp, Display, TEXT("Unique id %d"), Information->PlayerUniqueID);
-						UE_LOG(LogTemp, Display, TEXT("Current Hea%d"), Information-> CurrentHealth);
-						UE_LOG(LogTemp, Display, TEXT("Range %d"), Information->Range);
-						UE_LOG(LogTemp, Display, TEXT("Name is %s"), *Information->PlayerName);
 						UE_LOG(LogTemp, Display, TEXT("====================="));
-
-						// GetHUD() 캐스팅해서 셋 함수에 담아주고 viserbility 토글
-						
-						if (PlayerWidgets.Contains(BangState->PlayerUniqueID))
-						{
-							
-							//OtherPlayer->GetPlayerState()->GetPlayerId())
-							/*GEngine->AddOnScreenDebugMessage(
-								-1,
-								10.f,
-								FColor::Red,
-								TEXT("[Mouse Click ]HAS Player State")
-							);*/
-							//InteractionWidgetComponent = *PlayerWidgets.Find(OtherPlayer->GetPlayerState()->GetPlayerId());
-
-						}
-						else
-						{
-							GEngine->AddOnScreenDebugMessage(
-								-1,
-								10.f,
-								FColor::Red,
-								TEXT("[Mouse Click ] No Player State")
-							);
-							InteractionWidgetComponent = NewObject<UWidgetComponent>(OtherPlayer);
-							InteractionWidgetComponent->SetupAttachment(OtherPlayer->GetRootComponent());
-							InteractionWidgetComponent->RegisterComponent();
-							InteractionWidgetComponent->SetWidgetClass(InteractionWidgetClass);
-							InteractionWidgetComponent->InitWidget();
-
-							InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
-							InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200));
-							InteractionWidgetComponent->SetRelativeLocation(
-								FVector(0.f, 0.f, OtherPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f)
-							);
-
-							PlayerWidgets.Add(BangState->PlayerUniqueID, InteractionWidgetComponent);
-
-						}
-						if (InteractionWidgetComponent)
-						{
-							InteractionWidgetComponent->SetVisibility(true);
-							InteractionWidgetComponent->SetHiddenInGame(false);
-						}
+						UE_LOG(LogTemp, Display, TEXT("Unique id %d"), Information->PlayerUniqueID);
+						UE_LOG(LogTemp, Display, TEXT("JobCard is %d"), Information->JobCardType);
+						UE_LOG(LogTemp, Display, TEXT("CharCard is  %d"), Information->CharacterCardType);
+						UE_LOG(LogTemp, Display, TEXT("Name is %s"), *Information->PlayerName);
+						UE_LOG(LogTemp, Display, TEXT("Current Health is %d"), Information->CurrentHealth);
+						UE_LOG(LogTemp, Display, TEXT("Range is %d"), Information->Range);
+						UE_LOG(LogTemp, Display, TEXT("====================="));
 					}
-				
-					/**Test*/
-					uint32 PlayerStateID = 0;
-					uint32 TestTemp = 0;
-					GEngine->AddOnScreenDebugMessage(
-						-1,
-						5.f,
-						FColor::Red,
-						TEXT("This is a debug message!")
-					);
-					if (OtherPlayer->GetPlayerState())
+					else
 					{
-						PlayerStateID = OtherPlayer->GetPlayerState()->GetPlayerId();
-						UE_LOG(LogTemp, Log, TEXT("PlayerStateID = %d"), PlayerStateID);
-						
-						ABangPlayerState* PlayerBangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
-						if (PlayerBangState)
-						{
-							//Get Information for UI
-							//And Open UI
-						}
+						GEngine->AddOnScreenDebugMessage(
+							-1,
+							5.0f,
+							FColor::Yellow,
+							FString::Printf(TEXT("No 뱅 스테이트 "))
+						);
 					}
+
+
 				}
+
+
+
 			}
 		}
 
 	}
-	else
-	{
-		//CloseHuD 
-	}
+
 	CurrentMouseCursor = EMouseCursor::Default;
 }
 
@@ -953,7 +920,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		SetViewTarget(TempCam);
 
 		const FVector StartLocation = StartTransform.GetLocation();
-		const FVector EndLocation = EndCam->GetComponentLocation() + 300.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
+		const FVector EndLocation = EndCam->GetComponentLocation() + 100.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
 
 		//BangCamera의 위치를 한번 봐야할듯
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
@@ -993,7 +960,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 					TempCam->Destroy();
 				}
 			}), 0.01f, true);
-		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 10.f, false);
+		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 30.f, false);
 	}
 
 }
@@ -1034,15 +1001,16 @@ void ABangPlayerController::Server_OpenCamera_Implementation()
 	{
 		return;
 	}
-
-	//여기도 바꿔야하네 
-	uint32 BangUID = GetUniqueID();
-	//게임모드에서도 바꿔야하고 이거 
-
 	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (GM)
 	{
-		GM->OpenCamera(BangUID);
+		GM->OpenCamera(PlayerUniqueID);
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Yellow,
+			FString::Printf(TEXT("[PlayerController :: ServerOpenCamera ]Player UniqueID : %d"), PlayerUniqueID)
+		);
 	}
 }
 
@@ -1164,25 +1132,70 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 	}
 }
 
-void ABangPlayerController::Client_SelectTarget_Implementation(const FSingleCard& SingleCard)
-{
-	uint32 TargetPlayerID = 0;//GetSelectedTargetID(); // 상대 플레이어 ID를 가져옴 (레이 트레이싱 담당자에게 받아올 부분)
 
+void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 TargetPlayerID)
+{
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS) return;
 	FPlayerInformation* Myinfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
-	if (PS->PlayerInfo.IsDistanceAble(PlayerUniqueID, TargetPlayerID))
+	if (UsingActiveType == EActiveType::Bang)
 	{
-		PS->RestoreCard(PlayerUniqueID, SingleCard);
+		if (PS->PlayerInfo.IsBangDistanceAble(PlayerUniqueID, TargetPlayerID) || TargetPlayerID < 0)
+		{
+			if (PS->CheckIsCardAbleByPassive(PlayerUniqueID, EPassiveType::Volcanic))
+			{
+				bCanUseBang = true;
+				Server_UseCard(UsingCard, TargetPlayerID);
+				PS->RestoreCard(PlayerUniqueID, UsingCard);
+				PS->Server_SetPlayerInfo(PS->PlayerInfo);
+				Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+				InitializUsingCard();
+			}
+			else
+			{
+				bCanUseBang = false;
+				Server_UseCard(UsingCard, TargetPlayerID);
+				PS->RestoreCard(PlayerUniqueID, UsingCard);
+				PS->Server_SetPlayerInfo(PS->PlayerInfo);
+				Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+				InitializUsingCard();
+			}
+		}
+		else
+		{
+			//[사거리가 닿지 않습니다.]
+			Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
+			InitializUsingCard();
+		}
+	}
+	else if (UsingActiveType == EActiveType::Robbery)
+	{
+		FPlayerInformation* Targetinfo = PS->PlayerInfo.GetPlayerInformation(TargetPlayerID);
+		if (PS->PlayerInfo.IsDistanceAble(PlayerUniqueID, TargetPlayerID))
+		{
+			Server_UseCard(UsingCard, TargetPlayerID);
+			PS->RestoreCard(PlayerUniqueID, UsingCard);
+			PS->Server_SetPlayerInfo(PS->PlayerInfo);
+			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+			InitializUsingCard();
+		}
+	}
+	else if (UsingActiveType == EActiveType::CatBalou ||
+		UsingActiveType == EActiveType::Duel ||
+		UsingActiveType == EActiveType::Jail)
+	{
+		Server_UseCard(UsingCard, TargetPlayerID);
+		PS->RestoreCard(PlayerUniqueID, UsingCard);
 		PS->Server_SetPlayerInfo(PS->PlayerInfo);
-		Myinfo->MyCards.RemoveCard(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber);
+		Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
 	}
 }
 
 void ABangPlayerController::Client_BangSelectTarget_Implementation(const FSingleCard& SingleCard)
 {
 	uint32 TargetPlayerID = 0;
-
+	// PC -> 카메라 탑뷰 호출
+	// TargetPlayerID = 선택 유저 ID;
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS) return;
 	FPlayerInformation* Myinfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
@@ -1236,14 +1249,64 @@ UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const 
 	return nullptr;
 }
 
-void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32 StencilValue)
+void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue)
 {
+	//여기에서 컨트롤러 아이디랑 비교하면될듯 
 	if (!IsLocalController())
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Yellow,
+			FString::Printf(TEXT("서버라서..리턴됩니다 "))
+		);
+		UE_LOG(LogTemp, Error, TEXT("서버라서..리턴됩니다"));
 		return;
+	}
+	
+	
+	ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>();
+	if (!BangGameState) return;
 
-	//이거 그냥 동기화말고 서버에서 뿌려줘서 해당하는 애 찾아버리자 
-	//추가 제거함수 
-	APawn* MyPawn = GetPawn();
+	for (int i = 0; i < BangGameState->PlayerArray.Num(); i++)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Yellow,
+			FString::Printf(TEXT("배열 순회중"))
+		);
+		if (ABangPlayerState* BangPS = Cast<ABangPlayerState>(BangGameState->PlayerArray[i]))
+		{
+			if (PlayerUniqueID != OtherPlayerUniqueID)
+			{
+				continue;
+			}
+			UE_LOG(LogTemp, Error, TEXT("[SetOutline] find OtherPlayerUniqueID"));
+
+			APawn* MyPawn = BangPS->GetPawn();
+			if (!MyPawn)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					5.0f,
+					FColor::Yellow,
+					FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
+				);
+				continue;
+			}
+			TArray<UMeshComponent*> Meshes;
+			MyPawn->GetComponents<UMeshComponent>(Meshes);
+
+			for (UMeshComponent* Mesh : Meshes)
+			{
+				Mesh->SetRenderCustomDepth(bEnable);
+				Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+			}
+			UE_LOG(LogTemp, Warning, TEXT("[PlayerController OutLine] : OutLine생성"));
+		}
+	}
+	/*APawn* MyPawn = GetPawn();
 	if (!MyPawn) return;
 
 	TArray<UMeshComponent*> Meshes;
@@ -1253,7 +1316,8 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 	{
 		Mesh->SetRenderCustomDepth(bEnable);
 		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
-	}
+	}*/
+
 }
 
 void ABangPlayerController::Client_ToggleMappingContext_Implementation()
@@ -1442,3 +1506,12 @@ void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FS
 		HUD->ShowDrawCardUI(DrawnCards);
 	
 }
+
+void ABangPlayerController::Server_RequestSendGameLog_Implementation()
+{
+	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
+	{
+		GM->SendGameLog(this); 
+	}
+}
+

@@ -324,36 +324,15 @@ void ABangGameMode::StartTest()
 
 	if (Players.Players.Num() > 0)
 	{
-		FString RealPlayerName = TEXT("Unknown");
-
-		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
-		{
-			if (ABangPlayerState* PS = Cast<ABangPlayerState>(PC->PlayerState))
-			{
-				if (PS->PlayerInfo.Players.Num() > 0)
-				{
-					RealPlayerName = PS->PlayerInfo.Players[0].PlayerName;
-				}
-			}
-		}
-
-		FString ActiveCardText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)EActiveType::Bang);
-		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
-
-		FString LogMessageActive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *ActiveCardText);
-		FString LogMessagePassive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
-
-		if (ABangGameState* GS = GetGameState<ABangGameState>())
-		{
-			GS->BroadcastGameLogToClients(LogMessageActive);
-		}
-
 		AdvanceGameTurn();
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("플레이어가 생성되지 않았습니다. AdvanceGameTurn을 건너뜁니다."));
 	}
+
+	//원명 테스트 
+	SpawnPlayers();
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
@@ -511,7 +490,7 @@ void ABangGameMode::AdvanceGameTurn()
 		GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
 		// 주석 나중에 풀어줘야함
 		//PlayerStete로 전달
-		//CurrentPlayerState.State->StartTurn(CurrentTurnPlayerUniqeID, DrawCards);
+		CurrentPlayerState.State->StartTurn(CurrentTurnPlayerUniqeID, DrawCards);
 		
 		CurrentPlayerTurnState = EPlayerTurnState::UseCard;
 	}
@@ -874,29 +853,17 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			ControllerIDAtCameraMode = PC->GetUniqueID();
-			bool bIsTarget = (PC->GetUniqueID() == BangPlayerControllerID);
+			//ControllerIDAtCameraMode = PC->GetUniqueID();
+			//ControllerIDAtCameraMode = PC->PlayerUniqueID;
+			bool bIsTarget = (PC->PlayerUniqueID == BangPlayerControllerID);
 
 			PC->Client_SetInputEnabled(bIsTarget);
 			PC->Client_OpenCamera();
-			PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
+			PC->Client_SetOutline(BangPlayerControllerID,bIsTarget, bIsTarget ? 251 : 0);
 			if (bIsTarget)
 			{
 				PC->Client_ToggleMappingContext();
 			}
-			//
-			/*if (PC->GetUniqueID() == BangPlayerControllerID)
-			{
-				PC->Client_SetInputEnabled(true);
-				PC->Client_OpenCamera();
-				PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
-			}
-			else
-			{
-				PC->Client_SetInputEnabled(false);
-				PC->Client_OpenCamera();
-			}*/
-
 		}
 	}
 }
@@ -911,16 +878,15 @@ void ABangGameMode::CloseCamera()
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			bool bIsTarget = (PC->GetUniqueID() == ControllerIDAtCameraMode);
+			bool bIsTarget = (PC->PlayerUniqueID == ControllerIDAtCameraMode);
 			PC->Client_CloseCamera();
 			PC->Client_SetInputEnabled(true);
+			PC->Client_SetOutline(PC->PlayerUniqueID, bIsTarget, bIsTarget ? 251 : 0);
 			if (bIsTarget)
 			{
 				PC->Client_ToggleMappingContext();
 				//PS Id 보내야함 //
 			}
-
-			//PC->Client_SetOutline(false, 0);
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;
@@ -954,3 +920,21 @@ void ABangGameMode::ShowTableCardsToAll()
 	UE_LOG(LogTemp, Warning, TEXT("ShowTableCardsToAll 호출됨"));
 	DrawCardsAndNotifyClients(3);
 }
+void ABangGameMode::SendGameLog(AController* Controller)
+{
+	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(Controller))
+	{
+		uint32 UniqueID = BangPC->PlayerUniqueID;
+
+		FString RealPlayerName = FString::Printf(TEXT("Player[%d]"), UniqueID);
+
+		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
+		FString LogMessage = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
+
+		if (ABangGameState* GS = GetGameState<ABangGameState>())
+		{
+			GS->BroadcastGameLogToClients(LogMessage);
+		}
+	}
+}
+
