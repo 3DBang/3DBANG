@@ -1,4 +1,3 @@
-
 #include "BangGameState.h"
 #include "PlayerState/BangPlayerState.h"
 #include "Net/UnrealNetwork.h"
@@ -17,9 +16,27 @@ void ABangGameState::BroadcastChatMessage(const FString& NewMessage, const FStri
 	ToPlayerNickname = ReciverNickname;
 
 	// 서버에서는 수동 호출 필요
-	OnRep_Message();
-
+	if (HasAuthority())
+	{
+		OnRep_Message();
+	}
+	
 	ReceiveMessage(Message, FromPlayerNickname, ToPlayerNickname);
+}
+
+void ABangGameState::OnRep_PlayerList()
+{
+	UE_LOG(LogTemp, Log, TEXT("PlayerList Replicated: %d players"), PlayerList.Num());
+}
+
+void ABangGameState::OnRep_GameLog()
+{
+	UE_LOG(LogTemp, Log, TEXT("[GameLog]: %s"), *CurrentGameLog);
+}
+
+void ABangGameState::OnRep_Message()
+{
+	UE_LOG(LogTemp, Log, TEXT("[%s]: %s"), *FromPlayerNickname, *Message);
 }
 
 /**
@@ -38,11 +55,6 @@ void ABangGameState::ReceiveMessage(const FString& ChatMessage, const FString& F
 			BangPlayerControllerC->Client_ReceiveMessage(ChatMessage, FromNickname, ReciverNickname);
 		}
 	}
-}
-
-void ABangGameState::OnRep_Message()
-{
-	UE_LOG(LogTemp, Log, TEXT("[%s]: %s"), *FromPlayerNickname, *Message);
 }
 
 void ABangGameState::BroadcastPlayerListToClients()
@@ -64,7 +76,7 @@ void ABangGameState::BroadcastPlayerListToClients()
 	ReceivePlayerList(PlayerList);
 }
 
-void ABangGameState::ReceivePlayerList(const TArray<FPlayerInformation>& InPlayerList)
+void ABangGameState::ReceivePlayerList(const TArray<FPlayerInformation>& InPlayerList) const
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
@@ -75,10 +87,6 @@ void ABangGameState::ReceivePlayerList(const TArray<FPlayerInformation>& InPlaye
 	}
 }
 
-void ABangGameState::OnRep_PlayerList()
-{
-	UE_LOG(LogTemp, Log, TEXT("PlayerList Replicated: %d players"), PlayerList.Num());
-}
 void ABangGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -87,7 +95,6 @@ void ABangGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	DOREPLIFETIME(ABangGameState, ToPlayerNickname);
 	DOREPLIFETIME(ABangGameState, PlayerList);
 	DOREPLIFETIME(ABangGameState, CurrentGameLog);
-
 }
 
 void ABangGameState::BroadcastGameLogToClients(const FString& GameLogMessage)
@@ -98,7 +105,7 @@ void ABangGameState::BroadcastGameLogToClients(const FString& GameLogMessage)
 	ReceiveGameLog(CurrentGameLog);
 }
 
-void ABangGameState::ReceiveGameLog(const FString& GameLogMessage)
+void ABangGameState::ReceiveGameLog(const FString& GameLogMessage) const
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
@@ -109,10 +116,6 @@ void ABangGameState::ReceiveGameLog(const FString& GameLogMessage)
 	}
 }
 
-void ABangGameState::OnRep_GameLog()
-{
-	UE_LOG(LogTemp, Log, TEXT("[GameLog]: %s"), *CurrentGameLog);
-}
 void ABangGameState::AddPlayerState(APlayerState* NewPlayerState)
 {
 	Super::AddPlayerState(NewPlayerState);
@@ -128,6 +131,7 @@ void ABangGameState::AddPlayerState(APlayerState* NewPlayerState)
 		}
 	}
 }
+
 void ABangGameState::RemovePlayerState(APlayerState* NewPlayerState)
 {
 	Super::RemovePlayerState(NewPlayerState);
