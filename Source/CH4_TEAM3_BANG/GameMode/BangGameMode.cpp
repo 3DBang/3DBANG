@@ -864,16 +864,23 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 			//ControllerIDAtCameraMode = PC->GetUniqueID();
 			//ControllerIDAtCameraMode = PC->PlayerUniqueID;
 			bool bIsTarget = (PC->PlayerUniqueID == BangPlayerControllerID);
-
+			
 			PC->Client_SetInputEnabled(bIsTarget);
 			PC->Client_OpenCamera();
-			PC->Client_SetOutline(BangPlayerControllerID,bIsTarget, bIsTarget ? 251 : 0);
 			if (bIsTarget)
 			{
 				PC->Client_ToggleMappingContext();
+				if (APawn* Pawn = PC->GetPawn())
+				{
+					if (ABangCharacter* Char = Cast<ABangCharacter>(Pawn))
+					{
+						Char->Multicast_SetOutline(true, 251);
+					}
+				}
 			}
 		}
 	}
+	
 }
 void ABangGameMode::CloseCamera()
 {
@@ -887,13 +894,19 @@ void ABangGameMode::CloseCamera()
 		{
 			bool bIsTarget = (PC->PlayerUniqueID == ControllerIDAtCameraMode);
 			PC->Client_CloseCamera();
-			PC->Client_SetInputEnabled(true);
-			PC->Client_SetOutline(PC->PlayerUniqueID, bIsTarget, bIsTarget ? 251 : 0);
 			if (bIsTarget)
 			{
 				PC->Client_ToggleMappingContext();
-				//PS Id 보내야함 //
+				if (APawn* Pawn = PC->GetPawn())
+				{
+					if (ABangCharacter* Char = Cast<ABangCharacter>(Pawn))
+					{
+						Char->Multicast_SetOutline(false, 0);
+					}
+				}
+				PC->Client_ToggleMappingContext();
 			}
+			PC->Client_SetInputEnabled(true);
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;

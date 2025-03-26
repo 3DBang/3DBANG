@@ -9,13 +9,15 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Components/MeshComponent.h"
 #include "InputActionValue.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerStart.h"
-#include "GameFramework/PlayerState.h"  
+#include "GameFramework/PlayerState.h"
+#include "GameFramework/Actor.h"
 #include "PlayerState/BangPlayerState.h"
 
 // Sets default values
@@ -453,4 +455,16 @@ void ABangCharacter::OnCursorEnd(UPrimitiveComponent* MouseComp)
 void ABangCharacter::SetWidgetVisible(bool bVisible)
 {
 	//InteractionWidgetComponent->SetVisibility(bVisible);
+}
+
+void ABangCharacter::Multicast_SetOutline_Implementation(bool bEnable, int32 StencilValue)
+{
+	TArray<UMeshComponent*> Meshes;
+	GetComponents<UMeshComponent>(Meshes);
+
+	for (UMeshComponent* MeshComp : Meshes)
+	{
+		MeshComp->SetRenderCustomDepth(bEnable);
+		MeshComp->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+	}
 }

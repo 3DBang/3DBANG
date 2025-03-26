@@ -24,7 +24,7 @@
 #include "UI/Card/CardDescriptionWidget.h"
 #include "Data/PlayerInformation.h"
 #include "UI/PlayerInfo/BangInfoWidget.h"
-
+#include "Components/MeshComponent.h"
 ABangPlayerController::ABangPlayerController()
 {
 }
@@ -1190,6 +1190,9 @@ UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const 
 void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue)
 {
 	//여기에서 컨트롤러 아이디랑 비교하면될듯 
+	UE_LOG(LogTemp, Warning, TEXT("==================================================="));
+	UE_LOG(LogTemp, Warning, TEXT("[Outline] NetMode=%d"), (int)GetNetMode());
+
 	if (!IsLocalController())
 	{
 		GEngine->AddOnScreenDebugMessage(
@@ -1220,7 +1223,7 @@ void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerU
 			{
 				continue;
 			}
-			UE_LOG(LogTemp, Error, TEXT("[SetOutline] find OtherPlayerUniqueID"));
+			UE_LOG(LogTemp, Warning, TEXT("[SetOutline] find OtherPlayerUniqueID"));
 
 			APawn* MyPawn = BangPS->GetPawn();
 			if (!MyPawn)
@@ -1240,8 +1243,19 @@ void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerU
 			{
 				Mesh->SetRenderCustomDepth(bEnable);
 				Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					5.0f,
+					FColor::Yellow,
+					FString::Printf(TEXT("매쉬생성 완료 "))
+				);
+				UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
+					*Mesh->GetName(),
+					Mesh->bRenderCustomDepth,
+					Mesh->CustomDepthStencilValue
+				);
 			}
-			UE_LOG(LogTemp, Warning, TEXT("[PlayerController OutLine] : OutLine생성"));
+
 		}
 	}
 	/*APawn* MyPawn = GetPawn();
@@ -1456,4 +1470,3 @@ void ABangPlayerController::Server_RequestSendGameLog_Implementation()
 		GM->SendGameLog(this); 
 	}
 }
-
