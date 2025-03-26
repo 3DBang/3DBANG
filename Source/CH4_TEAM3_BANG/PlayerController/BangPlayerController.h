@@ -253,6 +253,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 
+	UFUNCTION(Server, Reliable)
+	void Server_RequestSendGameLog();
+
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 
