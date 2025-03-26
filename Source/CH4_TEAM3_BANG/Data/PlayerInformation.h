@@ -205,6 +205,19 @@ struct FPlayerCollection
 		return Players == Other.Players;
 	}
 
+	// UniqueID 기준으로 플레이어 위치 반환
+	int32 FindPlayerSeatByUniquID(const int32 PlayerUniqueID)
+	{
+		for (int16 i = 0; i < Players.Num(); i++)
+		{
+			if (Players[i].PlayerUniqueID == PlayerUniqueID)
+			{
+				return i % Players.Num();
+			}
+		}
+		return 0;
+	}
+
 	// 본인 다음 사람 UniqueID
 	int32 FindNextPlayer(const int32 PlayerUniqueID)
 	{
