@@ -283,6 +283,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		//사용할 카드와 카드 타입 저장
 		UsingCard = SingleCard;
 		UsingActiveType = OutActiveType;
+		//적 선택단계로 넘어가기(탑뷰)
 	}
 	else
 	{
@@ -534,6 +535,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		else
 		{
 			//잘못된 카드 사용 처리
+			UE_LOG(LogTemp, Error, TEXT("NonoBang!"));
 			return;
 
 		}
@@ -552,6 +554,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		else
 		{
 			//잘못된 카드 사용 처리
+			UE_LOG(LogTemp, Error, TEXT("Missed!"));
 			PS->LoosePlayerHealth(PlayerUniqueID, 1);
 			return;
 		}
@@ -1156,10 +1159,12 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 		FPlayerInformation* Targetinfo = PS->PlayerInfo.GetPlayerInformation(TargetPlayerID);
 		if (PS->PlayerInfo.IsDistanceAble(PlayerUniqueID, TargetPlayerID))
 		{
+
 			Server_UseCard(UsingCard, TargetPlayerID);
 			PS->RestoreCard(PlayerUniqueID, UsingCard);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select)
 			CardList->RemoveSelectedCard(UsingCard);
 			InitializUsingCard();
 		}
