@@ -783,7 +783,6 @@ void ABangPlayerController::TestButtonCLicked()
 
 }
 
-
 ///////////////////////////
 //// 원명 추가 
 //////////////////////////
@@ -819,7 +818,6 @@ void ABangPlayerController::MouseClicked()
 
 		if (HitChar && HitChar != GetPawn())
 		{
-
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
 
@@ -829,7 +827,6 @@ void ABangPlayerController::MouseClicked()
 				{
 					Server_CloseCamera();
 				}
-
 				else
 				{
 					ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
@@ -874,8 +871,6 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	{
 		return;
 	}
-
-
 
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
@@ -1275,10 +1270,6 @@ void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerU
 	}*/
 
 }
-
-///////////////////////////
-//// 찬호 추가 
-//////////////////////////
 
 void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 {

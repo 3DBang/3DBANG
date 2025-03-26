@@ -1,5 +1,4 @@
 #include "BangPlayerState.h"
-
 #include "Card/BangCardManager.h"
 #include "Card/BaseCard/BangCardBase.h"
 #include "Card/PassiveCard/BangPassiveCard.h"

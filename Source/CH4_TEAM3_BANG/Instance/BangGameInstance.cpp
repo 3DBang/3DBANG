@@ -16,7 +16,7 @@ void UBangGameInstance::Init()
 	}
 }
 
-void UBangGameInstance::GetCardManager(FCardManagerInstance& OutCardManager)
+void UBangGameInstance::GetCardManager(FCardManagerInstance& OutCardManager) const
 {
 	if (!CardManager) return;
 	OutCardManager.CardManager = CardManager;
