@@ -7,6 +7,7 @@
 #include "PlayerState/BangPlayerState.h"
 #include "PlayerController/BangPlayerController.h"
 #include "../BangCharacter/BangCharacter.h"
+#include "Card/ActiveCard/BangActiveCard.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
@@ -443,6 +444,10 @@ void ABangGameMode::AdvanceGameTurn()
 
 	if (CurrentPlayerTurnState == EPlayerTurnState::DrawCard) // 현재 턴인 플레이어가 카드뽑기 단계 일때
 	{
+		// 트랩카드 처리 (다이너마이트, 감옥)
+		CheckTrapCard();
+
+		// 카드 뽑기
 		FCardCollection DrawCards;
 		switch (Players.Players[PlayerIndex].CharacterCardType)
 		{
@@ -488,9 +493,18 @@ void ABangGameMode::AdvanceGameTurn()
 		
 		FBangSinglePlayerState CurrentPlayerState;
 		GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
-		// 주석 나중에 풀어줘야함
-		//PlayerStete로 전달
-		CurrentPlayerState.State->StartTurn(CurrentTurnPlayerUniqeID, DrawCards);
+		
+		FPlayerCardCollection DrawSymbolCollections;
+		
+		for (FSingleCard CardList : DrawCards.CardList)
+		{
+			FPlayerCardSymbol DrawSymbol;
+			DrawSymbol.SymbolNumber = CardList.Card->SymbolNumber;
+			DrawSymbol.SymbolType = CardList.Card->SymbolType;
+			DrawSymbolCollections.PlayerCards.Add(DrawSymbol);
+		}
+		
+		CurrentPlayerState.State->Client_StartTurn(CurrentTurnPlayerUniqeID, DrawSymbolCollections);
 		
 		CurrentPlayerTurnState = EPlayerTurnState::UseCard;
 	}
@@ -549,6 +563,54 @@ void ABangGameMode::AdvanceGameTurn()
 	else if (CurrentPlayerTurnState == EPlayerTurnState::LooseCard)
 	{
 		ForceUpdate_AdvancePlayerTurn();
+	}
+}
+
+void ABangGameMode::CheckTrapCard()
+{
+	for (FPlayerCardSymbol PlayerCard : Players.Players[PlayerIndex].TrapCards.PlayerCards)
+	{
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(PlayerCard.SymbolType, PlayerCard.SymbolNumber, OutFoundCard);
+
+		if (TObjectPtr<UBangActiveCard> BangActiveCard = Cast<UBangActiveCard>(OutFoundCard.Card))
+		{
+			if (BangActiveCard->ActiveType == EActiveType::Jail)
+			{
+				FCardCollection OutCards;
+				CardManager->CheckCardSymbolFromAvailCards(1, OutCards);
+
+				if (OutCards.CardList[0].Card->SymbolType != ESymbolType::Heart)
+				{
+					ForceUpdate_AdvancePlayerTurn();
+					return;
+				}
+			}
+			else if (BangActiveCard->ActiveType == EActiveType::Dynamite)
+			{
+				FCardCollection OutCards;
+				CardManager->CheckCardSymbolFromAvailCards(1, OutCards);
+
+				if (OutCards.CardList[0].Card->SymbolType == ESymbolType::Spade
+					&& (OutCards.CardList[1].Card->SymbolNumber >= 2 || OutCards.CardList[1].Card->SymbolNumber <= 9))
+				{
+					if (Players.Players[PlayerIndex].CurrentHealth < 4)
+					{
+						FPlayerCardCollection CardList;
+						CardList.PlayerCards.Append(Players.Players[PlayerIndex].MyCards.PlayerCards);
+						CardList.PlayerCards.Append(Players.Players[PlayerIndex].EquippedCards.PlayerCards);
+						CardList.PlayerCards.Append(Players.Players[PlayerIndex].TrapCards.PlayerCards);
+							
+						PlayerDead(CurrentTurnPlayerUniqeID,
+							Players.Players[PlayerIndex].CharacterCardType,
+							Players.Players[PlayerIndex].JobCardType,
+							CardList);
+						ForceUpdate_AdvancePlayerTurn();
+						return;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -657,7 +719,7 @@ void ABangGameMode::GetCardBySymbol(const FPlayerCardSymbol& Card)
 	// 뽑은 후에 PS 전달
 }
 
-// 카드 뽑아서 PS에 전달
+// 카드 뽑아서 PS에 전달 (플레이어에게 나눠줌)
 void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount)
 {
 	if (!CardManager) return;
@@ -672,12 +734,39 @@ void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 Car
 	PlayerState.State->ForceNetUpdate();
 }
 
+// 카드 뽑아서 선택 리스트에 전달 (플레이어에게 나눠줌)
 void ABangGameMode::DrawCard(const uint16 CardCount)
 {
 	if (!CardManager) return;
 
 	FCardCollection DrawCards;
 	CardManager->HandCards(CardCount, DrawCards);
+
+	FBangSinglePlayerState PlayerState;
+	GetPlayerStatesByUniqueID(CurrentTurnPlayerUniqeID, PlayerState);
+
+	FPlayerCollection PlayerCollection = PlayerState.State->PlayerInfo;
+	FPlayerCardCollection PlayerCardCollection;
+
+	for (auto [Card] : DrawCards.CardList)
+	{
+		FPlayerCardSymbol PlayerCard;
+		PlayerCard.SymbolNumber = Card->SymbolNumber;
+		PlayerCard.SymbolType = Card->SymbolType;
+		PlayerCardCollection.PlayerCards.Add(PlayerCard);
+	}
+
+	PlayerState.State->PlayerInfo.SelectableCards = PlayerCardCollection;
+	PlayerState.State->ForceNetUpdate();
+}
+
+// 카드 뽑아서 전체공개
+void ABangGameMode::ShowCard(const uint16 CardCount)
+{
+	if (!CardManager) return;
+
+	FCardCollection DrawCards;
+	CardManager->ShowCards(CardCount, DrawCards);
 
 	FBangSinglePlayerState PlayerState;
 	GetPlayerStatesByUniqueID(CurrentTurnPlayerUniqeID, PlayerState);
@@ -927,7 +1016,6 @@ void ABangGameMode::SendGameLog(AController* Controller)
 		uint32 UniqueID = BangPC->PlayerUniqueID;
 
 		FString RealPlayerName = FString::Printf(TEXT("Player[%d]"), UniqueID);
-
 		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
 		FString LogMessage = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
 

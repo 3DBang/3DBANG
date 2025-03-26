@@ -76,11 +76,11 @@ struct FPlayerCardCollection
 	//카드의 심볼과 번호정보를 플레이어 카드 리스트 안에 넣는 함수
 	void AddCardCollectionToPlayerCards(FCardCollection& GivenCards)
 	{
-		for (const auto [Card] : GivenCards.CardList)
+		for (const auto& Card : GivenCards.CardList)
 		{
 			FPlayerCardSymbol SingleSymbol;
-			SingleSymbol.SymbolNumber = Card->SymbolNumber;
-			SingleSymbol.SymbolType = Card->SymbolType;
+			SingleSymbol.SymbolNumber = Card.Card->SymbolNumber;
+			SingleSymbol.SymbolType = Card.Card->SymbolType;
 			PlayerCards.Add(SingleSymbol);
 		}
 	}
@@ -141,6 +141,10 @@ struct FPlayerInformation
 	//장착된 카드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FPlayerCardCollection EquippedCards;
+
+	//함정 카드
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	FPlayerCardCollection TrapCards;
 
 	void GetAllCardList(FPlayerCardCollection& OutCardList_)
 	{
