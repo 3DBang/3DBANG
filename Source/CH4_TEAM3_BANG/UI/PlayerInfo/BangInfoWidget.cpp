@@ -71,16 +71,16 @@ void UBangInfoWidget::ShowPlayerInfo(uint32 _TargetPlayerUniqueID)
 
     ScrollBox->ClearChildren();
 
-    // 장착카드를 돌면서 위젯 생성 및 집어 넢기
-    for (const auto& CardSymbol : PlayerInfo->EquippedCards.PlayerCards)
+    // 장착된 카드 가져오기
+    FCardCollection OutCardCollection;
+    GetBangPlayerState()->GetEquippedCard(_TargetPlayerUniqueID, OutCardCollection);
+
+    for (FSingleCard CardList : OutCardCollection.CardList)
     {
-        
         UCard* CardWidget = CreateWidget<UCard>(this, CardWidgetClass);
         if (CardWidget)
         {
-           // GetBangPlayerState();
-            //초기화
-            //CardWidget->InitializeWithCard(싱글 카드 정보 필요);
+            CardWidget->InitializeWithCard(CardList);
             ScrollBox->AddChild(CardWidget);
         }
         else

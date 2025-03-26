@@ -823,12 +823,8 @@ void ABangPlayerController::MouseClicked()
 					return;
 				}
 				ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
-
-				if (bIsCameraMode)
-				{
-					
-				}
-				BangPlayerHUD->ShowBangInfoWidget(BangState->PlayerUniqueID, true);
+				
+				BangPlayerHUD->ShowBangInfoWidget(BangState->PlayerUniqueID, bIsCameraMode);
 			}
 		}
 	}
