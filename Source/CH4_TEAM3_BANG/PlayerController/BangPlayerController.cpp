@@ -555,7 +555,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		{
 			//잘못된 카드 사용 처리
 			UE_LOG(LogTemp, Error, TEXT("Missed!"));
-			PS->LoosePlayerHealth(PlayerUniqueID, 1);
+			PS->LoosePlayerHealth(0, PlayerUniqueID, 1);
 			return;
 		}
 		break;

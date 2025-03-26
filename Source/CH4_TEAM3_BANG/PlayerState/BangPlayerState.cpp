@@ -31,13 +31,21 @@ void ABangPlayerState::Client_SetUniqueId_Implementation(const uint32& FromPlaye
 	PlayerUniqueID = FromPlayerUniqueID;
 }
 
-void ABangPlayerState::LoosePlayerHealth(const uint32& TargetUniqueID, int32 Amount)
+// 죽은대상 FromUniqueID, 죽인대상 TargetUniqueID
+void ABangPlayerState::LoosePlayerHealth(const uint32& FromUniqueID, const uint32& TargetUniqueID, const int32 Amount)
 {
 	// Message::피 닳은거 알림
 	PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth -= Amount;
 	
 	if (PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth <= 0)
 	{
+		if (FromUniqueID != 0 && PlayerInfo.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::VultureSam)
+		{
+			FPlayerCardCollection CardList;
+			PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
+			PlayerInfo.GetPlayerInformation(TargetUniqueID)->MyCards.PlayerCards.Append(CardList.PlayerCards);
+		}
+		
 		// 사망처리
 		Server_PlayerDead(TargetUniqueID);
 	}
@@ -77,23 +85,6 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 		BangPlayerController->PlayerUniqueID = PlayerUniqueID; 
 		UE_LOG(LogTemp, Display, TEXT("Update UniqueID {%d}{%d}"), PlayerUniqueID, BangPlayerController->PlayerUniqueID);
 	}
-	//GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, TEXT("ONRepPlayerInfo"));
-	//const FString Message = FPlayerCollectionToString(PlayerInfo);
-	//GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
-	/*
-	for (int32 i = 0; i < PlayerInfo.Players.Num(); ++i)
-	{
-		const FPlayerInformation& Info = PlayerInfo.Players[i];
-		UE_LOG(LogTemp, Warning, TEXT("[OnRep] Player %d Info:"), i);
-		UE_LOG(LogTemp, Warning, TEXT("  Name: %s, ID: %d"), *Info.PlayerName, Info.PlayerUniqueID);
-		UE_LOG(LogTemp, Warning, TEXT("  HP: %d/%d"), Info.CurrentHealth, Info.MaxHealth);
-		UE_LOG(LogTemp, Warning, TEXT("  RangeToMe: %d, RangeFromMe: %d"), Info.Range, Info.CharacterRange);
-		UE_LOG(LogTemp, Warning, TEXT("  IsMyTurn: %s"), Info.bIsMyTurn ? TEXT("true") : TEXT("false"));
-		UE_LOG(LogTemp, Warning, TEXT("  Job: %s, Character: %s"),
-			*UEnum::GetValueAsString(Info.JobCardType),
-			*UEnum::GetValueAsString(Info.CharacterCardType));
-	}
-	*/
 }
 
 // 컨트롤러가 카드타입 조회
@@ -121,7 +112,7 @@ void ABangPlayerState::Client_CheckCardSymbolReturn_Implementation(const uint32&
 					// Message::피안단거 알림
 					return;
 				}
-				LoosePlayerHealth(FromUniqueID, 1);
+				LoosePlayerHealth(0, FromUniqueID, 1);
 			}
 		}
 	}
@@ -241,6 +232,21 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 			}
 
 			// PC에서 뺏을 카드 선택 ToUniqueID
+			FPlayerCardCollection CardList;
+			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->EquippedCards.PlayerCards);
+			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->TrapCards.PlayerCards);
+			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards);
+
+			PlayerInfo.SelectableCards.PlayerCards.Append(CardList.PlayerCards);
+			Server_SetPlayerInfo(PlayerInfo);
+
+			FPlayerCardSymbol SingleSymbolCard;
+			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
+			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
+
+			FBangSinglePlayerState OutPlayerState;
+			FindTargetPlayerState(ToUniqueID, OutPlayerState);
+			OutPlayerState.State->UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
 			
 			break;
 		}
@@ -647,7 +653,6 @@ void ABangPlayerState::Client_StartTurn_Implementation(const int32& InPlayerUniq
 			PlayerController->Client_OnTurnStart(GivenCards);
 		}
 	}
-	
 }
 
 // 턴 종료 모든 처리 끝나면 호출
@@ -669,8 +674,17 @@ void ABangPlayerState::Server_PlayerDead_Implementation(const int32 FromUniqueID
 
 	const ECharacterType PlayerCharacter = PlayerInfo.GetPlayerInformation(FromUniqueID)->CharacterCardType;
 	const EJobType JobType = PlayerInfo.GetPlayerInformation(FromUniqueID)->JobCardType;
+
 	FPlayerCardCollection CardList;
-	PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
+	if (PlayerCharacter == ECharacterType::VultureSam)
+	{
+		CardList.PlayerCards.Empty();
+		PlayerInfo.GetPlayerInformation(FromUniqueID)->GetTrapCardList(CardList);
+	}
+	else
+	{
+		PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
+	}
 
 	GameMode->PlayerDead(FromUniqueID, PlayerCharacter, JobType, CardList);
 }

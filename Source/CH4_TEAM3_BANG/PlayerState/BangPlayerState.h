@@ -44,7 +44,7 @@ public:
 
 	// 플레이어 체력 감소
 	UFUNCTION()
-	void LoosePlayerHealth(const uint32& TargetUniqueID, int32 Amount);
+	void LoosePlayerHealth(const uint32& FromUniqueID, const uint32& TargetUniqueID, const int32 Amount);
 
 	// 플레이어 체력 증가
 	UFUNCTION()
