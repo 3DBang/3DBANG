@@ -82,9 +82,9 @@ void ABangGameMode::GetPlayerStatesByUniqueID(const int32& UniqueID, FBangSingle
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
+		if (const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			if (TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
+			if (const TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
 			{
 				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
 				{
@@ -99,9 +99,9 @@ void ABangGameMode::GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSi
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
+		if (const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			if (TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
+			if (const TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
 			{
 				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
 				{

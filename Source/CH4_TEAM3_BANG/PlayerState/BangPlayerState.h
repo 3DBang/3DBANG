@@ -44,15 +44,23 @@ public:
 
 	// 플레이어 체력 감소
 	UFUNCTION()
-	void LoosePlayerHealth(const uint32& TargetUniqueID, int32 Amount);
+	void LoosePlayerHealth(const uint32& FromUniqueID, const uint32& TargetUniqueID, const int32 Amount);
 
 	// 플레이어 체력 증가
 	UFUNCTION()
 	void GainPlayerHealth(const uint32& TargetUniqueID, int32 Amount);
 
-	// 컨트롤러가 카드 조회
+	// 컨트롤러가 플레이어 보유 카드 조회
 	UFUNCTION()
 	void GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
+
+	// 컨트롤러가 플레이어 장착 카드 조회
+	UFUNCTION()
+	void GetEquippedCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
+
+	// 컨트롤러가 플레이어 함정 카드 조회
+	UFUNCTION()
+	void GetTrapCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
 
 	// 캐릭터 카드 타입으로 싱글 카드 받아오기
 	UFUNCTION() 
