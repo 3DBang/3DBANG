@@ -876,7 +876,13 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	{
 		return;
 	}
-
+	AGameStateBase* BGameState = GetWorld()->GetGameState<AGameStateBase>();
+	if (!BGameState)
+	{
+		return;
+	}
+	int32 PlayerCount = BGameState->PlayerArray.Num();
+	
 
 
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
@@ -905,13 +911,13 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		SetViewTarget(TempCam);
 
 		const FVector StartLocation = StartTransform.GetLocation();
-		const FVector EndLocation = EndCam->GetComponentLocation() + 100.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
+		const FVector EndLocation = EndCam->GetComponentLocation() + 200.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
 
 		//BangCamera의 위치를 한번 봐야할듯
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
 
 		GetWorldTimerManager().SetTimer(CameraOpenBlendTimerHandle, FTimerDelegate::CreateLambda(
-			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation]() mutable
+			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, PlayerCount]() mutable
 			{
 				//좋아..상대시간 굳 
 				float Elapsed = FPlatformTime::Seconds() - CameraOpenBlendStartTime;
@@ -928,6 +934,13 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 						FColor::Red,
 						TEXT("Alpha")
 					);
+					//Re -> PlayerUniqueID -> FindIndex 
+					float Radian = (2 * PI / PlayerCount) * (PlayerUniqueID - 1);
+					float Degree = FMath::RadiansToDegrees(Radian);
+					FRotator CurrentRotation = BangPlayer->BangCamera->GetComponentRotation();
+					CurrentRotation.Yaw += Degree;
+					BangPlayer->BangCamera->SetRelativeRotation(CurrentRotation);
+
 					BangPlayer->BangCamera->Activate();
 					SetViewTarget(BangPlayer);
 					bIsCameraMode = true;
@@ -945,7 +958,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 					TempCam->Destroy();
 				}
 			}), 0.01f, true);
-		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 30.f, false);
+		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 300.f, false);
 	}
 
 }
@@ -1190,24 +1203,63 @@ UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const 
 
 void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue)
 {
+	if (!IsLocalController())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("==================================================="));
+		UE_LOG(LogTemp, Warning, TEXT("서버라 리턴합니다 !"));
+		UE_LOG(LogTemp, Warning, TEXT("[[Outline] Input is %d , Has %d"), OtherPlayerUniqueID, PlayerUniqueID);
+		UE_LOG(LogTemp, Warning, TEXT("==================================================="));
+		return;
+	}
+
 	//여기에서 컨트롤러 아이디랑 비교하면될듯 
 	UE_LOG(LogTemp, Warning, TEXT("==================================================="));
+	UE_LOG(LogTemp, Warning, TEXT("[[Outline] Input is %d , Has %d"), OtherPlayerUniqueID,PlayerUniqueID);
 	UE_LOG(LogTemp, Warning, TEXT("[Outline] NetMode=%d"), (int)GetNetMode());
-
-	if (!IsLocalController())
+	APawn* MyPawn = GetPawn();
+	if (!MyPawn)
 	{
 		GEngine->AddOnScreenDebugMessage(
 			-1,
 			5.0f,
 			FColor::Yellow,
-			FString::Printf(TEXT("서버라서..리턴됩니다 "))
+			FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
 		);
-		UE_LOG(LogTemp, Error, TEXT("서버라서..리턴됩니다"));
-		return;
 	}
+	TArray<UMeshComponent*> Meshes;
+	MyPawn->GetComponents<UMeshComponent>(Meshes);
+
+	for (UMeshComponent* Mesh : Meshes)
+	{
+		Mesh->SetRenderCustomDepth(bEnable);
+		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Yellow,
+			FString::Printf(TEXT("매쉬생성 완료 "))
+		);
+		UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
+			*Mesh->GetName(),
+			Mesh->bRenderCustomDepth,
+			Mesh->CustomDepthStencilValue
+		);
+	}
+
+	//if (!IsLocalController())
+	//{
+	//	GEngine->AddOnScreenDebugMessage(
+	//		-1,
+	//		5.0f,
+	//		FColor::Yellow,
+	//		FString::Printf(TEXT("서버라서..리턴됩니다 "))
+	//	);
+	//	UE_LOG(LogTemp, Error, TEXT("서버라서..리턴됩니다"));
+	//	return;
+	//}
+	//
 	
-	
-	ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>();
+	/*ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>();
 	if (!BangGameState) return;
 
 	for (int i = 0; i < BangGameState->PlayerArray.Num(); i++)
@@ -1258,7 +1310,7 @@ void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerU
 			}
 
 		}
-	}
+	}*/
 	/*APawn* MyPawn = GetPawn();
 	if (!MyPawn) return;
 
@@ -1471,3 +1523,38 @@ void ABangPlayerController::Server_RequestSendGameLog_Implementation()
 		GM->SendGameLog(this); 
 	}
 }
+//void ABangPlayerController::LocalSetOutline(bool bEnable, int32 StencilValue)
+//{
+//	if ((int)GetNetMode() == 1)return;
+//	UE_LOG(LogTemp, Warning, TEXT("==================================================="));
+//	UE_LOG(LogTemp, Warning, TEXT("[Outline] NetMode=%d"), (int)GetNetMode());
+//	APawn* MyPawn = GetPawn();
+//	if (!MyPawn)
+//	{
+//		GEngine->AddOnScreenDebugMessage(
+//			-1,
+//			5.0f,
+//			FColor::Yellow,
+//			FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
+//		);
+//	}
+//	TArray<UMeshComponent*> Meshes;
+//	MyPawn->GetComponents<UMeshComponent>(Meshes);
+//
+//	for (UMeshComponent* Mesh : Meshes)
+//	{
+//		Mesh->SetRenderCustomDepth(bEnable);
+//		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+//		GEngine->AddOnScreenDebugMessage(
+//			-1,
+//			5.0f,
+//			FColor::Yellow,
+//			FString::Printf(TEXT("매쉬생성 완료 "))
+//		);
+//		UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
+//			*Mesh->GetName(),
+//			Mesh->bRenderCustomDepth,
+//			Mesh->CustomDepthStencilValue
+//		);
+//	}
+//}

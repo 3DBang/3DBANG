@@ -868,11 +868,12 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 			//ControllerIDAtCameraMode = PC->PlayerUniqueID;
 			bool bIsTarget = (PC->PlayerUniqueID == BangPlayerControllerID);
 			
-			PC->Client_SetInputEnabled(bIsTarget);
+			//PC->Client_SetInputEnabled(bIsTarget);
 			PC->Client_OpenCamera();
+			PC->Client_SetOutline(PC->PlayerUniqueID, true, 252);
 			if (bIsTarget)
 			{
-				PC->Client_ToggleMappingContext();
+			//PC->Client_ToggleMappingContext();
 				if (APawn* Pawn = PC->GetPawn())
 				{
 					if (ABangCharacter* Char = Cast<ABangCharacter>(Pawn))
@@ -881,6 +882,7 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 					}
 				}
 			}
+			
 		}
 	}
 	
@@ -1022,7 +1024,6 @@ void ABangGameMode::NewPossessCharacter(AController* PlayerController, const FVe
 	if (NewPawn)
 	{
 		PlayerController->Possess(NewPawn);
-		
 	}
 	if (ABangPlayerController* BPC = Cast<ABangPlayerController>(PlayerController))
 	{

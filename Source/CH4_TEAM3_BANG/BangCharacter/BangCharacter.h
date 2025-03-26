@@ -127,6 +127,4 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SetOutline(bool bEnable, int32 StencilValue);
-
-
 };
