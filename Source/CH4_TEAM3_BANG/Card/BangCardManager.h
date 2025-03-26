@@ -105,6 +105,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void HandCards(const int CardCount, FCardCollection& OutCards_);
 
+	// 카드를 보여준다 (다시 덱에 돌려둠)
+	UFUNCTION(BlueprintCallable, Category = "Card Manager")
+	void ShowCards(const int CardCount, FCardCollection& OutCards_);
+
 	// 건내준 카드를 다시 사용된 카드 덱에 넣는다
 	UFUNCTION(BlueprintCallable, Category = "Card Manager")
 	void ReorderUsedCards(const FSingleCard HandedCard);

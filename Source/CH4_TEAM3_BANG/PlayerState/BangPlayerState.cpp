@@ -416,6 +416,18 @@ bool ABangPlayerState::CheckIsCardAbleByPassive(const int32 FromUniqueID, const 
 	return true;
 }
 
+void ABangPlayerState::Server_ShowCard_Implementation(const uint32 FromUniqueID, const uint16 CardCount)
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->ShowCard(CardCount);
+}
+
 void ABangPlayerState::Server_CheckCardSymbol_Implementation(const uint32& FromUniqueID, const uint16& CardCount)
 {
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
@@ -579,19 +591,14 @@ void ABangPlayerState::RestoreCard(const int32 FromUniqueID, FSingleCard SingleC
 	Server_UseCard(FromUniqueID, SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber, EDeckType::HandedCard);
 }
 
-void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards)
+void ABangPlayerState::Client_StartTurn_Implementation(const int32& InPlayerUniqueID, const FPlayerCardCollection& DrawCards)
 {
+	if (!CardManager) return;
 	
 	const TObjectPtr<UWorld> World = GetWorld();
-	if (!World || InPlayerUniqueID == 0)
-	{
-		return;
-	}
-
-	if (PlayerInfo.Players.Num() == 0)
-	{
-		return;
-	}
+	
+	if (!World || InPlayerUniqueID == 0) return;
+	if (PlayerInfo.Players.Num() == 0) return;
 		
 	// 플레이어 턴으로 변경 및 인포에 카드 추가
 	FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID);
@@ -600,9 +607,20 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 		UE_LOG(LogTemp, Error, TEXT("StartTurn: PlayerInformation is nullptr for ID: %d"), InPlayerUniqueID);
 		return;
 	}
+	
 	PlayerInformation->bIsMyTurn = true;
-	PlayerInformation->MyCards.AddCardCollectionToPlayerCards(DrawCards);
-	ForceNetUpdate();
+
+	FCardCollection GivenCards;
+	for (FPlayerCardSymbol PlayerCard : DrawCards.PlayerCards)
+	{
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(PlayerCard.SymbolType, PlayerCard.SymbolNumber, OutFoundCard);
+		
+		GivenCards.CardList.Add(OutFoundCard);
+	}
+	
+	PlayerInformation->MyCards.AddCardCollectionToPlayerCards(GivenCards);
+	Server_SetPlayerInfo(PlayerInfo); // 동기화
 	
 	// 플레이어들을 순회
 	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
@@ -615,10 +633,7 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 
 		//게임 스테이트
 		ABangGameState* GameState = Cast<ABangGameState>(World->GetGameState());
-		if (!PlayerController || !OtherPlayerState || !GameState)
-		{
-			return;
-		}
+		if (!PlayerController || !OtherPlayerState || !GameState) return;
 
 		//전체에게 메세지 뿌리기
 		FString ChatMessage = FString::Printf(TEXT("플레이어 %s의 차례!"), *PlayerInformation->PlayerName);  
@@ -629,7 +644,7 @@ void ABangPlayerState::StartTurn(const int32 InPlayerUniqueID, FCardCollection& 
 		// 현재 플레이어 턴이면
 		if (PlayerController->PlayerUniqueID == InPlayerUniqueID)
 		{
-			PlayerController->Client_OnTurnStart(DrawCards);
+			PlayerController->Client_OnTurnStart(GivenCards);
 		}
 	}
 	
