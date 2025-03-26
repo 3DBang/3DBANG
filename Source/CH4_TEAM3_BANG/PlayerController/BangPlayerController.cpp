@@ -1441,7 +1441,7 @@ void ABangPlayerController::Server_RequestSendGameLog_Implementation()
 {
 	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
-		GM->SendGameLog(this); //  이미 만들어둔 SendGameLog() 재사용!
+		GM->SendGameLog(this); 
 	}
 }
 
