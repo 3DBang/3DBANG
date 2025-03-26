@@ -263,7 +263,7 @@ void UCardList::NativeConstruct()
 	UseInputButton->OnClicked.AddDynamic(this, &UCardList::OnUseInputButtonClicked);
 	HiddenCardListButton->OnClicked.AddDynamic(this, &UCardList::OnHiddenCardListButtonClicked);
 	TurnEndButton->OnClicked.AddDynamic(this, &UCardList::OnTurnEndButtonClicked);
-	CardsToSelectCount = 3;
+	CardsToSelectCount = 1;
 	
 	for (int32 i = 0; i < ScrollBox->GetChildrenCount(); i++)
 	{
