@@ -793,136 +793,78 @@ void ABangPlayerController::MouseClicked()
 	{
 		return;
 	}
+	ABangPlayerState* ThisBangState = Cast<ABangPlayerState>(PlayerState);
+	if (!ThisBangState)
+	{
+		return;
+	}
+	auto InformationThis = ThisBangState->PlayerInfo.GetPlayerInformation(ThisBangState->PlayerUniqueID);
+	if (!InformationThis)
+	{
+		return;
+	}
+	//문제점1. 이러면 유저가 자기턴이 아닐경우에는 다른 유저를 클릭해 정보를 볼 수 없다.
+	/*if (!Information->bIsMyTurn) 
+	{
+		return;
+	}*/
+
+	
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
 	{
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
-		
-		
+
+
 		if (HitChar && HitChar != GetPawn())
 		{
 
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
-				
+
 
 				CurrentMouseCursor = EMouseCursor::Hand;
 				if (bIsCameraMode)
 				{
-					//uint32 GetUID = GetUniqueID();
-					//여기를 수정해야함 
-					//SendToServer And Send CloseCamera Request
-					//TODO : SendToServerMethod()
 					Server_CloseCamera();
-
 				}
 
 				else
 				{
-					// === 위젯 생성 및 표시 ===
-					if (InteractionWidgetClass)
+					ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
+					if (!BangState) return;
+					if (auto Information = BangState->PlayerInfo.GetPlayerInformation(BangState->PlayerUniqueID))
 					{
-						
-						ABangPlayerController* PCTest = Cast<ABangPlayerController>(GetWorld()->GetFirstPlayerController());
-						if (PCTest && PCTest->PlayerState)
-						{
-							ABangPlayerState* PSTest = Cast<ABangPlayerState>(PCTest->PlayerState);
-							if (PSTest)
-							{
-								GEngine->AddOnScreenDebugMessage(
-									-1,                              // Key: -1 = auto‑generate a new message each call
-									5.0f,                            // Duration (seconds)
-									FColor::Yellow,                  // Text color
-									FString::Printf(TEXT("PS TEST PlayerUniqueID: %d"), PSTest->PlayerUniqueID)
-								);
-							}
-						}
-
-
-						ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
-						if (GEngine)
-						{
-							auto Information = BangState->PlayerInfo.GetPlayerInformation(BangState->PlayerUniqueID);
-							UE_LOG(LogTemp, Display, TEXT("Unique id %d"), Information->PlayerUniqueID);
-							UE_LOG(LogTemp, Display, TEXT("Current Hea%d"), Information-> CurrentHealth);
-							UE_LOG(LogTemp, Display, TEXT("Range %d"), Information->Range);
-							UE_LOG(LogTemp, Display, TEXT("Name is %s"), *Information->PlayerName);
-							UE_LOG(LogTemp, Display, TEXT("====================="));
-						}
-						if (PlayerWidgets.Contains(BangState->PlayerUniqueID))
-						{
-							
-							//OtherPlayer->GetPlayerState()->GetPlayerId())
-							/*GEngine->AddOnScreenDebugMessage(
-								-1,
-								10.f,
-								FColor::Red,
-								TEXT("[Mouse Click ]HAS Player State")
-							);*/
-							//InteractionWidgetComponent = *PlayerWidgets.Find(OtherPlayer->GetPlayerState()->GetPlayerId());
-
-						}
-						else
-						{
-							GEngine->AddOnScreenDebugMessage(
-								-1,
-								10.f,
-								FColor::Red,
-								TEXT("[Mouse Click ] No Player State")
-							);
-							InteractionWidgetComponent = NewObject<UWidgetComponent>(OtherPlayer);
-							InteractionWidgetComponent->SetupAttachment(OtherPlayer->GetRootComponent());
-							InteractionWidgetComponent->RegisterComponent();
-							InteractionWidgetComponent->SetWidgetClass(InteractionWidgetClass);
-							InteractionWidgetComponent->InitWidget();
-
-							InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
-							InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200));
-							InteractionWidgetComponent->SetRelativeLocation(
-								FVector(0.f, 0.f, OtherPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f)
-							);
-
-							PlayerWidgets.Add(BangState->PlayerUniqueID, InteractionWidgetComponent);
-
-						}
-						if (InteractionWidgetComponent)
-						{
-							InteractionWidgetComponent->SetVisibility(true);
-							InteractionWidgetComponent->SetHiddenInGame(false);
-						}
+						UE_LOG(LogTemp, Display, TEXT("====================="));
+						UE_LOG(LogTemp, Display, TEXT("Unique id %d"), Information->PlayerUniqueID);
+						UE_LOG(LogTemp, Display, TEXT("JobCard is %d"), Information->JobCardType);
+						UE_LOG(LogTemp, Display, TEXT("CharCard is  %d"), Information->CharacterCardType);
+						UE_LOG(LogTemp, Display, TEXT("Name is %s"), *Information->PlayerName);
+						UE_LOG(LogTemp, Display, TEXT("Current Health is %d"), Information->CurrentHealth);
+						UE_LOG(LogTemp, Display, TEXT("Range is %d"), Information->Range);
+						UE_LOG(LogTemp, Display, TEXT("====================="));
 					}
-				
-					/**Test*/
-					uint32 PlayerStateID = 0;
-					uint32 TestTemp = 0;
-					GEngine->AddOnScreenDebugMessage(
-						-1,
-						5.f,
-						FColor::Red,
-						TEXT("This is a debug message!")
-					);
-					if (OtherPlayer->GetPlayerState())
+					else
 					{
-						PlayerStateID = OtherPlayer->GetPlayerState()->GetPlayerId();
-						UE_LOG(LogTemp, Log, TEXT("PlayerStateID = %d"), PlayerStateID);
-						
-						ABangPlayerState* PlayerBangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
-						if (PlayerBangState)
-						{
-							//Get Information for UI
-							//And Open UI
-						}
+						GEngine->AddOnScreenDebugMessage(
+							-1,
+							5.0f,
+							FColor::Yellow,
+							FString::Printf(TEXT("No 뱅 스테이트 "))
+						);
 					}
+
+
 				}
+
+
+
 			}
 		}
 
 	}
-	else
-	{
-		//CloseHuD 
-	}
+
 	CurrentMouseCursor = EMouseCursor::Default;
 }
 
@@ -961,7 +903,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		SetViewTarget(TempCam);
 
 		const FVector StartLocation = StartTransform.GetLocation();
-		const FVector EndLocation = EndCam->GetComponentLocation() + 300.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
+		const FVector EndLocation = EndCam->GetComponentLocation() + 100.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
 
 		//BangCamera의 위치를 한번 봐야할듯
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
@@ -1001,7 +943,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 					TempCam->Destroy();
 				}
 			}), 0.01f, true);
-		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 10.f, false);
+		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 30.f, false);
 	}
 
 }
@@ -1042,15 +984,16 @@ void ABangPlayerController::Server_OpenCamera_Implementation()
 	{
 		return;
 	}
-
-	//여기도 바꿔야하네 
-	uint32 BangUID = GetUniqueID();
-	//게임모드에서도 바꿔야하고 이거 
-
 	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (GM)
 	{
-		GM->OpenCamera(BangUID);
+		GM->OpenCamera(PlayerUniqueID);
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Yellow,
+			FString::Printf(TEXT("[PlayerController :: ServerOpenCamera ]Player UniqueID : %d"), PlayerUniqueID)
+		);
 	}
 }
 
@@ -1244,14 +1187,64 @@ UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const 
 	return nullptr;
 }
 
-void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32 StencilValue)
+void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue)
 {
+	//여기에서 컨트롤러 아이디랑 비교하면될듯 
 	if (!IsLocalController())
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Yellow,
+			FString::Printf(TEXT("서버라서..리턴됩니다 "))
+		);
+		UE_LOG(LogTemp, Error, TEXT("서버라서..리턴됩니다"));
 		return;
+	}
+	
+	
+	ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>();
+	if (!BangGameState) return;
 
-	//이거 그냥 동기화말고 서버에서 뿌려줘서 해당하는 애 찾아버리자 
-	//추가 제거함수 
-	APawn* MyPawn = GetPawn();
+	for (int i = 0; i < BangGameState->PlayerArray.Num(); i++)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Yellow,
+			FString::Printf(TEXT("배열 순회중"))
+		);
+		if (ABangPlayerState* BangPS = Cast<ABangPlayerState>(BangGameState->PlayerArray[i]))
+		{
+			if (PlayerUniqueID != OtherPlayerUniqueID)
+			{
+				continue;
+			}
+			UE_LOG(LogTemp, Error, TEXT("[SetOutline] find OtherPlayerUniqueID"));
+
+			APawn* MyPawn = BangPS->GetPawn();
+			if (!MyPawn)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					5.0f,
+					FColor::Yellow,
+					FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
+				);
+				continue;
+			}
+			TArray<UMeshComponent*> Meshes;
+			MyPawn->GetComponents<UMeshComponent>(Meshes);
+
+			for (UMeshComponent* Mesh : Meshes)
+			{
+				Mesh->SetRenderCustomDepth(bEnable);
+				Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+			}
+			UE_LOG(LogTemp, Warning, TEXT("[PlayerController OutLine] : OutLine생성"));
+		}
+	}
+	/*APawn* MyPawn = GetPawn();
 	if (!MyPawn) return;
 
 	TArray<UMeshComponent*> Meshes;
@@ -1261,7 +1254,8 @@ void ABangPlayerController::Client_SetOutline_Implementation(bool bEnable, int32
 	{
 		Mesh->SetRenderCustomDepth(bEnable);
 		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
-	}
+	}*/
+
 }
 
 ///////////////////////////

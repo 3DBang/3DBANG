@@ -78,7 +78,7 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 		BangPlayerController->PlayerUniqueID = PlayerUniqueID; 
 		UE_LOG(LogTemp, Display, TEXT("Update UniqueID {%d}{%d}"), PlayerUniqueID, BangPlayerController->PlayerUniqueID);
 	}
-	
+	//GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, TEXT("ONRepPlayerInfo"));
 	//const FString Message = FPlayerCollectionToString(PlayerInfo);
 	//GEngine->AddOnScreenDebugMessage(-1, 120.0f, FColor::Yellow, Message);
 	/*

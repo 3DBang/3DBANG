@@ -184,7 +184,7 @@ public:
 	void Client_CloseCamera();
 
 	UFUNCTION(Client, Reliable)
-	void Client_SetOutline(bool bEnable, int32 StencilValue);
+	void Client_SetOutline(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue);
 
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
 	
