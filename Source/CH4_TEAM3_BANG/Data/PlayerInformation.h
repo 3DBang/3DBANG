@@ -157,6 +157,19 @@ struct FPlayerInformation
 		{
 			OutCardList_.PlayerCards.Add(Card);
 		}
+
+		for (auto Card : TrapCards.PlayerCards)
+		{
+			OutCardList_.PlayerCards.Add(Card);
+		}
+	}
+
+	void GetTrapCardList(FPlayerCardCollection& OutCardList_)
+	{
+		for (auto Card : TrapCards.PlayerCards)
+		{
+			OutCardList_.PlayerCards.Add(Card);
+		}
 	}
 
 	bool operator==(const FPlayerInformation& Other) const
