@@ -135,6 +135,38 @@ void ABangPlayerState::GetCard(const int32 InPlayerUniqueID, FCardCollection& Ou
 	}
 }
 
+void ABangPlayerState::GetEquippedCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection)
+{
+	if (InPlayerUniqueID == 0 || !CardManager) return;
+
+	if (FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID))
+	{
+		for (auto [SymbolType, SymbolNumber] : PlayerInformation->EquippedCards.PlayerCards)
+		{
+			FSingleCard OutFoundCard;
+			CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+			UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetEquippedCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
+			OutCardCollection.CardList.Add(OutFoundCard);
+		}
+	}
+}
+
+void ABangPlayerState::GetTrapCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection)
+{
+	if (InPlayerUniqueID == 0 || !CardManager) return;
+
+	if (FPlayerInformation* PlayerInformation = PlayerInfo.GetPlayerInformation(InPlayerUniqueID))
+	{
+		for (auto [SymbolType, SymbolNumber] : PlayerInformation->TrapCards.PlayerCards)
+		{
+			FSingleCard OutFoundCard;
+			CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+			UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetTrapCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
+			OutCardCollection.CardList.Add(OutFoundCard);
+		}
+	}
+}
+
 void ABangPlayerState::GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard)
 {
 	if (CharacterType == ECharacterType::None || !CardManager) return;
