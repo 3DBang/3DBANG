@@ -87,6 +87,7 @@ private:
 	EActiveType UsingActiveType;
 	//사용중인 카드들 초기화
 	void InitializUsingCard();
+	
 public:
 	UPROPERTY()
 	uint32 PlayerUniqueID = 0;
