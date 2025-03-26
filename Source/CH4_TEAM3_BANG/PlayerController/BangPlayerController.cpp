@@ -848,15 +848,22 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	{
 		return;
 	}
-
 	AGameStateBase* BGameState = GetWorld()->GetGameState<AGameStateBase>();
 	if (!BGameState)
 	{
 		return;
 	}
 	int32 PlayerCount = BGameState->PlayerArray.Num();
-	
 
+	ABangPlayerState* BPS = Cast<ABangPlayerState>(PlayerState);
+	if (!BPS)
+	{
+		return;
+	}
+	int32 FindIndex = BPS->PlayerInfo.FindPlayerSeatByUniquID(PlayerUniqueID);
+	//지금은 PlayerUniqueID가 없기때문에 실험환경에 적합하지 않기때문에
+	//따라서 PlayerUniqueID가 생길 때 실험 해볼 예정 이론상 정확함
+	PlayerCount = BPS->PlayerInfo.Players.Num();
 
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
@@ -890,7 +897,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
 
 		GetWorldTimerManager().SetTimer(CameraOpenBlendTimerHandle, FTimerDelegate::CreateLambda(
-			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, PlayerCount]() mutable
+			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, FindIndex, PlayerCount]() mutable
 			{
 				//좋아..상대시간 굳 
 				float Elapsed = FPlatformTime::Seconds() - CameraOpenBlendStartTime;
@@ -908,7 +915,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 						TEXT("Alpha")
 					);
 					//Re -> PlayerUniqueID -> FindIndex 
-					float Radian = (2 * PI / PlayerCount) * (PlayerUniqueID - 1);
+					float Radian = (2 * PI / PlayerCount) * FindIndex;
 					float Degree = FMath::RadiansToDegrees(Radian);
 					FRotator CurrentRotation = BangPlayer->BangCamera->GetComponentRotation();
 					CurrentRotation.Yaw += Degree;
