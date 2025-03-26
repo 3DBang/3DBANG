@@ -24,7 +24,7 @@ public:
 	virtual void Init() override;
 	
 	UFUNCTION()
-	void GetCardManager(FCardManagerInstance& OutCardManager);
+	void GetCardManager(FCardManagerInstance& OutCardManager) const;
 
 private:
 	UPROPERTY()

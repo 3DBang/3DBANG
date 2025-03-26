@@ -14,9 +14,6 @@ class UHorizontalBox;
 class UScrollBox;
 class USizeBox;
 class UCanvasPanel;
-/**
- * 
- */
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUseCardDelegate, FCardCollection, SelectedCard, ECardSelectPurpose, Purpose);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTurnEndDelegate);
@@ -145,7 +142,6 @@ public:
 	// 선택된 카드를 리스트에서 제거하는 함수
 	UFUNCTION(BlueprintCallable, Category = "CardList")
 	void RemoveSelectedCard(FSingleCard RemoveCard);
-	
 	
 protected:
 	virtual void NativeConstruct() override;
