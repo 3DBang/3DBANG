@@ -31,6 +31,10 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerUniqueID)
 	uint32 PlayerUniqueID = 0;
 
+	// 세부턴 UniqueID
+	UPROPERTY(Replicated)
+	uint32 MiniTurnUniqueID = 0;
+
 	UFUNCTION()
 	void OnRep_PlayerUniqueID();
 	
@@ -134,7 +138,11 @@ public:
 	// 카드 심볼 확인
 	UFUNCTION(Server, Reliable)
 	void Server_CheckCardSymbol(const uint32& FromUniqueID, const uint16& CardCount);
-	
+
+	// 중요
+	//
+	//
+	//
 	// PlayerInfo 동기화 PlayerState에서 값 변경 후 호출해야함
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerInfo(const FPlayerCollection& NewInfo);
