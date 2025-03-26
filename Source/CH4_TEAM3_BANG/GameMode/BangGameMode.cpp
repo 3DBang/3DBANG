@@ -324,32 +324,6 @@ void ABangGameMode::StartTest()
 
 	if (Players.Players.Num() > 0)
 	{
-		FString RealPlayerName = TEXT("Unknown");
-
-		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
-		{
-			if (ABangPlayerState* PS = Cast<ABangPlayerState>(PC->PlayerState))
-			{
-				if (PS->PlayerInfo.Players.Num() > 0)
-				{
-					RealPlayerName = PS->PlayerInfo.Players[0].PlayerName;
-				}
-			}
-		}
-
-		FString ActiveCardText = StaticEnum<EActiveType>()->GetNameStringByValue((int64)EActiveType::Bang);
-		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
-
-		FString LogMessageActive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *ActiveCardText);
-		FString LogMessagePassive = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
-
-		if (ABangGameState* GS = GetGameState<ABangGameState>())
-		{
-			GS->BroadcastGameLogToClients(LogMessageActive);
-			//GS->BroadcastGameLogToClients(LogMessagePassive);
-		}
-
-
 		AdvanceGameTurn();
 	}
 	else
@@ -962,4 +936,22 @@ void ABangGameMode::ShowTableCardsToAll()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ShowTableCardsToAll 호출됨"));
 	DrawCardsAndNotifyClients(3);
+}
+
+void ABangGameMode::SendGameLog(AController* Controller)
+{
+	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(Controller))
+	{
+		uint32 UniqueID = BangPC->PlayerUniqueID;
+
+		FString RealPlayerName = FString::Printf(TEXT("Player[%d]"), UniqueID);
+
+		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
+		FString LogMessage = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
+
+		if (ABangGameState* GS = GetGameState<ABangGameState>())
+		{
+			GS->BroadcastGameLogToClients(LogMessage);
+		}
+	}
 }

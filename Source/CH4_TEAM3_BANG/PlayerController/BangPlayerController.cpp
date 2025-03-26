@@ -798,6 +798,9 @@ void ABangPlayerController::TestButtonCLicked()
 	Server_StartTest();
 	Server_RequestPlayerListBroadcast();
 	Server_TestDrawCards();
+
+	Server_RequestSendGameLog();
+
 }
 
 
@@ -1433,3 +1436,12 @@ void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FS
 		HUD->ShowDrawCardUI(DrawnCards);
 	
 }
+
+void ABangPlayerController::Server_RequestSendGameLog_Implementation()
+{
+	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
+	{
+		GM->SendGameLog(this); //  이미 만들어둔 SendGameLog() 재사용!
+	}
+}
+
