@@ -359,6 +359,9 @@ void ABangGameMode::StartTest()
 	{
 		UE_LOG(LogTemp, Error, TEXT("플레이어가 생성되지 않았습니다. AdvanceGameTurn을 건너뜁니다."));
 	}
+
+	//원명 테스트 
+	SpawnPlayers();
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
@@ -887,29 +890,17 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			ControllerIDAtCameraMode = PC->GetUniqueID();
-			bool bIsTarget = (PC->GetUniqueID() == BangPlayerControllerID);
+			//ControllerIDAtCameraMode = PC->GetUniqueID();
+			//ControllerIDAtCameraMode = PC->PlayerUniqueID;
+			bool bIsTarget = (PC->PlayerUniqueID == BangPlayerControllerID);
 
 			PC->Client_SetInputEnabled(bIsTarget);
 			PC->Client_OpenCamera();
-			PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
+			PC->Client_SetOutline(BangPlayerControllerID,bIsTarget, bIsTarget ? 251 : 0);
 			if (bIsTarget)
 			{
 				PC->Client_ToggleMappingContext();
 			}
-			//
-			/*if (PC->GetUniqueID() == BangPlayerControllerID)
-			{
-				PC->Client_SetInputEnabled(true);
-				PC->Client_OpenCamera();
-				PC->Client_SetOutline(bIsTarget, bIsTarget ? 251 : 0);
-			}
-			else
-			{
-				PC->Client_SetInputEnabled(false);
-				PC->Client_OpenCamera();
-			}*/
-
 		}
 	}
 }
@@ -923,16 +914,15 @@ void ABangGameMode::CloseCamera()
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			bool bIsTarget = (PC->GetUniqueID() == ControllerIDAtCameraMode);
+			bool bIsTarget = (PC->PlayerUniqueID == ControllerIDAtCameraMode);
 			PC->Client_CloseCamera();
 			PC->Client_SetInputEnabled(true);
+			PC->Client_SetOutline(PC->PlayerUniqueID, bIsTarget, bIsTarget ? 251 : 0);
 			if (bIsTarget)
 			{
 				PC->Client_ToggleMappingContext();
 				//PS Id 보내야함 //
 			}
-
-			//PC->Client_SetOutline(false, 0);
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;

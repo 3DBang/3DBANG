@@ -206,7 +206,7 @@ void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			{
 				EnhancedInput->BindAction(
 					PlayerController->ClickAction,
-					ETriggerEvent::Triggered,
+					ETriggerEvent::Completed,
 					this,
 					&ABangCharacter::Click
 				);

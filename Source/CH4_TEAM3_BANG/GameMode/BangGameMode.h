@@ -173,6 +173,5 @@ public:
 	void CloseCamera();
 
 private:
-	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum
-	
+	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum	
 };
