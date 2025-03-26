@@ -1,4 +1,5 @@
 #include "BangGameMode.h"
+#include "EngineUtils.h"
 
 #include "Card/BangCardManager.h"
 #include "Card/JobCard/BangJobCard.h"
@@ -11,6 +12,9 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
 #include "Instance/BangGameInstance.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Card/BangCardActor.h"
+#include "Card/BangCardTableSpawner.h"
 
 ABangGameMode::ABangGameMode()
 {
@@ -36,6 +40,17 @@ void ABangGameMode::BeginPlay()
 
 		// 카드 매니저 초기 셋팅 (GameMode에서만 진행)
 		CardManager->PlayBeginByRole();
+	}
+
+	for (TActorIterator<ABangCardTableSpawner> It(GetWorld()); It; ++It)
+	{
+		if (ABangCardTableSpawner* Table = *It)
+		{
+			Table->CardManager = CardManager;
+			Table->SpawnCardsOnTable(); // 여기도 호출해줘야 스폰됨!
+
+			break;
+		}
 	}
 }
 

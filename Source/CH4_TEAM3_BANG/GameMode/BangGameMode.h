@@ -8,6 +8,7 @@
 #include "BangGameMode.generated.h"
 
 class UBangCardManager;
+class ABangCardActor;
 
 UENUM(BlueprintType)
 enum class EGameState : uint8
@@ -97,6 +98,11 @@ public:
 	void DrawCardsAndNotifyClients(int32 CardCount);
 
 	void SendGameLog(AController* Controller);
+
+
+	// 정빈 
+	UPROPERTY(EditDefaultsOnly, Category = "Cards")
+	TSubclassOf<class ABangCardActor> CardActorClass;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
