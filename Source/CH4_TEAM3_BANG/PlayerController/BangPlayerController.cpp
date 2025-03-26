@@ -459,7 +459,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 
 	case ECardSelectPurpose::GeneralStoreDraft:
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
-		//MyInfo.SelectableCards 삭제 선택한 카드 보유카드에 추가.
+		// MyInfo.SelectableCards 삭제 선택한 카드 보유카드에 추가.
 		break;
 
 	case ECardSelectPurpose::KitCarlsonDrawCard:
@@ -504,13 +504,17 @@ void ABangPlayerController::OnCardSelectionComplete(
 	}
 
 	case ECardSelectPurpose::StealFromOpponent:
-	{// 상대의 보유 카드 중 1장을 선택 
+	{	// 상대의 보유 카드 중 1장을 선택 
 		// 상대 카드 중 1장 없애기
 		// 내 카드 덱에 1장 추가하기
 		break;
 	}
 	case ECardSelectPurpose::RespondToDuel:
-	{// 결투 중 뱅 카드 선택
+	{	// 결투 중 뱅 카드 선택
+		if (SelectedCards.CardList.Num() == 0)
+		{
+			PS->LoosePlayerHealth(PlayerUniqueID, 1);
+		}
 		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if(OutActiveType == EActiveType::Bang)
 		{
@@ -520,12 +524,17 @@ void ABangPlayerController::OnCardSelectionComplete(
 		}
 		else
 		{
+			Client_RequestCardSelection_Implementation(1, ECardSelectPurpose::RespondToDuel);
 			//잘못된 카드 사용 처리
 		}
 		break;
 	}
 	case ECardSelectPurpose::RespondToIndians:
 	{// 인디언 카드 대응 – 뱅 카드 선택
+		if (SelectedCards.CardList.Num() == 0)
+		{
+			PS->LoosePlayerHealth(PlayerUniqueID, 1);
+		}
 		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if (OutActiveType == EActiveType::Bang)
 		{
@@ -535,15 +544,19 @@ void ABangPlayerController::OnCardSelectionComplete(
 		else
 		{
 			//잘못된 카드 사용 처리
+			Client_RequestCardSelection_Implementation(1, ECardSelectPurpose::RespondToIndians);
 			UE_LOG(LogTemp, Error, TEXT("NonoBang!"));
 			return;
-
 		}
 		break;
 	}
 
 	case ECardSelectPurpose::RespondToAttack:
 	{	// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
+		if (SelectedCards.CardList.Num() == 0)
+		{
+			PS->LoosePlayerHealth(PlayerUniqueID, 1);
+		}
 		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if (OutActiveType == EActiveType::Missed)
 		{
@@ -555,7 +568,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		{
 			//잘못된 카드 사용 처리
 			UE_LOG(LogTemp, Error, TEXT("Missed!"));
-			PS->LoosePlayerHealth(PlayerUniqueID, 1);
+			Client_RequestCardSelection_Implementation(1, ECardSelectPurpose::RespondToAttack);
 			return;
 		}
 		break;
@@ -1122,6 +1135,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS) return;
 	FPlayerInformation* Myinfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
+
 	if (UsingActiveType == EActiveType::Bang)
 	{
 		if (PS->PlayerInfo.IsBangDistanceAble(PlayerUniqueID, TargetPlayerID) || TargetPlayerID > 0 || bCanUseBang)
@@ -1164,7 +1178,8 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 			PS->RestoreCard(PlayerUniqueID, UsingCard);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
-			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select)
+			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select);
+
 			CardList->RemoveSelectedCard(UsingCard);
 			InitializUsingCard();
 		}
