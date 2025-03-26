@@ -971,6 +971,7 @@ void ABangGameMode::ReSpawnPlayerAtTurn()
 			{
 				if (APawn* Pawn = PC->GetPawn())
 				{
+					//죽은사람은 빙의를 풀어서 소환을 못하게 한다.
 					Pawn->SetActorLocationAndRotation(SpawnData->Key, SpawnData->Value);
 					PC->Client_SetControllerRotation(SpawnData->Value);
 				}
@@ -980,9 +981,54 @@ void ABangGameMode::ReSpawnPlayerAtTurn()
 }
 void ABangGameMode::ReSpawnPlayerAtRestart()
 {
-	//
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			if (TPair<FVector, FRotator>* SpawnData = PlayersTransfrom.Find(PC))
+			{
+				NewPossessCharacter(PC, SpawnData->Key, SpawnData->Value);
+			}
+		}
+	}
 }
 void ABangGameMode::ReSpawnPlayerAtRestartBluePrint()
 {
 	ReSpawnPlayerAtTurn();
+}
+void ABangGameMode::NewPossessCharacter(AController* PlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation)
+{
+	if (PlayerController == nullptr)
+	{
+		return;
+	}
+	APawn* BeforePawn = PlayerController->GetPawn();
+	if (BeforePawn)
+	{
+		BeforePawn->Destroy();
+	}
+
+	TSubclassOf<APawn> PawnClass = DefaultPawnClass;
+	if (PawnClass == nullptr)
+	{
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = PlayerController;
+	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(PawnClass, SpawnLocation, SpawnRotation, SpawnParams);
+	if (NewPawn)
+	{
+		PlayerController->Possess(NewPawn);
+		
+	}
+	if (ABangPlayerController* BPC = Cast<ABangPlayerController>(PlayerController))
+	{
+		BPC->Client_SetControllerRotation(SpawnRotation);
+	}
+	
+}
+void ABangGameMode::PlayerDie()
+{
+
 }

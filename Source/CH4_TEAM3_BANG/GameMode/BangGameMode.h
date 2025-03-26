@@ -179,11 +179,18 @@ public:
 	UFUNCTION()
 	void ReSpawnPlayerAtTurn();
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void ReSpawnPlayerAtRestart();
 	
 	UFUNCTION(BlueprintCallable)
 	void ReSpawnPlayerAtRestartBluePrint();
+
+	UFUNCTION()
+	void NewPossessCharacter(AController* PlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation);
+
+	UFUNCTION()
+	void PlayerDie();
+
 private:
 	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum
 
