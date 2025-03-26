@@ -19,7 +19,7 @@ class UCanvasPanel;
  */
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUseCardDelegate, FCardCollection, SelectedCard, ECardSelectPurpose, Purpose);
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTurnEndDelegate);
 // 카드 선택 이벤트를 위한 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCardSelectedDelegate, FSingleCard, SelectedCard);
 UCLASS()
@@ -77,7 +77,7 @@ public:
 	// 선택된 카드 위젯 포인터
 	UPROPERTY(BlueprintReadOnly, Category = "CardList")
 	TArray<TObjectPtr<UCard>> SelectedCardWidgetList;
-
+	
 	//카드가 선택되면 다른 카드들의 선택을 해제함
 	UPROPERTY(BlueprintAssignable, Category = "CardList")
 	FOnCardSelectedDelegate OnCardSelected;
@@ -94,7 +94,9 @@ public:
 	 */
 	UPROPERTY(BlueprintAssignable, Category = "CardList")
 	FOnUseCardDelegate OnUseCard;
-	
+
+	UPROPERTY(BlueprintAssignable, Category = "CardList")
+	FOnTurnEndDelegate OnTurnEnd;
 	
 	// 카드 리스트 숨김 처리 불 변수
 	UPROPERTY(BlueprintReadOnly, Category = "CardList")

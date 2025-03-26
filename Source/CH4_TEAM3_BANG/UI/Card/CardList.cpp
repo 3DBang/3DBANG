@@ -173,6 +173,7 @@ void UCardList::OnHiddenCardListButtonClicked()
 void UCardList::OnTurnEndButtonClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("[UCardList::OnTurnEndButtonClicked] Turn End Button 클릭!"));
+	OnTurnEnd.Broadcast();
 }
 
 void UCardList::ClearCards()
@@ -186,7 +187,6 @@ void UCardList::ClearCards()
 	// 선택된 카드 정보 초기화 
 	SelectedCardWidgetList.Empty();
 	SelectedCardList.CardList.Empty();
-	
 }
 
 void UCardList::RemoveSelectedCard(FSingleCard RemoveCard)
