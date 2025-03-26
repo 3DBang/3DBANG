@@ -79,11 +79,11 @@ void ABangPlayerHUD::SetupTurnCardSelection(ECardSelectPurpose Purpose, FText Bu
 
 	// 버튼 텍스트 설정
 	CardListWidgetInstance->UseInputButtonText->SetText(ButtonText);
-	CardListWidgetInstance->UseInputButton->SetVisibility(ESlateVisibility::Visible);
-
 	//이넘과 선택할 카드 개수
 	CardListWidgetInstance->CurrentCardSelectPurpose = Purpose;
 	CardListWidgetInstance->CardsToSelectCount = NumCardsToSelect;
+	
+	CardListWidgetInstance->UseInputButton->SetVisibility(ESlateVisibility::Visible);
 	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::SetupTurnCardSelection] : 카드 개수 설정 %d"), NumCardsToSelect);
 	if (Purpose == ECardSelectPurpose::UseCard)
 	{
