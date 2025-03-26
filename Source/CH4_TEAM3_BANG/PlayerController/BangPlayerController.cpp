@@ -800,71 +800,34 @@ void ABangPlayerController::MouseClicked()
 	{
 		return;
 	}
+	
 	auto InformationThis = ThisBangState->PlayerInfo.GetPlayerInformation(ThisBangState->PlayerUniqueID);
 	if (!InformationThis)
 	{
 		return;
 	}
-	//문제점1. 이러면 유저가 자기턴이 아닐경우에는 다른 유저를 클릭해 정보를 볼 수 없다.
-	/*if (!Information->bIsMyTurn) 
-	{
-		return;
-	}*/
-
+	
 	
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
 	{
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
-
-
 		if (HitChar && HitChar != GetPawn())
 		{
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
-
-
-				CurrentMouseCursor = EMouseCursor::Hand;
-				if (bIsCameraMode)
+				ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
+				if (!BangState)
 				{
-					Server_CloseCamera();
+					return;
 				}
-				else
-				{
-					ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
-					if (!BangState) return;
-					if (auto Information = BangState->PlayerInfo.GetPlayerInformation(BangState->PlayerUniqueID))
-					{
-						UE_LOG(LogTemp, Display, TEXT("====================="));
-						UE_LOG(LogTemp, Display, TEXT("Unique id %d"), Information->PlayerUniqueID);
-						UE_LOG(LogTemp, Display, TEXT("JobCard is %d"), Information->JobCardType);
-						UE_LOG(LogTemp, Display, TEXT("CharCard is  %d"), Information->CharacterCardType);
-						UE_LOG(LogTemp, Display, TEXT("Name is %s"), *Information->PlayerName);
-						UE_LOG(LogTemp, Display, TEXT("Current Health is %d"), Information->CurrentHealth);
-						UE_LOG(LogTemp, Display, TEXT("Range is %d"), Information->Range);
-						UE_LOG(LogTemp, Display, TEXT("====================="));
-					}
-					else
-					{
-						GEngine->AddOnScreenDebugMessage(
-							-1,
-							5.0f,
-							FColor::Yellow,
-							FString::Printf(TEXT("No 뱅 스테이트 "))
-						);
-					}
-
-
-				}
-
-
-
+				ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
+				
+				BangPlayerHUD->ShowBangInfoWidget(BangState->PlayerUniqueID, bIsCameraMode);
 			}
 		}
-
 	}
-
 	CurrentMouseCursor = EMouseCursor::Default;
 }
 
@@ -1388,6 +1351,14 @@ void ABangPlayerController::RemoveBangPlayerState(uint32 BangPlayerStateID)
 		PlayerWidgets.Remove(BangPlayerStateID);
 	}
 }
+
+/**
+ * 특정 플레이어의 정보를 업데이트합니다. 지정된 고유 ID를 가진 플레이어의 HP 및 사거리를 갱신합니다.
+ *
+ * @param BangUniqueID 업데이트할 플레이어의 고유 ID입니다.
+ * @param NewHP 업데이트할 플레이어의 새로운 HP 값입니다.
+ * @param NewRange 업데이트할 플레이어의 새로운 사거리 값입니다.
+ */
 void ABangPlayerController::UpdatePlayerInfo(uint32 BangUniqueID, int32 NewHP, int32 NewRange)
 {
 	UWidgetComponent** WidgetCompPtr = PlayerWidgets.Find(BangUniqueID);
@@ -1408,8 +1379,9 @@ void ABangPlayerController::UpdatePlayerInfo(uint32 BangUniqueID, int32 NewHP, i
 		return;
 	}
 
-	InfoWidget->UpdateRange(NewRange);
-	InfoWidget->UpdateCurrentHealth(NewHP);
+	//플레이어 인포 업데이트 하는 부분
+	/*InfoWidget->UpdateRange(NewRange);
+	InfoWidget->UpdateCurrentHealth(NewHP);*/
 }
 
 
