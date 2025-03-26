@@ -15,7 +15,7 @@
 #include "GameState/BangGameState.h"
 #include "UI/BangPlayerHUD.h"
 #include "Components/WidgetComponent.h"
-#include "EngineUtils.h"
+#include "EngineUtils.h" //액터순회하는거 곧 사라질 헤더 
 #include "Components/CapsuleComponent.h"
 #include "UI/Card/CardList.h"
 #include "UI/Chat/BangInGameChattingWidget.h"
@@ -863,15 +863,15 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	int32 FindIndex = BPS->PlayerInfo.FindPlayerSeatByUniquID(PlayerUniqueID);
 	//지금은 PlayerUniqueID가 없기때문에 실험환경에 적합하지 않기때문에
 	//따라서 PlayerUniqueID가 생길 때 실험 해볼 예정 이론상 정확함
-	PlayerCount = BPS->PlayerInfo.Players.Num();
-
+	int32 PlayerCount1 = BPS->PlayerInfo.Players.Num();
+	UE_LOG(LogTemp, Warning, TEXT("PlayerCount1 is %d"),PlayerCount1);
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
 		if (BangPlayer->GetFirstPersonMode())
 		{
 			BangPlayer->GetMesh()->SetVisibility(true);
 		}
-
+		UE_LOG(LogTemp, Warning, TEXT("Rotation is %s"), *BangPlayer->BangCamera->GetComponentRotation().ToString());
 		UCameraComponent* StartCam = BangPlayer->FollowCamera;
 		UCameraComponent* EndCam = BangPlayer->BangCamera;
 		if (!StartCam || !EndCam) return;
@@ -891,7 +891,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		SetViewTarget(TempCam);
 
 		const FVector StartLocation = StartTransform.GetLocation();
-		const FVector EndLocation = EndCam->GetComponentLocation() + 200.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
+		const FVector EndLocation = EndCam->GetComponentLocation() + FVector(-100.f,-100.f,100.f); // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
 
 		//BangCamera의 위치를 한번 봐야할듯
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
@@ -914,13 +914,18 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 						FColor::Red,
 						TEXT("Alpha")
 					);
-					//Re -> PlayerUniqueID -> FindIndex 
-					float Radian = (2 * PI / PlayerCount) * FindIndex;
-					float Degree = FMath::RadiansToDegrees(Radian);
-					FRotator CurrentRotation = BangPlayer->BangCamera->GetComponentRotation();
-					CurrentRotation.Yaw += Degree;
-					BangPlayer->BangCamera->SetRelativeRotation(CurrentRotation);
-
+					if (bIsFirstCameraMode)
+					{
+						//Re -> Test 주석 지우지 말아주세요    (PlayerUniqueId-1)-> FindIndex으로  값 변경해야합니다
+						//
+						float Radian = (2 * PI / PlayerCount) * (PlayerUniqueID - 1);
+						float Degree = FMath::RadiansToDegrees(Radian);
+						FRotator CurrentRotation = BangPlayer->BangCamera->GetComponentRotation();
+						CurrentRotation.Yaw += Degree;
+						BangPlayer->BangCamera->SetWorldRotation(CurrentRotation); //Local ->World 로 바꿔봤음 안될 시 이거 처리 
+						UE_LOG(LogTemp, Warning, TEXT("Rotation is %s"), *BangPlayer->BangCamera->GetComponentRotation().ToString());
+					}
+					bIsFirstCameraMode = false;
 					BangPlayer->BangCamera->Activate();
 					SetViewTarget(BangPlayer);
 					bIsCameraMode = true;
@@ -938,7 +943,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 					TempCam->Destroy();
 				}
 			}), 0.01f, true);
-		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 300.f, false);
+		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 30.f, false);
 	}
 
 }
@@ -1563,3 +1568,35 @@ void ABangPlayerController::Server_RequestSendGameLog_Implementation()
 //		);
 //	}
 //}
+void ABangPlayerController::SetMyUI()
+{
+	ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn());
+	if (!BangPlayer)
+	{
+		return;
+	}
+	UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(BangPlayer);
+	if (!WidgetComp)
+	{
+		return;
+	}
+	WidgetComp->SetupAttachment(BangPlayer->GetRootComponent());
+	WidgetComp->RegisterComponent();
+
+	WidgetComp->SetWidgetClass(InteractionWidgetClass);
+	WidgetComp->InitWidget();
+	WidgetComp->SetWidgetSpace(EWidgetSpace::World);
+	WidgetComp->SetDrawSize({ 400, 200 });
+	WidgetComp->SetRelativeLocation({ 0,0,BangPlayer->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f });
+	WidgetComp->SetVisibility(false);
+	WidgetComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+}
+void ABangPlayerController::ViewMyUI()
+{
+
+}
+void ABangPlayerController::HideMyUI()
+{
+
+}

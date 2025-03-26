@@ -116,8 +116,9 @@ void ABangCharacter::BeginPlay()
 		TargetLocation.Z += 600.f;
 		BangCamera->SetWorldLocation(TargetLocation);
 		FVector DownVector = -TempPlayerStart->GetActorUpVector();
+		DownVector.X -= 0.0001f;
 		FRotator CameraRotation = DownVector.Rotation();
-		CameraRotation.Yaw += 180.f;
+		//CameraRotation.Yaw += 180.0001f;
 		BangCamera->SetWorldRotation(CameraRotation);
 
 	}
