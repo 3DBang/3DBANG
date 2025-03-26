@@ -70,9 +70,6 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(const FSingleCard& SingleCard, int32 TargetID);
-
-	UFUNCTION(Server, Reliable)
-	void Server_UseCardReturn(bool IsAble);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn();
@@ -115,9 +112,6 @@ public:
 		FCardCollection SelectedCards,       // 플레이어가 실제로 선택한 카드들
 		ECardSelectPurpose Purpose                      // 선택 목적
 	);
-	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
-	UFUNCTION(Client, Reliable)
-	void Client_SelectCard();
 
 	UFUNCTION(Client, Reliable)
 	void Client_HandleCardSelection(const FSingleCard& SingleCard);
@@ -127,9 +121,6 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget(const uint32 TargetPlayerID);
-
-	UFUNCTION(Client, Reliable)
-	void Client_BangSelectTarget(const FSingleCard& SingleCard);
 
 	//UFUNCTION(Client, Reliable)
 	//void StealFromOpponent(const FSingleCard& SingleCard);

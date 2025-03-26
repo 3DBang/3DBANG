@@ -107,13 +107,6 @@ void ABangPlayerController::InitPlayerUniqueID()
 	}
 }
 
-void ABangPlayerController::Server_UseCardReturn_Implementation(bool IsAble)
-{
-
-}
-
-
-
 void ABangPlayerController::Client_SetControllerRotation_Implementation(FRotator NewRotation)
 {
 	if (IsLocalController())
@@ -152,7 +145,7 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 	{
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::StartTurn] BangHUD 없음"));
 	}
-	
+	Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);	
 }
 
 void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
@@ -243,19 +236,6 @@ void ABangPlayerController::SetInitializeHP(int32 NewHP)
 	}
 }
 
-void ABangPlayerController::Client_SelectCard_Implementation()
-{
-	// PlayerState에서 받아온 CurrentCardCollection을 기반으로
-	// 유저가 실제로 들고 있는 카드 중에서 선택하도록 UI 연동
-
-	const FCardCollection& MyCards = CurrentCardCollection;
-	//이걸 기반으로 카드 UI에 표시하기
-	
-	// 유저가 클릭한 카드의 정보로
-	//FSingleCard SelectedCard = /* 유저가 선택한 카드 */;
-	//Client_HandleCardSelection(SelectedCard);
-}
-
 
 /**
  * 카드 선택에 대한 클라이언트 작업을 처리합니다. 선택된 카드와 필요에 따라 타겟 플레이어를 기반으로 적절한 서버 작업을 실행합니다.
@@ -264,6 +244,9 @@ void ABangPlayerController::Client_SelectCard_Implementation()
  */
 void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSingleCard& SingleCard)
 {
+	ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD());
+	UCardList* CardList = BangHUD->CardListWidgetInstance;
+
     uint32 TargetPlayerID = 0; // 기본값, 상대가 필요하면 SelectTarget()에서 설정
 	if (!SingleCard.Card)return;
 	UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection"));
@@ -284,9 +267,6 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	UE_LOG(LogTemp, Warning, TEXT("OutActiveType: %s, OutPassiveType: %s"),
 		*UEnum::GetValueAsString(OutActiveType),
 		*UEnum::GetValueAsString(OutPassiveType));
-	//사용할 카드와 카드 타입 정리
-	UsingCard = SingleCard;
-	UsingActiveType = OutActiveType;
 
 	if (OutActiveType == EActiveType::Missed)
 	{
@@ -301,12 +281,15 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 
 	if (bNeedsTarget)
 	{
-
+		//사용할 카드와 카드 타입 저장
+		UsingCard = SingleCard;
+		UsingActiveType = OutActiveType;
 	}
 	else
 	{
 		//사용후 초기화
-		Server_UseCard(SingleCard, TargetPlayerID);
+		//Server_UseCard(SingleCard, TargetPlayerID);
+		CardList->RemoveSelectedCard(SingleCard);
 		InitializUsingCard();
 	}
 }
@@ -348,6 +331,7 @@ void ABangPlayerController::JCH_Test()
 	}
 }
 
+//유저 입력 상황 UI연동
 void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	int32 RequiredSelectCount,
 	ECardSelectPurpose Purpose)
@@ -364,15 +348,12 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		SelectCount = 1;
 		break;
 	}
-
 	case ECardSelectPurpose::DiscardCard:
-		// 보유 카드 수 > 체력, 초과분 만큼 버려야 함
-		//버튼을 버리기 버튼으로 바꿈 
-		//OnUseInputButtonClicked(버리기, 보유카드 - 현재체력, ECardSelectPurpose::DiscardCard)
+	{
 		ButtonText = FText::AsCultureInvariant(L"버리기");
 		SelectCount = RequiredSelectCount;
 		break;
-
+	}
 	case ECardSelectPurpose::GeneralStoreDraft:
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
 		break;
@@ -388,29 +369,23 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		break;
 
 	case ECardSelectPurpose::RespondToDuel:
-		// 결투 중 뱅 카드 선택
-		// 보유 카드 띄우기 1장 선택(뱅만)
-		//OnUseInputButtonClicked(응수하기, 1, ECardSelectPurpose::RespondToDuel:)
+	{
 		ButtonText = FText::AsCultureInvariant(L"응수하기");
 		SelectCount = 1;
 		break;
-
+	}
 	case ECardSelectPurpose::RespondToIndians:
-		// 인디언 카드 대응 – 뱅 카드 선택
-		// 보유 카드 중 1장 선택(뱅만)
-		//OnUseInputButtonClicked(쫓아내기, 1, ECardSelectPurpose::RespondToIndians:)
+	{
 		ButtonText = FText::AsCultureInvariant(L"쫓아내기");
 		SelectCount = 1;
 		break;
-
+	}
 	case ECardSelectPurpose::RespondToAttack:
-		// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
-		// 보유카드 중 1장 선택(Missed)만
-		//OnUseInputButtonClicked(피하기, 1, ECardSelectPurpose::RespondToAttack:)
+	{
 		ButtonText = FText::AsCultureInvariant(L"회피하기");
 		SelectCount = 1;
 		break;
-
+	}
 	default:
 		ButtonText = FText::AsCultureInvariant(TEXT("선택"));
 		break;
@@ -560,6 +535,8 @@ void ABangPlayerController::OnCardSelectionComplete(
 		else
 		{
 			//잘못된 카드 사용 처리
+			return;
+
 		}
 		break;
 	}
@@ -576,6 +553,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		else
 		{
 			//잘못된 카드 사용 처리
+			return;
 		}
 		break;
 	}
@@ -775,7 +753,7 @@ void ABangPlayerController::StartButtonCLicked()
 {
 	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
 	BangPlayerHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
-	Client_RequestCardSelection(2, ECardSelectPurpose::DiscardCard);
+	Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
 	//JCH_Test();
 	//Server_StartGame();
 }
@@ -1135,12 +1113,15 @@ void ABangPlayerController::Client_CloseCamera_Implementation()
 
 void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 TargetPlayerID)
 {
+	ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD());
+	UCardList * CardList = BangHUD->CardListWidgetInstance;
+
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS) return;
 	FPlayerInformation* Myinfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
 	if (UsingActiveType == EActiveType::Bang)
 	{
-		if (PS->PlayerInfo.IsBangDistanceAble(PlayerUniqueID, TargetPlayerID) || TargetPlayerID < 0)
+		if (PS->PlayerInfo.IsBangDistanceAble(PlayerUniqueID, TargetPlayerID) || TargetPlayerID > 0 || bCanUseBang)
 		{
 			if (PS->CheckIsCardAbleByPassive(PlayerUniqueID, EPassiveType::Volcanic))
 			{
@@ -1149,6 +1130,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 				PS->RestoreCard(PlayerUniqueID, UsingCard);
 				PS->Server_SetPlayerInfo(PS->PlayerInfo);
 				Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+				CardList->RemoveSelectedCard(UsingCard);
 				InitializUsingCard();
 			}
 			else
@@ -1158,6 +1140,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 				PS->RestoreCard(PlayerUniqueID, UsingCard);
 				PS->Server_SetPlayerInfo(PS->PlayerInfo);
 				Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+				CardList->RemoveSelectedCard(UsingCard);
 				InitializUsingCard();
 			}
 		}
@@ -1177,6 +1160,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 			PS->RestoreCard(PlayerUniqueID, UsingCard);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+			CardList->RemoveSelectedCard(UsingCard);
 			InitializUsingCard();
 		}
 	}
@@ -1188,41 +1172,8 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 		PS->RestoreCard(PlayerUniqueID, UsingCard);
 		PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
-	}
-}
-
-void ABangPlayerController::Client_BangSelectTarget_Implementation(const FSingleCard& SingleCard)
-{
-	uint32 TargetPlayerID = 0;
-	// PC -> 카메라 탑뷰 호출
-	// TargetPlayerID = 선택 유저 ID;
-	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
-	if (!PS) return;
-	FPlayerInformation* Myinfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
-
-	if (PS->PlayerInfo.IsBangDistanceAble(PlayerUniqueID, TargetPlayerID) || TargetPlayerID < 0)
-	{
-		if (PS->CheckIsCardAbleByPassive(PlayerUniqueID, EPassiveType::Volcanic))
-		{
-			bCanUseBang = true;
-			Server_UseCard(SingleCard, TargetPlayerID);
-			PS->RestoreCard(PlayerUniqueID, SingleCard);
-			PS->Server_SetPlayerInfo(PS->PlayerInfo);
-			Myinfo->MyCards.RemoveCard(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber);
-		}
-		else
-		{
-			bCanUseBang = false;
-			Server_UseCard(SingleCard, TargetPlayerID);
-			PS->RestoreCard(PlayerUniqueID, SingleCard);
-			PS->Server_SetPlayerInfo(PS->PlayerInfo);
-			Myinfo->MyCards.RemoveCard(SingleCard.Card->SymbolType, SingleCard.Card->SymbolNumber);
-		}
-	}
-	else
-	{
-		//OnUseInputButtonClicked(선택, 1, dddd::UseCard)
-		//[사거리가 닿지 않습니다.]
+		CardList->RemoveSelectedCard(UsingCard);
+		InitializUsingCard();
 	}
 }
 
