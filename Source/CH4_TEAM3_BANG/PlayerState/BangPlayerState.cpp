@@ -3,6 +3,7 @@
 #include "Card/BaseCard/BangCardBase.h"
 #include "Card/PassiveCard/BangPassiveCard.h"
 #include "GameMode/BangGameMode.h"
+#include "GameState/BangGameState.h"
 #include "Instance/BangGameInstance.h"
 #include "Net/UnrealNetwork.h"
 
