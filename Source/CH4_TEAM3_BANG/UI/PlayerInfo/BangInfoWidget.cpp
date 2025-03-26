@@ -1,37 +1,125 @@
 #include "UI/PlayerInfo/BangInfoWidget.h"
+
+#include "Card/BangCardManager.h"
 #include "Components/Button.h"
+#include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
+#include "PlayerState/BangPlayerState.h"
+#include "UI/Card/Card.h"
 
 void UBangInfoWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    if (CloseButton)
+    if (!PlayerNameText || !CharacterCard  || !TurnStatusText || !CardCountText || !UseCardButton)
     {
-        CloseButton->OnClicked.AddDynamic(this, &UBangInfoWidget::CloseWidget);
+        UE_LOG(LogTemp, Error, TEXT("[UBangInfoWidget::NativeConstruct] : 바인딩 안됨")); // UBangInfoWidget: 텍스트 블록 위젯이 제대로 바인딩되지 않았습니다!
+        return;
     }
-    UpdateRange(Range);
-    UpdateCurrentHealth(CurrentHealth);
+
+    UseCardButton->OnClicked.AddDynamic(this, &UBangInfoWidget::OnUseCardButtonClicked);
 }
-void UBangInfoWidget::UpdateRange(int32 NewRange)
+
+//마우스 나갈때 위젯 사라지게 
+void UBangInfoWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
-    Range = NewRange;
-    if (RangeText)
+    Super::NativeOnMouseLeave(InMouseEvent);
+    TargetPlayerUniqueID = 0;
+    this->SetVisibility(ESlateVisibility::Hidden);
+}
+
+// 버튼을 누르면 플레이어의 아이디값을 반환
+void UBangInfoWidget::OnUseCardButtonClicked()
+{
+    
+    PlayerSelectedDelegate.Broadcast(TargetPlayerUniqueID);
+}
+
+void UBangInfoWidget::ShowPlayerInfo(uint32 _TargetPlayerUniqueID)
+{
+    if (!PlayerNameText || !CardCountText || !TurnStatusText || !ScrollBox || !CharacterCard) // CharacterCard 체크 추가
     {
-        RangeText->SetText(FText::AsNumber(Range));
+        UE_LOG(LogTemp, Error, TEXT("[UBangInfoWidget::ShowPlayerInfo] : 위젯 바인딩 에러"));
+        return;
+    }
+
+    
+    TargetPlayerUniqueID = _TargetPlayerUniqueID;
+    FPlayerInformation* PlayerInfo= GetTargetPlayerInfo(_TargetPlayerUniqueID);
+    
+    if (!PlayerInfo)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[UBangInfoWidget::ShowPlayerInfo] : PlayerInfo is null"));
+        return;
+    }
+
+    FSingleCard PlayerCharacterCard;
+    GetBangPlayerState()->GetCardByCharacter(PlayerInfo->CharacterCardType, PlayerCharacterCard);
+    CharacterCard->InitializeWithCard(PlayerCharacterCard);
+    PlayerNameText->SetText(FText::FromString(PlayerInfo->PlayerName));
+    CardCountText->SetText(FText::FromString(FString::Printf(TEXT("보유 카드 수: %d"), PlayerInfo->MyCards.PlayerCards.Num())));
+
+    if (PlayerInfo->bIsMyTurn)
+    {
+        TurnStatusText->SetVisibility(ESlateVisibility::Visible);
+        TurnStatusText->SetText(FText::FromString(TEXT("플레이어 턴")));
+    }
+    else
+    {
+        TurnStatusText->SetVisibility(ESlateVisibility::Hidden);
+    }
+
+    ScrollBox->ClearChildren();
+
+    // 장착된 카드 가져오기
+    FCardCollection OutCardCollection;
+    GetBangPlayerState()->GetEquippedCard(_TargetPlayerUniqueID, OutCardCollection);
+
+    for (FSingleCard CardList : OutCardCollection.CardList)
+    {
+        UCard* CardWidget = CreateWidget<UCard>(this, CardWidgetClass);
+        if (CardWidget)
+        {
+            CardWidget->InitializeWithCard(CardList);
+            ScrollBox->AddChild(CardWidget);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("[UBangInfoWidget::UpdateInfo] : CardWidget 생성 실패"));
+        }
     }
 }
 
-void UBangInfoWidget::UpdateCurrentHealth(int32 NewHealth)
+ FPlayerInformation* UBangInfoWidget::GetTargetPlayerInfo(uint32 _TargetPlayerUniqueID)
 {
-    CurrentHealth = NewHealth;
-    if (HealthText)
+    if(ABangPlayerState* BangPlayerState= GetBangPlayerState())
     {
-        HealthText->SetText(FText::AsNumber(CurrentHealth));
+        return BangPlayerState->PlayerInfo.GetPlayerInformation(_TargetPlayerUniqueID);
     }
+    return nullptr;
 }
 
-void UBangInfoWidget::CloseWidget()
+
+ABangPlayerState* UBangInfoWidget::GetBangPlayerState() const
 {
-    RemoveFromParent();
+    APlayerController* OwningPlayerController = GetOwningPlayer();
+    if (OwningPlayerController)
+    {
+        ABangPlayerState* PlayerState = OwningPlayerController->GetPlayerState<ABangPlayerState>();
+        if (PlayerState)
+        {
+            return PlayerState;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[UBangInfoWidget::GetBangPlayerState] : PlayerState is null"));
+            return nullptr;
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[UBangInfoWidget::GetBangPlayerState] : OwningPlayerController is null"));
+    }
+
+    return nullptr;
 }

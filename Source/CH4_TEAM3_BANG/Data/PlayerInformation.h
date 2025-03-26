@@ -205,6 +205,19 @@ struct FPlayerCollection
 		return Players == Other.Players;
 	}
 
+	// 본인 다음 사람 UniqueID
+	int32 FindNextPlayer(const int32 PlayerUniqueID)
+	{
+		for (int16 i = 0; i < Players.Num(); i++)
+		{
+			if (Players[i].PlayerUniqueID == PlayerUniqueID)
+			{
+				return Players[(i + 1) % Players.Num()].PlayerUniqueID;
+			}
+		}
+		return 0;
+	}
+
 	// 총기 허용 거리 확인
 	bool IsBangDistanceAble(const int32 FromUniqueID, const int32 ToUniqueID)
 	{

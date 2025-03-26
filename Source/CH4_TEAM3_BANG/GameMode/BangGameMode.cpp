@@ -48,7 +48,7 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 
 	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap")
 		|| MapName.Contains("Hwang")
-		|| MapName.Contains("Bong"))
+		|| MapName.Contains("Bong_TestMap"))
 	{
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{
