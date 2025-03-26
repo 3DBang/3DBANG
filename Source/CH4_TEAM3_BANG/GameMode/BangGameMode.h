@@ -68,12 +68,15 @@ public:
 	// 심볼로 특정 카드 찾기 (Play Role)
 	UFUNCTION()
 	void GetCardBySymbol(const FPlayerCardSymbol& Card);
-	// 카드 뽑아서 PS에 적용
+	// 카드 뽑아서 PS에 전달 (플레이어에게 나눠줌)
 	UFUNCTION()
 	void ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount);
-	// 카드 뽑아서 PS에 전달
+	// 카드 뽑아서 선택 리스트에 전달 (플레이어에게 나눠줌)
 	UFUNCTION()
 	void DrawCard(const uint16 CardCount);
+	// 카드 뽑아서 전체공개
+	UFUNCTION()
+	void ShowCard(const uint16 CardCount);
 	// 버릴 카드 선택 (시드 케첨 카드 버려서 생명력 회복)
 	// 플레이어 사망
 	UFUNCTION()
@@ -163,6 +166,9 @@ private:
 	// UniqueID로 PlayerController 받아오기
 	UFUNCTION()
 	void GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSinglePlayerController& PlayerController_);
+	// 현재 턴 플레이어 함정카드 확인
+	UFUNCTION()
+	void CheckTrapCard();
 	
 	UFUNCTION(BlueprintCallable)
 	void SetUserHP();

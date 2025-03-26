@@ -70,6 +70,22 @@ void UBangCardManager::HandCards(const int CardCount, FCardCollection& OutCards_
 	}
 }
 
+// 카드를 보여준다 (다시 사용한덱에 돌려둠)
+void UBangCardManager::ShowCards(const int CardCount, FCardCollection& OutCards_)
+{
+	if (AvailCards.CardList.Num() <= CardCount || AvailCards.CardList.Num() == 0)
+	{
+		ReorderCards();
+	}
+
+	for (int i = 0; i < CardCount; i++)
+	{
+		UsedCards.CardList.Add(AvailCards.CardList[0]);
+		OutCards_.CardList.Add(AvailCards.CardList[0]);
+		AvailCards.CardList.RemoveAt(0);
+	}
+}
+
 // 카드 심볼과 번호로 카드 찾기
 void UBangCardManager::GetCardBySymbolAndNumber(const ESymbolType SymbolType, const int32 SymbolNumber, const EDeckType DeckType, FSingleCard& FoundCard_)
 {

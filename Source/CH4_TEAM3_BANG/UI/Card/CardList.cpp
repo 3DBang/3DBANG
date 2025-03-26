@@ -146,11 +146,15 @@ void UCardList::OnUseInputButtonClicked()
 		}
 		// 선택된 카드 리스트를 델리게이트로 브로드캐스트 (리스트 전체 전달)
 		OnUseCard.Broadcast(SelectedCardList, CurrentCardSelectPurpose);
+	} 
+	else if (SelectedCardList.CardList.Num() == 0)
+	{
+		OnUseCard.Broadcast(SelectedCardList, CurrentCardSelectPurpose);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[UCardList::OnUseInputButtonClicked] 선택할 카드가 부족합니다"));
-		// 선택된 카드가 없을 때의 처리 (예: 경고 메시지 표시)
+        		// 선택된 카드가 없을 때의 처리 (예: 경고 메시지 표시)
 	}
 }
 
@@ -173,6 +177,7 @@ void UCardList::OnHiddenCardListButtonClicked()
 void UCardList::OnTurnEndButtonClicked()
 {
 	UE_LOG(LogTemp, Log, TEXT("[UCardList::OnTurnEndButtonClicked] Turn End Button 클릭!"));
+	OnTurnEnd.Broadcast();
 }
 
 void UCardList::ClearCards()
@@ -186,7 +191,6 @@ void UCardList::ClearCards()
 	// 선택된 카드 정보 초기화 
 	SelectedCardWidgetList.Empty();
 	SelectedCardList.CardList.Empty();
-	
 }
 
 void UCardList::RemoveSelectedCard(FSingleCard RemoveCard)
@@ -257,7 +261,7 @@ void UCardList::NativeConstruct()
 	bIsHidden = true;
 	ScrollBox->SetVisibility(ESlateVisibility::Hidden);
 	HiddenCardListButtonText->SetText(FText::FromString(TEXT("카드 보이기")));
-	UseInputButton->SetVisibility(ESlateVisibility::Visible);
+	UseInputButton->SetVisibility(ESlateVisibility::Hidden);
 	TurnEndButton->SetVisibility(ESlateVisibility::Hidden);
 	
 	UseInputButton->OnClicked.AddDynamic(this, &UCardList::OnUseInputButtonClicked);
