@@ -444,7 +444,9 @@ void ABangPlayerState::Server_CheckCardSymbol_Implementation(const uint32& FromU
 void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCardSymbol& SingleCard, const int32& ToUniqueID, const EActiveType& ActiveType, const EPassiveType& PassiveType)
 {
 	if (!CardManager) return;
-
+	AController* MyController = Cast<AController>(GetOwner());
+	ABangPlayerController* PC = Cast<ABangPlayerController>(MyController);
+	if (!PC) return;
 	switch (ActiveType)
 	{
 	case EActiveType::None:
@@ -462,6 +464,7 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 			Server_CheckCardSymbol(ToUniqueID, 1);
 			return;
 		}
+		PC->Client_RequestCardSelection(1, ECardSelectPurpose::RespondToAttack);
 	}
 	case EActiveType::Missed:
 		break;
@@ -486,7 +489,7 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 					}
 				}
 			}
-			
+			PC->Client_RequestCardSelection(1, ECardSelectPurpose::RespondToAttack);
 			//PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards.Contains();
 			break;
 		}
@@ -499,16 +502,21 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 	case EActiveType::Duel:
 		{
 			// PC에 뱅 사용여부 전달
+			PC->Client_RequestCardSelection(1, ECardSelectPurpose::RespondToDuel);
+
 			break;
 		}
 	case EActiveType::GeneralStore:
 		{
 			// PC에 카드 선택 요구 SelectableCards에서 하나 선택하고 MyCards로 갱신한뒤 SelectableCards 다 삭제해야함
+			PC->Client_RequestCardSelection(1, ECardSelectPurpose::GeneralStoreDraft);
 			break;
 		}
 	case EActiveType::Indians:
 		{
 			// PC에 뱅 내라고 요청
+			PC->Client_RequestCardSelection(1, ECardSelectPurpose::RespondToIndians);
+
 			break;
 		}
 	case EActiveType::Jail:
