@@ -125,7 +125,6 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerController::Client_OnTurnStart_Implementation]: PlayerState is null!"));
 		return;
 	}
-
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
 	{
 		BangHUD->SetupTurnCardSelection();
@@ -337,7 +336,6 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	ECardSelectPurpose Purpose)
 {
 	FText ButtonText = FText::FromString(TEXT("선택"));
-	int32 SelectCount = 0;
 
 	UE_LOG(LogTemp, Warning, TEXT("[TEST] Client_RequestCardSelection_Implementation called"));
 	switch (Purpose)
@@ -345,13 +343,11 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	case ECardSelectPurpose::UseCard:
 	{
 		ButtonText = FText::AsCultureInvariant(L"사용하기");
-		SelectCount = 1;
 		break;
 	}
 	case ECardSelectPurpose::DiscardCard:
 	{
 		ButtonText = FText::AsCultureInvariant(L"버리기");
-		SelectCount = RequiredSelectCount;
 		break;
 	}
 	case ECardSelectPurpose::GeneralStoreDraft:
@@ -371,19 +367,22 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	case ECardSelectPurpose::RespondToDuel:
 	{
 		ButtonText = FText::AsCultureInvariant(L"응수하기");
-		SelectCount = 1;
 		break;
 	}
 	case ECardSelectPurpose::RespondToIndians:
 	{
 		ButtonText = FText::AsCultureInvariant(L"쫓아내기");
-		SelectCount = 1;
 		break;
 	}
 	case ECardSelectPurpose::RespondToAttack:
 	{
+		ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+		if (PS->CheckIsCardAbleByPassive(PlayerUniqueID, EPassiveType::Barrel))
+		{
+			PS->Server_CheckCardSymbol(PlayerUniqueID, 1);
+			return;
+		}
 		ButtonText = FText::AsCultureInvariant(L"회피하기");
-		SelectCount = 1;
 		break;
 	}
 	default:
@@ -401,7 +400,7 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	{
 		if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 		{
-			BangHUD->SetupTurnCardSelection(Purpose, ButtonText, SelectCount);
+			BangHUD->SetupTurnCardSelection(Purpose, ButtonText, RequiredSelectCount);
 		}
 	}
 }
@@ -553,6 +552,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		else
 		{
 			//잘못된 카드 사용 처리
+			PS->LoosePlayerHealth(PlayerUniqueID, 1);
 			return;
 		}
 		break;
