@@ -78,10 +78,6 @@ public:
 	UFUNCTION()
 	void RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard);
 	
-	// 턴 시작
-	UFUNCTION()
-	void StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards);
-	
 	// 턴 종료
 	UFUNCTION()
 	void EndTurn(const int32 InPlayerUniqueID);
@@ -123,6 +119,10 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_DrawCard(const uint32 FromUniqueID, const uint16 CardCount, const bool bIsForce);
 
+	// 플레이어 카드 공개 (사용된덱에 즉시 반납)
+	UFUNCTION(Server, Reliable)
+	void Server_ShowCard(const uint32 FromUniqueID, const uint16 CardCount);
+
 	// 카드 심볼 확인
 	UFUNCTION(Server, Reliable)
 	void Server_CheckCardSymbol(const uint32& FromUniqueID, const uint16& CardCount);
@@ -133,6 +133,10 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetUniqueId(const uint32& FromPlayerUniqueID);
+
+	// 턴 시작
+	UFUNCTION(Client, Reliable)
+	void Client_StartTurn(const int32& InPlayerUniqueID, const FPlayerCardCollection& DrawCards);
 	
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)
