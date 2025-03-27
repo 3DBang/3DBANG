@@ -954,7 +954,7 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 			PC->Client_SetOutline(PC->PlayerUniqueID, true, 252);
 			if (bIsTarget)
 			{
-			//PC->Client_ToggleMappingContext();
+			//PC->Client_ToggleMappingContext(); //
 				if (APawn* Pawn = PC->GetPawn())
 				{
 					if (ABangCharacter* Char = Cast<ABangCharacter>(Pawn))
@@ -994,6 +994,7 @@ void ABangGameMode::CloseCamera()
 				PC->Client_ToggleMappingContext();
 			}
 			PC->Client_SetInputEnabled(true);
+			PC->Client_SetOutline(PC->PlayerUniqueID, false, 0);
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;
