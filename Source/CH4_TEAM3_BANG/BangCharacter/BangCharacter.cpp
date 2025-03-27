@@ -227,16 +227,10 @@ void ABangCharacter::Move(const FInputActionValue& Value)
 		return;
 	}
 	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
-	if (!BPS)
-	{
-		return;
-	}
+	ensure(BPS);
 	uint32 tmpID = BPS->PlayerUniqueID;
 	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
-	if (!PlayerInform)
-	{
-		return;
-	}
+	ensure(PlayerInform);
 	if (!PlayerInform->bIsMyTurn)
 	{
 		return;

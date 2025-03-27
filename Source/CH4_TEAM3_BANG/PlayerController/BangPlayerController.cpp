@@ -914,17 +914,11 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		return;
 	}
 	AGameStateBase* BGameState = GetWorld()->GetGameState<AGameStateBase>();
-	if (!BGameState)
-	{
-		return;
-	}
+	ensure(BGameState);
 	int32 PlayerCount = BGameState->PlayerArray.Num();
 
 	ABangPlayerState* BPS = Cast<ABangPlayerState>(PlayerState);
-	if (!BPS)
-	{
-		return;
-	}
+	ensure(BPS);
 	int32 FindIndex = BPS->PlayerInfo.FindPlayerSeatByUniquID(PlayerUniqueID);
 	//지금은 PlayerUniqueID가 없기때문에 실험환경에 적합하지 않기때문에
 	//따라서 PlayerUniqueID가 생길 때 실험 해볼 예정 이론상 정확함
@@ -1050,8 +1044,7 @@ void ABangPlayerController::Server_OpenCamera_Implementation()
 	{
 		return;
 	}
-	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (GM)
+	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
 		GM->OpenCamera(PlayerUniqueID);
 		GEngine->AddOnScreenDebugMessage(
@@ -1089,8 +1082,7 @@ void ABangPlayerController::Server_CloseCamera_Implementation()
 			TEXT("Duration End")
 		);
 	}
-	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (GM)
+	if (ABangGameMode * GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
 		GM->CloseCamera();
 	}
