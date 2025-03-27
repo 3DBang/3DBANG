@@ -9,13 +9,15 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Components/MeshComponent.h"
 #include "InputActionValue.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerStart.h"
-#include "GameFramework/PlayerState.h"  
+#include "GameFramework/PlayerState.h"
+#include "GameFramework/Actor.h"
 #include "PlayerState/BangPlayerState.h"
 
 // Sets default values
@@ -111,11 +113,11 @@ void ABangCharacter::BeginPlay()
 	{
 		FVector TargetLocation = TempPlayerStart->GetActorLocation();
 		FlagLocation = TargetLocation;
-		TargetLocation.Z += 1000.f;
+		TargetLocation.Z += 600.f;
 		BangCamera->SetWorldLocation(TargetLocation);
-
 		FVector DownVector = -TempPlayerStart->GetActorUpVector();
 		FRotator CameraRotation = DownVector.Rotation();
+		CameraRotation.Yaw += 180.f;
 		BangCamera->SetWorldRotation(CameraRotation);
 
 	}
@@ -127,23 +129,6 @@ void ABangCharacter::BeginPlay()
 	{
 		InitialCameraTransform = FollowCamera->GetRelativeTransform();
 	}
-	
-
-	//if (IsLocallyControlled())
-	//{
-	//	InteractionWidgetComponent = NewObject<UWidgetComponent>(this, UWidgetComponent::StaticClass(), TEXT("InteractionWidget"));
-	//	InteractionWidgetComponent->RegisterComponent();
-	//	InteractionWidgetComponent->SetupAttachment(RootComponent);
-	//	InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
-	//	InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200));
-	//	InteractionWidgetComponent->SetRelativeLocation(FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 50.f));
-	//	InteractionWidgetComponent->SetVisibility(false);
-	//	InteractionWidgetComponent->SetHiddenInGame(true);
-	//	if (InteractionWidgetClass)
-	//	{
-	//		InteractionWidgetComponent->SetWidgetClass(InteractionWidgetClass);
-	//	}
-	//}
 }
 void ABangCharacter::Tick(float DeltaTime)
 {
@@ -301,7 +286,6 @@ void ABangCharacter::Zoom(const FInputActionValue& Value)
 
 void ABangCharacter::Click(const FInputActionValue& Value)
 {
-	//OnMouseClicked.Broadcast();
 	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
 	{
 		PC->MouseClicked();
@@ -453,4 +437,16 @@ void ABangCharacter::OnCursorEnd(UPrimitiveComponent* MouseComp)
 void ABangCharacter::SetWidgetVisible(bool bVisible)
 {
 	//InteractionWidgetComponent->SetVisibility(bVisible);
+}
+
+void ABangCharacter::Multicast_SetOutline_Implementation(bool bEnable, int32 StencilValue)
+{
+	TArray<UMeshComponent*> Meshes;
+	GetComponents<UMeshComponent>(Meshes);
+
+	for (UMeshComponent* MeshComp : Meshes)
+	{
+		MeshComp->SetRenderCustomDepth(bEnable);
+		MeshComp->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+	}
 }

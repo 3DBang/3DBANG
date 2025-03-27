@@ -70,9 +70,6 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseCard(const FSingleCard& SingleCard, int32 TargetID);
-
-	UFUNCTION(Server, Reliable)
-	void Server_UseCardReturn(bool IsAble);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_EndTurn();
@@ -90,6 +87,7 @@ private:
 	EActiveType UsingActiveType;
 	//사용중인 카드들 초기화
 	void InitializUsingCard();
+	
 public:
 	UPROPERTY()
 	uint32 PlayerUniqueID = 0;
@@ -115,9 +113,6 @@ public:
 		FCardCollection SelectedCards,       // 플레이어가 실제로 선택한 카드들
 		ECardSelectPurpose Purpose                      // 선택 목적
 	);
-	// 보유중인 카드 보기 (UI에서 클릭하면 카드 선택 가능)
-	UFUNCTION(Client, Reliable)
-	void Client_SelectCard();
 
 	UFUNCTION(Client, Reliable)
 	void Client_HandleCardSelection(const FSingleCard& SingleCard);
@@ -127,9 +122,6 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget(const uint32 TargetPlayerID);
-
-	UFUNCTION(Client, Reliable)
-	void Client_BangSelectTarget(const FSingleCard& SingleCard);
 
 	//UFUNCTION(Client, Reliable)
 	//void StealFromOpponent(const FSingleCard& SingleCard);
@@ -171,7 +163,12 @@ private:
 	//id의 값을 PlayerState ->
 
 public:
+
+	// 마우스 클릭하면 호출 되는 함수
+
+	UFUNCTION()
 	void MouseClicked();
+	
 	FName TestPlayerController;
 
 	UFUNCTION(Client, Reliable)
@@ -223,8 +220,8 @@ public:
 	FCardCollection CurrentCardCollection;
 
 	UPROPERTY() // 유저가 카드고를수있는 카드컬렉션,
-		//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
-		FCardCollection SelectCardCollection;
+	//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
+	FCardCollection SelectCardCollection;
 
 	UFUNCTION(Client, Reliable)
 	void Client_DisplayBangUI();
@@ -312,6 +309,9 @@ protected:
 
 public:
 	void UpdatePlayerInfo(uint32 BangUniqueID,int32 HP, int32 Range);
+
+	/*void LocalSetOutline(bool bEnable, int32 StencilValue);*/
+
 };
 
 

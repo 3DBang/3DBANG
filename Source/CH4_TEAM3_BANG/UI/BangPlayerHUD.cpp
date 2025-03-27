@@ -6,6 +6,12 @@
 #include "Chat/BangInGameChattingWidget.h"
 #include "UI/Chat/PlayerListGameLog.h" 
 #include "PlayerController/BangPlayerController.h"
+#include "PlayerInfo/BangInfoWidget.h"
+
+ABangPlayerHUD::ABangPlayerHUD()
+{
+	WidgetOffset = FVector2D(10.0f, 10.0f);
+}
 
 void ABangPlayerHUD::BeginPlay()
 {
@@ -41,10 +47,26 @@ void ABangPlayerHUD::BeginPlay()
 		}
 	}
 
+	if (PlayerInfoWidgetClass)
+	{
+		PlayerInfoWidgetInstance = CreateWidget<UBangInfoWidget>(World, PlayerInfoWidgetClass);
+		if (PlayerInfoWidgetInstance)
+		{
+			PlayerInfoWidgetInstance->AddToViewport();
+		}
+	}
+
+	//시작할땐 숨겨두기 
+	if (PlayerInfoWidgetInstance)
+	{
+		PlayerInfoWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+	}
+	
 	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(PC))
 	{
 		BangPC->NotifyHUDLoaded();
 	}
+	
 }
 
 void ABangPlayerHUD::ShowDrawCardUI(const TArray<FSingleCard>& Cards)
@@ -95,4 +117,84 @@ void ABangPlayerHUD::SetupTurnCardSelection(ECardSelectPurpose Purpose, FText Bu
 	}
 	
 	UE_LOG(LogTemp, Log, TEXT("SetupTurnCardSelection called for Purpose: %s, ButtonText: %s, CardsToSelectCount: %d"),	*UEnum::GetValueAsString(Purpose), *ButtonText.ToString(), NumCardsToSelect);
+}
+
+void ABangPlayerHUD::ShowBangInfoWidget(uint32 TargetPlayerUniqueID, bool bShowButtonWidget)
+{
+	if (!PlayerInfoWidgetInstance)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::ShowBangInfoWidget] : PlayerInfoWidgetInstance is null"));
+		return;
+	}
+
+	if (TargetPlayerUniqueID == 0)
+	{
+		return;
+	}
+
+	// 마우스 커서 위치 가져오기
+	APlayerController* PC = GetOwningPlayerController();
+	if (!PC)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::ShowBangInfoWidget] : PlayerController is null"));
+		return;
+	}
+	float MouseX, MouseY;
+	if (!PC->GetMousePosition(MouseX, MouseY))
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::ShowBangInfoWidget] : Failed to get mouse position"));
+		return;
+	}
+
+	// 화면 사이즈 가져오기
+	FVector2D ViewportSize;
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::ShowBangInfoWidget] : GameViewport is null"));
+		return; // GameViewport가 없으면 경계 처리 불가
+	}
+
+	FVector2D WidgetSize = PlayerInfoWidgetInstance->GetDesiredSize();
+
+	
+	// 위젯을 보이게 설정
+	PlayerInfoWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+	// UBangInfoWidget의 ShowPlayerInfo 함수를 호출하여 정보 업데이트
+    PlayerInfoWidgetInstance->ShowPlayerInfo(TargetPlayerUniqueID);
+
+	FVector2D WidgetPosition = FVector2D(MouseX + WidgetOffset.X, MouseY + WidgetOffset.Y);
+
+	// 화면 경계 검사 및 조정
+	float WidgetRightEdgeX = WidgetPosition.X + WidgetSize.X;
+	float WidgetBottomEdgeY = WidgetPosition.Y + WidgetSize.Y;
+
+	// 오른쪽 경계 검사
+	if (WidgetRightEdgeX > ViewportSize.X)
+	{
+		WidgetPosition.X = ViewportSize.X - WidgetSize.X - WidgetOffset.X;
+		if (WidgetPosition.X < 0) WidgetPosition.X = 0; // 왼쪽 경계에 너무 가까워지는 경우 방지
+	}
+
+	// 아래쪽 경계 검사
+	if (WidgetBottomEdgeY > ViewportSize.Y)
+	{
+		WidgetPosition.Y = ViewportSize.Y - WidgetSize.Y - WidgetOffset.Y;
+		if (WidgetPosition.Y < 0) WidgetPosition.Y = 0; // 위쪽 경계에 너무 가까워지는 경우 방지
+	}
+	
+	// 위젯 위치 설정 (조정된 위치)
+	PlayerInfoWidgetInstance->SetPositionInViewport(WidgetPosition, true);
+	
+	if (bShowButtonWidget) // bShowWidget가 true이면 위젯을 표시
+	{
+		PlayerInfoWidgetInstance->UseCardButton->SetVisibility(ESlateVisibility::Visible);
+	}
+	else // bShowWidget가 false이면 위젯을 숨김
+	{
+		PlayerInfoWidgetInstance->UseCardButton->SetVisibility(ESlateVisibility::Hidden);
+	}
 }

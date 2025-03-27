@@ -125,4 +125,6 @@ public:
 public:
 	void SetWidgetVisible(bool bVisible);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SetOutline(bool bEnable, int32 StencilValue);
 };

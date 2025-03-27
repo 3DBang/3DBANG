@@ -95,7 +95,6 @@ void ABangGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	DOREPLIFETIME(ABangGameState, ToPlayerNickname);
 	DOREPLIFETIME(ABangGameState, PlayerList);
 	DOREPLIFETIME(ABangGameState, CurrentGameLog);
-
 }
 
 void ABangGameState::BroadcastGameLogToClients(const FString& GameLogMessage)

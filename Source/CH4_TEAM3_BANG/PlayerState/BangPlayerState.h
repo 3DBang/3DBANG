@@ -31,6 +31,10 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerUniqueID)
 	uint32 PlayerUniqueID = 0;
 
+	// 세부턴 UniqueID
+	UPROPERTY(Replicated)
+	uint32 MiniTurnUniqueID = 0;
+
 	UFUNCTION()
 	void OnRep_PlayerUniqueID();
 	
@@ -44,15 +48,23 @@ public:
 
 	// 플레이어 체력 감소
 	UFUNCTION()
-	void LoosePlayerHealth(const uint32& TargetUniqueID, int32 Amount);
+	void LoosePlayerHealth(const uint32& FromUniqueID, const uint32& TargetUniqueID, const int32 Amount);
 
 	// 플레이어 체력 증가
 	UFUNCTION()
 	void GainPlayerHealth(const uint32& TargetUniqueID, int32 Amount);
 
-	// 컨트롤러가 카드 조회
+	// 컨트롤러가 플레이어 보유 카드 조회
 	UFUNCTION()
 	void GetCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
+
+	// 컨트롤러가 플레이어 장착 카드 조회
+	UFUNCTION()
+	void GetEquippedCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
+
+	// 컨트롤러가 플레이어 함정 카드 조회
+	UFUNCTION()
+	void GetTrapCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
 
 	// 캐릭터 카드 타입으로 싱글 카드 받아오기
 	UFUNCTION() 
@@ -77,10 +89,6 @@ public:
 	// 컨트롤러가 카드 버릴때 호출
 	UFUNCTION()
 	void RestoreCard(const int32 FromUniqueID, FSingleCard SingleCard);
-	
-	// 턴 시작
-	UFUNCTION()
-	void StartTurn(const int32 InPlayerUniqueID, FCardCollection& DrawCards);
 	
 	// 턴 종료
 	UFUNCTION()
@@ -123,16 +131,28 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_DrawCard(const uint32 FromUniqueID, const uint16 CardCount, const bool bIsForce);
 
+	// 플레이어 카드 공개 (사용된덱에 즉시 반납)
+	UFUNCTION(Server, Reliable)
+	void Server_ShowCard(const uint32 FromUniqueID, const uint16 CardCount);
+
 	// 카드 심볼 확인
 	UFUNCTION(Server, Reliable)
 	void Server_CheckCardSymbol(const uint32& FromUniqueID, const uint16& CardCount);
-	
+
+	// 중요
+	//
+	//
+	//
 	// PlayerInfo 동기화 PlayerState에서 값 변경 후 호출해야함
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerInfo(const FPlayerCollection& NewInfo);
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetUniqueId(const uint32& FromPlayerUniqueID);
+
+	// 턴 시작
+	UFUNCTION(Client, Reliable)
+	void Client_StartTurn(const int32& InPlayerUniqueID, const FPlayerCardCollection& DrawCards);
 	
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)

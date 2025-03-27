@@ -8,6 +8,7 @@
 #include "PlayerState/BangPlayerState.h"
 #include "PlayerController/BangPlayerController.h"
 #include "../BangCharacter/BangCharacter.h"
+#include "Card/ActiveCard/BangActiveCard.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
@@ -63,7 +64,7 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 
 	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap")
 		|| MapName.Contains("Hwang")
-		|| MapName.Contains("Bong"))
+		|| MapName.Contains("Bong_TestMap"))
 	{
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{
@@ -97,9 +98,9 @@ void ABangGameMode::GetPlayerStatesByUniqueID(const int32& UniqueID, FBangSingle
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
+		if (const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			if (TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
+			if (const TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
 			{
 				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
 				{
@@ -114,9 +115,9 @@ void ABangGameMode::GetPlayerControllerByUniqueID(const int32& UniqueID, FBangSi
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		if (TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
+		if (const TObjectPtr<ABangPlayerController> CastingController = Cast<ABangPlayerController>(It->Get()))
 		{
-			if (TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
+			if (const TObjectPtr<ABangPlayerState> PlayerState = CastingController->GetPlayerState<ABangPlayerState>())
 			{
 				if (PlayerState->PlayerUniqueID == UniqueID && CastingController)
 				{
@@ -459,6 +460,10 @@ void ABangGameMode::AdvanceGameTurn()
 
 	if (CurrentPlayerTurnState == EPlayerTurnState::DrawCard) // 현재 턴인 플레이어가 카드뽑기 단계 일때
 	{
+		// 트랩카드 처리 (다이너마이트, 감옥)
+		CheckTrapCard();
+
+		// 카드 뽑기
 		FCardCollection DrawCards;
 		switch (Players.Players[PlayerIndex].CharacterCardType)
 		{
@@ -504,9 +509,18 @@ void ABangGameMode::AdvanceGameTurn()
 		
 		FBangSinglePlayerState CurrentPlayerState;
 		GetPlayerStatesByUniqueID(Players.Players[PlayerIndex].PlayerUniqueID, CurrentPlayerState);
-		// 주석 나중에 풀어줘야함
-		//PlayerStete로 전달
-		CurrentPlayerState.State->StartTurn(CurrentTurnPlayerUniqeID, DrawCards);
+		
+		FPlayerCardCollection DrawSymbolCollections;
+		
+		for (FSingleCard CardList : DrawCards.CardList)
+		{
+			FPlayerCardSymbol DrawSymbol;
+			DrawSymbol.SymbolNumber = CardList.Card->SymbolNumber;
+			DrawSymbol.SymbolType = CardList.Card->SymbolType;
+			DrawSymbolCollections.PlayerCards.Add(DrawSymbol);
+		}
+		
+		CurrentPlayerState.State->Client_StartTurn(CurrentTurnPlayerUniqeID, DrawSymbolCollections);
 		
 		CurrentPlayerTurnState = EPlayerTurnState::UseCard;
 	}
@@ -565,6 +579,54 @@ void ABangGameMode::AdvanceGameTurn()
 	else if (CurrentPlayerTurnState == EPlayerTurnState::LooseCard)
 	{
 		ForceUpdate_AdvancePlayerTurn();
+	}
+}
+
+void ABangGameMode::CheckTrapCard()
+{
+	for (FPlayerCardSymbol PlayerCard : Players.Players[PlayerIndex].TrapCards.PlayerCards)
+	{
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(PlayerCard.SymbolType, PlayerCard.SymbolNumber, OutFoundCard);
+
+		if (TObjectPtr<UBangActiveCard> BangActiveCard = Cast<UBangActiveCard>(OutFoundCard.Card))
+		{
+			if (BangActiveCard->ActiveType == EActiveType::Jail)
+			{
+				FCardCollection OutCards;
+				CardManager->CheckCardSymbolFromAvailCards(1, OutCards);
+
+				if (OutCards.CardList[0].Card->SymbolType != ESymbolType::Heart)
+				{
+					ForceUpdate_AdvancePlayerTurn();
+					return;
+				}
+			}
+			else if (BangActiveCard->ActiveType == EActiveType::Dynamite)
+			{
+				FCardCollection OutCards;
+				CardManager->CheckCardSymbolFromAvailCards(1, OutCards);
+
+				if (OutCards.CardList[0].Card->SymbolType == ESymbolType::Spade
+					&& (OutCards.CardList[1].Card->SymbolNumber >= 2 || OutCards.CardList[1].Card->SymbolNumber <= 9))
+				{
+					if (Players.Players[PlayerIndex].CurrentHealth < 4)
+					{
+						FPlayerCardCollection CardList;
+						CardList.PlayerCards.Append(Players.Players[PlayerIndex].MyCards.PlayerCards);
+						CardList.PlayerCards.Append(Players.Players[PlayerIndex].EquippedCards.PlayerCards);
+						CardList.PlayerCards.Append(Players.Players[PlayerIndex].TrapCards.PlayerCards);
+							
+						PlayerDead(CurrentTurnPlayerUniqeID,
+							Players.Players[PlayerIndex].CharacterCardType,
+							Players.Players[PlayerIndex].JobCardType,
+							CardList);
+						ForceUpdate_AdvancePlayerTurn();
+						return;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -673,7 +735,7 @@ void ABangGameMode::GetCardBySymbol(const FPlayerCardSymbol& Card)
 	// 뽑은 후에 PS 전달
 }
 
-// 카드 뽑아서 PS에 전달
+// 카드 뽑아서 PS에 전달 (플레이어에게 나눠줌)
 void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 CardCount)
 {
 	if (!CardManager) return;
@@ -688,12 +750,39 @@ void ABangGameMode::ForceUpdate_DrawCard(const uint32 UniqueID, const uint16 Car
 	PlayerState.State->ForceNetUpdate();
 }
 
+// 카드 뽑아서 선택 리스트에 전달 (플레이어에게 나눠줌)
 void ABangGameMode::DrawCard(const uint16 CardCount)
 {
 	if (!CardManager) return;
 
 	FCardCollection DrawCards;
 	CardManager->HandCards(CardCount, DrawCards);
+
+	FBangSinglePlayerState PlayerState;
+	GetPlayerStatesByUniqueID(CurrentTurnPlayerUniqeID, PlayerState);
+
+	FPlayerCollection PlayerCollection = PlayerState.State->PlayerInfo;
+	FPlayerCardCollection PlayerCardCollection;
+
+	for (auto [Card] : DrawCards.CardList)
+	{
+		FPlayerCardSymbol PlayerCard;
+		PlayerCard.SymbolNumber = Card->SymbolNumber;
+		PlayerCard.SymbolType = Card->SymbolType;
+		PlayerCardCollection.PlayerCards.Add(PlayerCard);
+	}
+
+	PlayerState.State->PlayerInfo.SelectableCards = PlayerCardCollection;
+	PlayerState.State->ForceNetUpdate();
+}
+
+// 카드 뽑아서 전체공개
+void ABangGameMode::ShowCard(const uint16 CardCount)
+{
+	if (!CardManager) return;
+
+	FCardCollection DrawCards;
+	CardManager->ShowCards(CardCount, DrawCards);
 
 	FBangSinglePlayerState PlayerState;
 	GetPlayerStatesByUniqueID(CurrentTurnPlayerUniqeID, PlayerState);
@@ -819,6 +908,9 @@ void ABangGameMode::SpawnPlayers()
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = BangPlayerControllers[i];
         SpawnParams.Instigator = BangPlayerControllers[i]->GetPawn();
+		
+		PlayersTransfrom.Add(BangPlayerControllers[i], TPair<FVector, FRotator>(SpawnLocation, SpawnRotation));
+
         ABangCharacter* Player = GetWorld()->SpawnActor<ABangCharacter>(DefaultPawnClass, SpawnLocation, SpawnRotation, SpawnParams);
         if (Player)
         {
@@ -872,16 +964,25 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 			//ControllerIDAtCameraMode = PC->GetUniqueID();
 			//ControllerIDAtCameraMode = PC->PlayerUniqueID;
 			bool bIsTarget = (PC->PlayerUniqueID == BangPlayerControllerID);
-
-			PC->Client_SetInputEnabled(bIsTarget);
+			
+			//PC->Client_SetInputEnabled(bIsTarget);
 			PC->Client_OpenCamera();
-			PC->Client_SetOutline(BangPlayerControllerID,bIsTarget, bIsTarget ? 251 : 0);
+			PC->Client_SetOutline(PC->PlayerUniqueID, true, 252);
 			if (bIsTarget)
 			{
-				PC->Client_ToggleMappingContext();
+			//PC->Client_ToggleMappingContext();
+				if (APawn* Pawn = PC->GetPawn())
+				{
+					if (ABangCharacter* Char = Cast<ABangCharacter>(Pawn))
+					{
+						Char->Multicast_SetOutline(true, 251);
+					}
+				}
 			}
+			
 		}
 	}
+	
 }
 
 void ABangGameMode::CloseCamera()
@@ -896,13 +997,19 @@ void ABangGameMode::CloseCamera()
 		{
 			bool bIsTarget = (PC->PlayerUniqueID == ControllerIDAtCameraMode);
 			PC->Client_CloseCamera();
-			PC->Client_SetInputEnabled(true);
-			PC->Client_SetOutline(PC->PlayerUniqueID, bIsTarget, bIsTarget ? 251 : 0);
 			if (bIsTarget)
 			{
 				PC->Client_ToggleMappingContext();
-				//PS Id 보내야함 //
+				if (APawn* Pawn = PC->GetPawn())
+				{
+					if (ABangCharacter* Char = Cast<ABangCharacter>(Pawn))
+					{
+						Char->Multicast_SetOutline(false, 0);
+					}
+				}
+				PC->Client_ToggleMappingContext();
 			}
+			PC->Client_SetInputEnabled(true);
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;
@@ -943,7 +1050,6 @@ void ABangGameMode::SendGameLog(AController* Controller)
 		uint32 UniqueID = BangPC->PlayerUniqueID;
 
 		FString RealPlayerName = FString::Printf(TEXT("Player[%d]"), UniqueID);
-
 		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
 		FString LogMessage = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
 
@@ -954,3 +1060,96 @@ void ABangGameMode::SendGameLog(AController* Controller)
 	}
 }
 
+void ABangGameMode::ReSpawnPlayerAtTurn()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			if (TPair<FVector, FRotator>* SpawnData = PlayersTransfrom.Find(PC))
+			{
+				if (APawn* Pawn = PC->GetPawn())
+				{
+					//죽은사람은 빙의를 풀어서 소환을 못하게 한다.
+					Pawn->SetActorLocationAndRotation(SpawnData->Key, SpawnData->Value);
+					PC->Client_SetControllerRotation(SpawnData->Value);
+				}
+			}
+		}
+	}
+}
+void ABangGameMode::ReSpawnPlayerAtRestart()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			if (TPair<FVector, FRotator>* SpawnData = PlayersTransfrom.Find(PC))
+			{
+				NewPossessCharacter(PC, SpawnData->Key, SpawnData->Value);
+			}
+		}
+	}
+}
+void ABangGameMode::ReSpawnPlayerAtRestartBluePrint()
+{
+	ReSpawnPlayerAtTurn();
+}
+void ABangGameMode::NewPossessCharacter(AController* PlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation)
+{
+	if (PlayerController == nullptr)
+	{
+		return;
+	}
+
+	APawn* BeforePawn = PlayerController->GetPawn();
+	if (BeforePawn)
+	{
+		PlayerController->UnPossess();
+		BeforePawn->Destroy();
+	}
+
+	TSubclassOf<APawn> PawnClass = DefaultPawnClass;
+	if (PawnClass == nullptr)
+	{
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = PlayerController;
+	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(PawnClass, SpawnLocation, SpawnRotation, SpawnParams);
+	if (NewPawn)
+	{
+		PlayerController->Possess(NewPawn);
+	}
+	if (ABangPlayerController* BPC = Cast<ABangPlayerController>(PlayerController))
+	{
+		BPC->Client_SetControllerRotation(SpawnRotation);
+	}
+	
+}
+
+void ABangGameMode::AtPlayerDie(AController* DeadPlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation)
+{
+	if (ABangPlayerController* PC = Cast<ABangPlayerController>(DeadPlayerController))
+	{
+		APawn* CurrentPawn = PC->GetPawn();
+		if (CurrentPawn)
+		{
+			PC->UnPossess();
+			CurrentPawn->Destroy();
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = PC;
+			//여기에서 새로운 액터를 만들든 아니면 매시를바꾸든 하면될것 같습니다 
+			// 위에있는 PlayerDead에서 이 함수 호출하면 될것 같습니다
+			// Controller배열에서 빼주기 , 
+			// 만일 매시를 바꾸게된다면 IsDead라는 변수가 하나 필요합니다 
+			//APawn* NewPawn = GetWorld()->SpawnActor<APawn>(NewPawnClass, SpawnLocation, SpawnRotation, SpawnParams);
+
+		/*	if (NewPawn)
+			{
+				PC->Possess(NewPawn);
+			}*/
+		}
+	}
+}
