@@ -35,6 +35,10 @@ public:
 	UPROPERTY(Replicated)
 	uint32 MiniTurnUniqueID = 0;
 
+	//듀얼 관리
+	UPROPERTY(Replicated)
+	FDuelInfo CurrentDuel;
+
 	UFUNCTION()
 	void OnRep_PlayerUniqueID();
 	
@@ -114,6 +118,10 @@ public:
 	UFUNCTION()
 	bool CheckIsCardAbleByPassive(const int32 FromUniqueID, const EPassiveType PassiveType);
 	
+	//듀얼 진행용
+	UFUNCTION()
+	void HandleDuelResponse(uint32 ResponderID, bool bUsedBang);
+
 	/////////////////////
 	/// 서버통신
 	/////////////////////
