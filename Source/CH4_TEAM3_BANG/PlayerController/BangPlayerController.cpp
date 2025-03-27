@@ -276,8 +276,9 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		//사용할 카드와 카드 타입 저장
 		UsingCard = SingleCard;
 		UsingActiveType = OutActiveType;
-		Server_OpenCamera_Implementation();
+		Server_OpenCamera();
 		//적 선택단계로 넘어가기(탑뷰)
+		// Server_UseCard(SingleCard, TargetPlayerID);
 	}
 	else
 	{

@@ -265,20 +265,20 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 
 			// PC에서 뺏을 카드 선택 ToUniqueID
 			FPlayerCardCollection CardList;
+			FPlayerCardCollection HiddenCardList;
 			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->EquippedCards.PlayerCards);
 			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->TrapCards.PlayerCards);
-			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards);
+			HiddenCardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards);
 
 			PlayerInfo.SelectableCards.PlayerCards.Append(CardList.PlayerCards);
+			PlayerInfo.HiddenSelectableCards.PlayerCards.Append(HiddenCardList.PlayerCards);
 			Server_SetPlayerInfo(PlayerInfo);
 
 			FPlayerCardSymbol SingleSymbolCard;
 			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
 			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
-
-			FBangSinglePlayerState OutPlayerState;
-			FindTargetPlayerState(ToUniqueID, OutPlayerState);
-			OutPlayerState.State->UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
+			
+			UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
 			
 			break;
 		}
@@ -533,6 +533,7 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 			break;
 		}
 	case EActiveType::Robbery:
+		PC->Client_RequestCardSelection(1, ECardSelectPurpose::StealFromOpponent);
 		break;
 	case EActiveType::CatBalou:
 		break;
