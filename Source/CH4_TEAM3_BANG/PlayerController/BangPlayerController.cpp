@@ -326,7 +326,7 @@ void ABangPlayerController::JCH_Test()
 	}
 	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
 	BangPlayerHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
-	Client_RequestCardSelection(1, ECardSelectPurpose::RespondToDuel);
+	Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
 }
 
 //유저 입력 상황 UI연동
