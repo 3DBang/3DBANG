@@ -127,8 +127,4 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SetOutline(bool bEnable, int32 StencilValue);
-
-	void SetCanMove(bool _bCanMove);
-private:
-	bool bCanMove = true;
 };
