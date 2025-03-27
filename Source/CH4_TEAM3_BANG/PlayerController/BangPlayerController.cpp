@@ -276,15 +276,27 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		//사용할 카드와 카드 타입 저장
 		UsingCard = SingleCard;
 		UsingActiveType = OutActiveType;
-		Server_OpenCamera_Implementation();
+		//Server_OpenCamera();
 		//적 선택단계로 넘어가기(탑뷰)
 	}
 	else
 	{
-		//사용후 초기화
-		//Server_UseCard(SingleCard, TargetPlayerID);
-		CardList->RemoveSelectedCard(SingleCard);
-		InitializUsingCard();
+		if (OutPassiveType == EPassiveType::None)
+		{
+			//사용후 초기화
+			//Server_UseCard(SingleCard, TargetPlayerID);
+			CardList->RemoveSelectedCard(SingleCard);
+			InitializUsingCard();
+		}
+		else
+		{
+			if (PS->CheckIsCardAble(PlayerUniqueID, SingleCard))
+			{
+				//Server_UseCard(SingleCard, TargetPlayerID);
+				CardList->RemoveSelectedCard(SingleCard);
+				InitializUsingCard();
+			}
+		}
 	}
 }
 
@@ -337,6 +349,8 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	FText ButtonText = FText::FromString(TEXT("선택"));
 
 	UE_LOG(LogTemp, Warning, TEXT("[TEST] Client_RequestCardSelection_Implementation called"));
+	UE_LOG(LogTemp, Warning, TEXT("Purpose: %s"), *UEnum::GetValueAsString(Purpose));
+
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
@@ -514,22 +528,29 @@ void ABangPlayerController::OnCardSelectionComplete(
 		break;
 	}
 	case ECardSelectPurpose::RespondToDuel:
-	{	// 결투 중 뱅 카드 선택
+	{
 		if (SelectedCards.CardList.Num() == 0)
 		{
-			//PS->LoosePlayerHealth(PlayerUniqueID, 1);
-		}
-		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
-		if(OutActiveType == EActiveType::Bang)
-		{
-			// 뱅 카드 사용(결투 반격 성공)
-			// 카드 지우기
-			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
+			PS->HandleDuelResponse(PlayerUniqueID, false);
 		}
 		else
-		{
-			Client_RequestCardSelection_Implementation(1, ECardSelectPurpose::RespondToDuel);
-			//잘못된 카드 사용 처리
+		{	
+			PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
+
+			// 결투 중 카드 선택
+			if (OutActiveType == EActiveType::Bang)
+			{
+				const FSingleCard& Card = SelectedCards.CardList[0];
+				// 뱅 카드 사용(결투 반격 성공)
+				PS->HandleDuelResponse(PlayerUniqueID, true);
+				MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
+				PS->RestoreCard(PlayerUniqueID, Card);
+				PS->Server_SetPlayerInfo(PS->PlayerInfo);
+			}
+			else
+			{
+				//잘못된 카드 사용 처리
+			}
 		}
 		break;
 	}
@@ -785,7 +806,7 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	//JCH_Test();
+	JCH_Test();
 	//Server_StartGame();
 }
 
@@ -1197,7 +1218,6 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 			PS->RestoreCard(PlayerUniqueID, UsingCard);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
-			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select);
 
 			CardList->RemoveSelectedCard(UsingCard);
 			InitializUsingCard();
