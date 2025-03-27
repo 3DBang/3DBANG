@@ -68,7 +68,6 @@ void ABangPlayerController::BeginPlay()
 	bShowMouseCursor = true;*/
 	FTimerHandle InitDelayHandle;
 	GetWorld()->GetTimerManager().SetTimer(InitDelayHandle, this, &ABangPlayerController::InitPlayerUniqueID, 3.0f, false);
-
 }
 
 void ABangPlayerController::OnRep_PlayerState()
@@ -647,6 +646,7 @@ void ABangPlayerController::NotifyHUDLoaded()
 		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 		{
 			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
+			BangHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
 		}
 	}
 }
@@ -806,7 +806,7 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	//JCH_Test();
+	JCH_Test();
 	//Server_StartGame();
 }
 
