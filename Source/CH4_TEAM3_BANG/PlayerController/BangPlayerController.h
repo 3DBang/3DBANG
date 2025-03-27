@@ -221,10 +221,6 @@ private:
 	//// 찬호 추가 
 	//////////////////////////
 public:
-	// 현재 들고있는 카드 배열
-	UPROPERTY()
-	FCardCollection CurrentCardCollection;
-
 	UPROPERTY() // 유저가 카드고를수있는 카드컬렉션,
 	//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
 	FCardCollection SelectCardCollection;
