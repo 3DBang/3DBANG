@@ -123,11 +123,6 @@ public:
 public:
 	bool GetFirstPersonMode();
 
-	UFUNCTION()
-	void OnCursorBegin(UPrimitiveComponent* MouseComp);
-
-	UFUNCTION()
-	void OnCursorEnd(UPrimitiveComponent* MouseComp);
 
 	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	UWidgetComponent* InteractionWidgetComponent;

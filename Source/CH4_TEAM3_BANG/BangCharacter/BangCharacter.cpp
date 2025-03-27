@@ -435,37 +435,6 @@ bool ABangCharacter::GetFirstPersonMode()
 {
 	return bFirstPersonMode;
 }
-
-void ABangCharacter::OnCursorBegin(UPrimitiveComponent* MouseComp)
-{
-	
-	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
-	{
-		/*if (auto* PlayC = Cast<ABangPlayerController>(GetController()))
-			PC->SetWidgetVisibility(this, false);*/
-			/*if (PC->IsLocalController())
-			{
-				SetWidgetVisible(false);
-			}*/
-		//uint32 
-		UE_LOG(LogTemp, Error, TEXT("Player State Active"));
-		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), false);
-	}
-}
-
-void ABangCharacter::OnCursorEnd(UPrimitiveComponent* MouseComp)
-{
-	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
-	{
-		/*if (auto* PlayC = Cast<ABangPlayerController>(GetController()))
-			PC->SetWidgetVisibility(this, false);*/
-		/*if (PC->IsLocalController())
-		{
-			SetWidgetVisible(false);
-		}*/
-		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), false);
-	}
-}
 void ABangCharacter::SetWidgetVisible(bool bVisible)
 {
 	//InteractionWidgetComponent->SetVisibility(bVisible);
@@ -499,6 +468,19 @@ void ABangCharacter::StopSprint(const FInputActionValue& value)
 }
 void ABangCharacter::StartJump(const FInputActionValue& value)
 {
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
+	ensure(BPS);
+	uint32 tmpID = BPS->PlayerUniqueID;
+	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
+	ensure(PlayerInform);
+	if (!PlayerInform->bIsMyTurn)
+	{
+		return;
+	}
 	if (value.Get<bool>())
 	{
 		Jump();
@@ -507,6 +489,19 @@ void ABangCharacter::StartJump(const FInputActionValue& value)
 
 void ABangCharacter::StopJump(const FInputActionValue& value)
 {
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
+	ensure(BPS);
+	uint32 tmpID = BPS->PlayerUniqueID;
+	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
+	ensure(PlayerInform);
+	if (!PlayerInform->bIsMyTurn)
+	{
+		return;
+	}
 	if (!value.Get<bool>())
 	{
 		StopJumping();
