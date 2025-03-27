@@ -87,7 +87,7 @@ void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 	}
 }
 
-// 컨트롤러가 카드타입 조회
+// 인풋 카드 타입 조회
 void ABangPlayerState::GetCardType(const int32 InPlayerUniqueID, const FSingleCard& Card, EActiveType& OutActiveType, EPassiveType& OutPassiveType)
 {
 	if (InPlayerUniqueID == 0) return;
@@ -281,7 +281,7 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->EquippedCards.PlayerCards);
 			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->TrapCards.PlayerCards);
 
-			// 히드처리필요
+			// 히든처리필요
 			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards);
 
 			PlayerInfo.SelectableCards.PlayerCards.Append(CardList.PlayerCards);
