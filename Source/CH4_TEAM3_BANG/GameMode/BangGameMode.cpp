@@ -34,7 +34,7 @@ void ABangGameMode::BeginPlay()
 		BangGameInstance->GetCardManager(OutCardManager);
 		CardManager = OutCardManager.CardManager;
 		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::BeginPlay] CardManager Loaded"));
-
+		
 		// 카드 매니저 초기 셋팅 (GameMode에서만 진행)
 		CardManager->PlayBeginByRole();
 	}
@@ -45,7 +45,7 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] Player Login"));
-
+	
 	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap")
 		|| MapName.Contains("Hwang")
 		|| MapName.Contains("Bong_TestMap"))
@@ -54,7 +54,9 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 		{
 			BangPlayerControllers.Add(BangPlayerController);
 			BangPlayerController->Init();
+			
 			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, BangPlayerController);
+			SendGameLog(FString::Printf(TEXT("%s님이 입장했습니다."), *BangPlayerController->PlayerNickname));
 		}
 	}
 	//게임 시작버튼을 누르면 그때 Player위치 조정함수 사용
@@ -69,12 +71,12 @@ void ABangGameMode::Logout(AController* Exiting)
 	if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(Exiting))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::Logout] Player %s 로그아웃"), *BangPlayerController->PlayerNickname);
-
 		BangPlayerControllers.Remove(BangPlayerController);
 
 		const uint32 UniqueID = BangPlayerController->PlayerUniqueID;
 		LobbyPlayers.RemovePlayer(UniqueID);
 		ForceUpdate_RemovePlayer(UniqueID);
+		SendGameLog(FString::Printf(TEXT("%s님이 퇴장하였습니다."), *BangPlayerController->PlayerNickname));
 	}
 }
 
@@ -225,7 +227,7 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
-
+	SendGameLog(FString::Printf(TEXT("게임이 시작되었습니다.")));
 	Players.Players.Empty();
 
 	// 기존 코드 계속 진행
@@ -284,7 +286,6 @@ void ABangGameMode::StartTest()
 		FCardCollection Cards;
 		CardManager->HandCards(Health, Cards);
 		Players.Players[i].MyCards.AddCardCollectionToPlayerCards(Cards);
-
 		if (JobCards[i] == EJobType::Officer)
 		{
 			CurrentTurnPlayerUniqeID = Players.Players[i].PlayerUniqueID;
@@ -339,6 +340,7 @@ void ABangGameMode::StartTest()
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
 void ABangGameMode::ForceUpdate_StartGame_Real()
 {
+	SendGameLog(FString::Printf(TEXT("게임 시작! 참여인원 %d"), LobbyPlayers.Players.Num()));
 	UE_LOG(LogTemp, Warning, TEXT("StartGame [%d]"), LobbyPlayers.Players.Num());
 	if (!CardManager) return;
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager) return;
@@ -444,7 +446,7 @@ void ABangGameMode::AdvanceGameTurn()
 
 	if (CurrentPlayerTurnState == EPlayerTurnState::DrawCard) // 현재 턴인 플레이어가 카드뽑기 단계 일때
 	{
-		// 트랩카드 처리 (다이너마이트, 감옥)
+		// 트랩카드 처리 (다이너마이트, 감옥)	✨
 		CheckTrapCard();
 
 		// 카드 뽑기
@@ -454,7 +456,6 @@ void ABangGameMode::AdvanceGameTurn()
 		case ECharacterType::PedroRamirez:
 			{
 				CardManager->HandCards(2, DrawCards);
-				
 				
 				break;
 			}
@@ -496,6 +497,8 @@ void ABangGameMode::AdvanceGameTurn()
 		
 		FPlayerCardCollection DrawSymbolCollections;
 		
+		SendGameLog(FString::Printf(TEXT("플레이어 %s 카드 드로우턴"), *Players.Players[PlayerIndex].PlayerName));
+				
 		for (FSingleCard CardList : DrawCards.CardList)
 		{
 			FPlayerCardSymbol DrawSymbol;
@@ -580,6 +583,10 @@ void ABangGameMode::CheckTrapCard()
 				FCardCollection OutCards;
 				CardManager->CheckCardSymbolFromAvailCards(1, OutCards);
 
+				FText OutCardsCardName = OutCards.CardList[0].Card->CardName;
+				FString OutCardsSymbolType = GetEnumToString<ESymbolType>(OutCards.CardList[0].Card->SymbolType);
+				SendGameLog(FString::Printf(TEXT("감옥 카드 뽑기 : 뽑은 카드 %s , 카드 심볼 : %s"), *OutCardsCardName.ToString(), *OutCardsSymbolType));
+				
 				if (OutCards.CardList[0].Card->SymbolType != ESymbolType::Heart)
 				{
 					ForceUpdate_AdvancePlayerTurn();
@@ -591,6 +598,10 @@ void ABangGameMode::CheckTrapCard()
 				FCardCollection OutCards;
 				CardManager->CheckCardSymbolFromAvailCards(1, OutCards);
 
+				FText OutCardsCardName = OutCards.CardList[0].Card->CardName;
+				FString OutCardsSymbolType = GetEnumToString<ESymbolType>(OutCards.CardList[0].Card->SymbolType);
+				SendGameLog(FString::Printf(TEXT("다이너마이트 카드 뽑기 : 뽑은 카드 %s , 카드 심볼 : %s"), *OutCardsCardName.ToString(), *OutCardsSymbolType));
+				
 				if (OutCards.CardList[0].Card->SymbolType == ESymbolType::Spade
 					&& (OutCards.CardList[1].Card->SymbolNumber >= 2 || OutCards.CardList[1].Card->SymbolNumber <= 9))
 				{
@@ -992,7 +1003,7 @@ void ABangGameMode::DrawCardsAndNotifyClients(int32 CardCount)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("카드 전달: %d장 → %s"), Drawn.CardList.Num(), *PC->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::DrawCardsAndNotifyClients] : 카드 전달: %d장 → %s"), Drawn.CardList.Num(), *PC->GetName());
 			PC->Client_ShowDrawnCards(Drawn.CardList);
 		}
 	}
@@ -1000,29 +1011,28 @@ void ABangGameMode::DrawCardsAndNotifyClients(int32 CardCount)
 
 void ABangGameMode::Test_DrawAndLogCards()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Test_DrawAndLogCards 호출됨"));
+	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::Test_DrawAndLogCards] 호출됨"));
 	DrawCardsAndNotifyClients(3);
 }
 
 void ABangGameMode::ShowTableCardsToAll()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ShowTableCardsToAll 호출됨"));
+	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::ShowTableCardsToAll] 호출됨"));
 	DrawCardsAndNotifyClients(3);
 }
-void ABangGameMode::SendGameLog(AController* Controller)
+
+/**
+ * 게임 로그를 클라이언트들에게 브로드캐스트하기 위해 생성된 메서드입니다.
+ *
+ * @param Controller 게임 로그를 전송하려는 대상 컨트롤러. 이 컨트롤러는 ABangPlayerController로 캐스팅되어 사용됩니다.
+ *
+ */
+
+void ABangGameMode::SendGameLog(const FString& GameLogMessage)
 {
-	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(Controller))
+	if (ABangGameState* GS = GetGameState<ABangGameState>())
 	{
-		uint32 UniqueID = BangPC->PlayerUniqueID;
-
-		FString RealPlayerName = FString::Printf(TEXT("Player[%d]"), UniqueID);
-		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
-		FString LogMessage = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
-
-		if (ABangGameState* GS = GetGameState<ABangGameState>())
-		{
-			GS->BroadcastGameLogToClients(LogMessage);
-		}
+		GS->BroadcastGameLogToClients(GameLogMessage);
 	}
 }
 

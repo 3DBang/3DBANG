@@ -673,11 +673,7 @@ void ABangPlayerState::Client_StartTurn_Implementation(const int32& InPlayerUniq
 		ABangGameState* GameState = Cast<ABangGameState>(World->GetGameState());
 		if (!PlayerController || !OtherPlayerState || !GameState) return;
 
-		//전체에게 메세지 뿌리기
-		FString ChatMessage = FString::Printf(TEXT("플레이어 %s의 차례!"), *PlayerInformation->PlayerName);  
-		FString FromNickname = TEXT("Server"); 
-		FString ReciverNickname = TEXT("All"); 
-		GameState->ReceiveMessage(ChatMessage, FromNickname, ReciverNickname);
+		
 		
 		// 현재 플레이어 턴이면
 		if (PlayerController->PlayerUniqueID == InPlayerUniqueID)

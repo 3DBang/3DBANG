@@ -97,9 +97,19 @@ public:
 	UFUNCTION()
 	void ShowTableCardsToAll();
 
+	/**
+	 * 지정된 개수의 카드를 뽑고, 클라이언트들에게 알림을 전송합니다.
+	 *
+	 * @param CardCount 뽑을 카드의 개수를 나타냅니다.
+	 */
 	void DrawCardsAndNotifyClients(int32 CardCount);
 
-	void SendGameLog(AController* Controller);
+	/**
+	 * 게임 로그 메시지를 클라이언트들에게 전송합니다.
+	 *
+	 * @param GameLogMessage 전송할 게임 로그 메시지를 나타냅니다.
+	 */
+	void SendGameLog(const FString& GameLogMessage);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
