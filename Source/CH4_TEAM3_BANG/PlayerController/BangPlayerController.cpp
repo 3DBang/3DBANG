@@ -127,7 +127,7 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 	}
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
 	{
-		BangHUD->SetupTurnCardSelection();
+		/*BangHUD->SetupTurnCardSelection();*/
 		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
 		{
 			for (const FSingleCard& Card : DrawCards.CardList)
@@ -277,7 +277,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		OutActiveType == EActiveType::CatBalou ||
 		OutActiveType == EActiveType::Duel ||
 		OutActiveType == EActiveType::Jail);
-
+	// 좌표
 	if (bNeedsTarget)
 	{
 		//사용할 카드와 카드 타입 저장
@@ -405,6 +405,7 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		}
 	}
 }
+
 void ABangPlayerController::InitializUsingCard()
 {
 	//UsingCard = nullptr;
@@ -806,7 +807,7 @@ void ABangPlayerController::TestButtonCLicked()
 	Server_TestDrawCards();
 
 	// 테스트 버튼을 누르면 로그가 찍히는듯? 여기서 왜 로그를 찍는지를 변수로 보내줘야 할듯?
-	Server_RequestSendGameLog(FString::Printf(TEXT("게임 시작")));
+	// Server_RequestSendGameLog(FString::Printf(TEXT("게임 시작")));
 	// 플레이어 스테이트에서
 	// 카드 사용
 	// 턴 오는거

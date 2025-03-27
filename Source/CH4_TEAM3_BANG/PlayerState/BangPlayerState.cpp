@@ -678,6 +678,7 @@ void ABangPlayerState::Client_StartTurn_Implementation(const int32& InPlayerUniq
 		// 현재 플레이어 턴이면
 		if (PlayerController->PlayerUniqueID == InPlayerUniqueID)
 		{
+			Server_SendLog(FString::Printf(TEXT("플레이어 %s 턴 시작"), *PlayerInformation->PlayerName));
 			PlayerController->Client_OnTurnStart(GivenCards);
 		}
 	}
@@ -756,7 +757,7 @@ void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& O
 	DOREPLIFETIME(ABangPlayerState, PlayerUniqueID);
 }
 
-void ABangPlayerState::Server_StartTurnReturn_Implementation(const FString& LogMessage)
+void ABangPlayerState::Server_SendLog_Implementation(const FString& LogMessage)
 {
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (!GameMode)
