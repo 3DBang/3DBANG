@@ -66,6 +66,10 @@ public:
 	UFUNCTION()
 	void GetTrapCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
 
+	// 컨트롤러가 선택 카드 조회
+	UFUNCTION()
+	void GetSelectableCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
+
 	// 캐릭터 카드 타입으로 싱글 카드 받아오기
 	UFUNCTION() 
 	void GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard);

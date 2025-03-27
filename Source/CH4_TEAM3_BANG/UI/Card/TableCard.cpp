@@ -17,8 +17,7 @@ void UTableCard::InitializeCardList(const FCardCollection& Cards)
 
 	for (const FSingleCard& CardData : Cards.CardList)
 	{
-		UCard* CardWidget = CreateWidget<UCard>(GetWorld(), CardWidgetClass);
-		if (CardWidget)
+		if (UCard* CardWidget = CreateWidget<UCard>(GetWorld(), CardWidgetClass))
 		{
 			CardWidget->InitializeWithCard(CardData);
 			CardContainer->AddChildToWrapBox(CardWidget);

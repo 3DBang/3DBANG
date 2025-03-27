@@ -276,7 +276,8 @@ public:
 
 	UFUNCTION()
 	void TryBindPlayerInfoUpdated();
-	
+
+public:
 
 	///////////////////////////
 	//// 원명 추가 
