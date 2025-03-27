@@ -124,7 +124,7 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 	}
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
 	{
-		BangHUD->SetupTurnCardSelection();
+		/*BangHUD->SetupTurnCardSelection();*/
 		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
 		{
 			for (const FSingleCard& Card : DrawCards.CardList)
@@ -267,7 +267,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		OutActiveType == EActiveType::CatBalou ||
 		OutActiveType == EActiveType::Duel ||
 		OutActiveType == EActiveType::Jail);
-
+	
 	if (bNeedsTarget)
 	{
 		//사용할 카드와 카드 타입 저장
@@ -292,6 +292,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 				//Server_UseCard(SingleCard, TargetPlayerID);
 				CardList->RemoveSelectedCard(SingleCard);
 				InitializUsingCard();
+				Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s님이 %s 카드를 사용했습니다"), *Info->PlayerName, *SingleCard.Card->CardName.ToString()));
 			}
 		}
 	}
@@ -321,6 +322,7 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	}
 	else
 	{
+		Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s님의 턴이 종료되었습니다."), *MyInfo->PlayerName));
 		PS->Server_EndTurn(PlayerUniqueID);
 		Client_RequestCardSelection(1, ECardSelectPurpose::None);
 	}
@@ -334,8 +336,12 @@ void ABangPlayerController::JCH_Test()
 		UE_LOG(LogTemp, Warning, TEXT("PlayerUniqueID : %d,"), PS->PlayerUniqueID);
 	}
 	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
+	if (!BangPlayerHUD)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerController::JCH_Test] BangPlayerHUD가 없습니다"));
+	}
 	BangPlayerHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
-	Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
+	Client_RequestCardSelection(1, ECardSelectPurpose:: UseCard);
 }
 
 //유저 입력 상황 UI연동
@@ -361,8 +367,11 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		break;
 	}
 	case ECardSelectPurpose::GeneralStoreDraft:
+		// 좌표
+		// 이때 위젯을 띄워줌
+			// 위젯을 띄워줄때 플레이어 info에서 셀렉트 카드를 
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
-			// 남은 카드가 없다면 잡화점 종료 처리
+		// 남은 카드가 없다면 잡화점 종료 처리
 		break;
 
 	case ECardSelectPurpose::KitCarlsonDrawCard:
@@ -415,6 +424,7 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		}
 	}
 }
+
 void ABangPlayerController::InitializUsingCard()
 {
 	//UsingCard = nullptr;
@@ -443,10 +453,18 @@ void ABangPlayerController::OnCardSelectionComplete(
 		return;
 	}
 
+	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
+
+	if (BangPlayerHUD)
+	{
+		return;
+	}
+	
+	
 	EActiveType OutActiveType;
 	EPassiveType OutPassiveType;
 
-
+	// 좌표1
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
@@ -469,8 +487,13 @@ void ABangPlayerController::OnCardSelectionComplete(
 		break;
 	}
 
+		// 잡화점
 	case ECardSelectPurpose::GeneralStoreDraft:
 	{
+		// 좌표
+		// 잡화점 모드에서 카드를 선택했을때 여기를 호출되도록 바인딩을 해줘야함
+		// 선택을 했으니 위젯은 비활성화 해줘야함
+		BangPlayerHUD->TableCardWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
 		MyInfo->MyCards.AddCardCollectionToPlayerCards(SelectedCards);
 		HandleGeneralStoreSelectionComplete(SelectedCards.CardList[0]);
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
@@ -836,10 +859,12 @@ void ABangPlayerController::TestButtonCLicked()
 	
 	Server_StartTest();
 	Server_RequestPlayerListBroadcast();
-	Server_TestDrawCards();
 
+	// 테스트 버튼 누르면 Draw 카드
+	Server_TestDrawCards();
+	
 	// 테스트 버튼을 누르면 로그가 찍히는듯? 여기서 왜 로그를 찍는지를 변수로 보내줘야 할듯?
-	Server_RequestSendGameLog(FString::Printf(TEXT("게임 시작")));
+	// Server_RequestSendGameLog(FString::Printf(TEXT("게임 시작")));
 	// 플레이어 스테이트에서
 	// 카드 사용
 	// 턴 오는거
@@ -1243,6 +1268,12 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 	}
 }
 
+/**
+ * 잡화점에서 카드 선택이 완료된 후의 처리를 수행합니다. 선택된 카드를 플레이어의 정보에서 제거하고, 다음 플레이어의 MiniTurn을 설정합니다.
+ *
+ * @param SelectedCard 선택된 단일 카드의 정보를 포함하는 구조체입니다.
+ */
+//좌표 6
 void ABangPlayerController::HandleGeneralStoreSelectionComplete(const FSingleCard& SelectedCard)
 {
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
