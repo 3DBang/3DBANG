@@ -760,6 +760,18 @@ void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& O
 	DOREPLIFETIME(ABangPlayerState, PlayerUniqueID);
 }
 
+void ABangPlayerState::Server_StartTurnReturn_Implementation(const FString& LogMessage)
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->SendGameLog(LogMessage);
+}
+
 // 카드매니저에서 카드정보 가져오기
 FCardCollection ABangPlayerState::GetCardListFromCardManager(const FPlayerInformation& Info) const
 {

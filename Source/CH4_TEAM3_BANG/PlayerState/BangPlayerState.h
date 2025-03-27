@@ -143,9 +143,12 @@ public:
 	//
 	//
 	//
-	// PlayerInfo 동기화 PlayerState에서 값 변경 후 호출해야함
+	// PlayerInfo 동기화 PlayerState에서 PlayerInfo 값 변경 후 호출해야 동기화됨
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerInfo(const FPlayerCollection& NewInfo);
+
+	UFUNCTION(Server, Reliable)
+	void Server_StartTurnReturn(const FString& LogMessage);
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetUniqueId(const uint32& FromPlayerUniqueID);
