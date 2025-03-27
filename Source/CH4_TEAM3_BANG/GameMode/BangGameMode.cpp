@@ -369,9 +369,13 @@ void ABangGameMode::StartTest()
 		if (ABangCardTableSpawner* Table = *It)
 		{
 			Table->SpawnUsedCards();
+			Table->SpawnHandCards(); 
+
 			break;
 		}
 	}
+
+
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
@@ -1057,14 +1061,15 @@ void ABangGameMode::DrawCardsAndNotifyClients(int32 CardCount)
 void ABangGameMode::Test_DrawAndLogCards()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Test_DrawAndLogCards 호출됨"));
-	DrawCardsAndNotifyClients(3);
+	DrawCardsAndNotifyClients(1);
 }
 
 void ABangGameMode::ShowTableCardsToAll()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ShowTableCardsToAll 호출됨"));
-	DrawCardsAndNotifyClients(3);
+	DrawCardsAndNotifyClients(1);
 }
+
 void ABangGameMode::SendGameLog(AController* Controller)
 {
 	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(Controller))

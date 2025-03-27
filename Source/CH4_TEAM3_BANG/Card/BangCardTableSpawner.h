@@ -26,6 +26,7 @@ public:
 	void SpawnDeckCards();
 	void SpawnHandCards();
 	void SpawnUsedCards();
+	void SpawnEquippedCards();
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnCardListOnTable(const FCardCollection& CardsToSpawn);
