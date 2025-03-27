@@ -1572,7 +1572,7 @@ void ABangPlayerController::Server_TestDrawCards_Implementation()
 	UE_LOG(LogTemp, Warning, TEXT(" Server_TestDrawCards_Implementation() 실행"));
 	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
-		GM->Test_DrawAndLogCards(); // 여기서 카드 뽑고 로그 남기고 → 아래 클라이언트 함수 호출해야 함
+		// 여기서 카드 뽑고 로그 남기고 → 아래 클라이언트 함수 호출해야 함
 	}
 }
 
@@ -1582,11 +1582,17 @@ void ABangPlayerController::Server_TestDrawCards_Implementation()
  *
  * @param DrawnCards 클라이언트가 뽑은 카드들의 정보를 포함한 배열입니다.
  */
-void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FSingleCard>& DrawnCards)
+void ABangPlayerController::Client_ShowDrawnCards_Implementation()
 {
-	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
-		HUD->ShowDrawCardUI(DrawnCards);
-	
+	if (const TObjectPtr<ABangPlayerState> BangPlayerState = GetPlayerState<ABangPlayerState>())
+	{
+		FCardCollection OutCardCollection;
+		BangPlayerState->GetSelectableCard(PlayerUniqueID, OutCardCollection);
+		if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			HUD->ShowDrawCardUI(OutCardCollection);
+		}
+	}
 }
 
 /**

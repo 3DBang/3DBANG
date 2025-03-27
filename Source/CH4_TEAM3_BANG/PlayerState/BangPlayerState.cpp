@@ -167,6 +167,19 @@ void ABangPlayerState::GetTrapCard(const int32 InPlayerUniqueID, FCardCollection
 	}
 }
 
+void ABangPlayerState::GetSelectableCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection)
+{
+	if (InPlayerUniqueID == 0 || !CardManager) return;
+
+	for (auto [SymbolType, SymbolNumber] : PlayerInfo.SelectableCards.PlayerCards)
+	{
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetSelectableCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
+		OutCardCollection.CardList.Add(OutFoundCard);
+	}
+}
+
 void ABangPlayerState::GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard)
 {
 	if (CharacterType == ECharacterType::None || !CardManager) return;
@@ -542,7 +555,6 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 		{
 			// PC에 뱅 사용여부 전달
 			PC->Client_RequestCardSelection(1, ECardSelectPurpose::RespondToDuel);
-
 			break;
 		}
 	case EActiveType::GeneralStore:
@@ -683,8 +695,6 @@ void ABangPlayerState::Client_StartTurn_Implementation(const int32& InPlayerUniq
 		//게임 스테이트
 		ABangGameState* GameState = Cast<ABangGameState>(World->GetGameState());
 		if (!PlayerController || !OtherPlayerState || !GameState) return;
-
-		
 		
 		// 현재 플레이어 턴이면
 		if (PlayerController->PlayerUniqueID == InPlayerUniqueID)
@@ -772,7 +782,7 @@ void ABangPlayerState::Server_StartTurnReturn_Implementation(const FString& LogM
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (!GameMode)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_StartTurnReturn_Implementation] BeginPlay Controller GameMode is NULL!"));
 		return;
 	}
 
