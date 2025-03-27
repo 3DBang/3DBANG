@@ -350,6 +350,28 @@ void ABangGameMode::StartTest()
 
 	//원명 테스트 
 	SpawnPlayers();
+
+	// 사용된 카드 테스트 코드 
+	for (int i = 0; i < 3; ++i)
+	{
+		FCardCollection Draw;
+		CardManager->HandCards(1, Draw);
+
+		if (Draw.CardList.Num() > 0)
+		{
+			FSingleCard Card = Draw.CardList[0];
+			CardManager->ReorderUsedCards(Card);
+		}
+	}
+
+	for (TActorIterator<ABangCardTableSpawner> It(GetWorld()); It; ++It)
+	{
+		if (ABangCardTableSpawner* Table = *It)
+		{
+			Table->SpawnUsedCards();
+			break;
+		}
+	}
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.

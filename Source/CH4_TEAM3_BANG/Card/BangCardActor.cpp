@@ -30,9 +30,10 @@ ABangCardActor::ABangCardActor()
     CardBackWidget->SetWidgetSpace(EWidgetSpace::World);
     CardBackWidget->SetDrawSize(FVector2D(512, 512));
     CardBackWidget->SetRelativeLocation(FVector(0.f, 0.f, -0.1f));
-    CardBackWidget->SetRelativeRotation(FRotator(180.f, 0.f, 0.f)); // 
+    CardBackWidget->SetRelativeRotation(FRotator(180.f, 0.f, 0.f)); 
+
     bReplicates = true;
-    SetReplicateMovement(true);
+    SetReplicateMovement(true); // 카드 위치 복사
 }
 
 void ABangCardActor::BeginPlay()

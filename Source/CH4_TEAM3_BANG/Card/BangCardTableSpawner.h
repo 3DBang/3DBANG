@@ -22,8 +22,16 @@ public:
 	class UBangCardManager* CardManager;
 
 	virtual void BeginPlay() override;
+
 	void SpawnDeckCards();
 	void SpawnHandCards();
+	void SpawnUsedCards();
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnCardListOnTable(const FCardCollection& CardsToSpawn);
+
+	UPROPERTY()
+	ABangCardActor* CurrentUsedCardActor = nullptr;
 private:
 
 };

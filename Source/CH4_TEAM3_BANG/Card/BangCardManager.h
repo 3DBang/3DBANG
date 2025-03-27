@@ -160,6 +160,9 @@ public:
 		return ECharacterType::None;
 	}
 
+	//사용한 카드 접근
+	const FCardCollection& GetUsedCards() const { return UsedCards; }
+
 private:
 	// 모든 카드 저장 배열
 	UPROPERTY()
