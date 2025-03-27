@@ -243,6 +243,7 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
+	SpawnPlayers();
 	SendGameLog(FString::Printf(TEXT("게임이 시작되었습니다.")));
 	Players.Players.Empty();
 
@@ -525,8 +526,6 @@ void ABangGameMode::AdvanceGameTurn()
 
 				FPlayerCardCollection PlayerCards;
 				PlayerCards.AddCardCollectionToPlayerCards(DrawCards);
-
-				PlayerController.Controller->Client_RequestSelectCard(CurrentTurnPlayerUniqeID, PlayerCards);
 				
 				return;
 			}
@@ -1054,24 +1053,16 @@ void ABangGameMode::CloseCamera()
 	ControllerIDAtCameraMode = INDEX_NONE;
 }
 
-void ABangGameMode::DrawCardsAndNotifyClients()
+void ABangGameMode::ShowTableCardsToAll(EShowTableCard ShowTableType)
 {
-	if (!CardManager) return;;
-
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
-		{
+		{	
 			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::DrawCardsAndNotifyClients] : 카드 전달: %s"), *PC->GetName());
-			PC->Client_ShowDrawnCards();
+			PC->Client_ShowDrawCard(ShowTableType);
 		}
 	}
-}
-
-void ABangGameMode::ShowTableCardsToAll()
-{
-	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::ShowTableCardsToAll] 호출됨"));
-	DrawCardsAndNotifyClients();
 }
 
 /**

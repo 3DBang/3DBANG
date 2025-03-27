@@ -190,6 +190,11 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SetOutline(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue);
 
+	UFUNCTION(Client, Reliable)
+	void Client_ShowDrawCard(EShowTableCard ShowTableType);
+
+
+	
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
 	
 private:
@@ -216,10 +221,6 @@ private:
 	//// 찬호 추가 
 	//////////////////////////
 public:
-	// 현재 들고있는 카드 배열
-	UPROPERTY()
-	FCardCollection CurrentCardCollection;
-
 	UPROPERTY() // 유저가 카드고를수있는 카드컬렉션,
 	//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
 	FCardCollection SelectCardCollection;
@@ -262,10 +263,6 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
-
-	// 플레이어에게 카드 선택권 요구
-	UFUNCTION(Client, Reliable)
-	void Client_RequestSelectCard(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards);
 	
 	// 플레이어에게 카드 선택권 요구 응답
 	UFUNCTION(Server, Reliable)

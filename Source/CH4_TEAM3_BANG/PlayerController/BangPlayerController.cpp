@@ -505,7 +505,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		// 좌표
 		// 잡화점 모드에서 카드를 선택했을때 여기를 호출되도록 바인딩을 해줘야함
 		// 선택을 했으니 위젯은 비활성화 해줘야함
-		BangPlayerHUD->TableCardWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+		//BangPlayerHUD->TableCardWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
 		MyInfo->MyCards.AddCardCollectionToPlayerCards(SelectedCards);
 		HandleGeneralStoreSelectionComplete(SelectedCards.CardList[0]);
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
@@ -758,24 +758,6 @@ void ABangPlayerController::Server_RespondSelectCard_Implementation()
 	}
 	
 	GameMode->RefundCards(PlayerCardCollection);
-}
-
-// 플레이어에게 카드 선택권 요구
-void ABangPlayerController::Client_RequestSelectCard_Implementation(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards)
-{
-	if (DrawCards.PlayerCards.Num() == 0) return;
-
-	if (IsLocalController() && GetUniqueID() == FromUniqueID)
-	{
-		ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
-		BangPlayerState->GetCard(FromUniqueID, SelectCardCollection);
-		
-		// 플레이어에게 카드 선택권 요구
-		
-		
-		// 선택한 카드 배열에서 지우기
-		// SelectCardCollection
-	}
 }
 
 void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
@@ -1302,6 +1284,7 @@ void ABangPlayerController::HandleGeneralStoreSelectionComplete(const FSingleCar
 	PS->MiniTurnUniqueID = PS->PlayerInfo.FindNextPlayer(PlayerUniqueID);
 
 	PS->Server_SetPlayerInfo(PS->PlayerInfo);
+	//UI업데이트 해줘
 }
 
 
@@ -1312,6 +1295,32 @@ void ABangPlayerController::Server_UseCard_Implementation(const FSingleCard& Sin
 	if (!PS) return;
 
 	PS->UseCard(PlayerUniqueID, SingleCard, TargetID);
+}
+
+void ABangPlayerController::Client_ShowDrawCard_Implementation(EShowTableCard ShowTableType)
+{
+	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
+	ABangPlayerState* BangPlayerState =  GetPlayerState<ABangPlayerState>();
+	if (!BangPlayerHUD || !BangPlayerState)
+	{
+		return;
+	}
+
+	//이걸 가지고 카드를 가지고 옴
+	FPlayerCardCollection PlayerCardCollection = BangPlayerState->PlayerInfo.SelectableCards;
+
+	//넣을 카드 
+	FCardCollection Cards;
+	BangPlayerState->GetRealBySymbol(PlayerCardCollection , Cards);
+	
+	if (ShowTableType == EShowTableCard::ShowCard)
+	{
+		BangPlayerHUD->ShowDrawCardUI(Cards);
+	}
+	else if (ShowTableType == EShowTableCard::HideCard)
+	{
+		BangPlayerHUD->HideDrawCardUI();
+	}
 }
 
 UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const FName& Tag)
