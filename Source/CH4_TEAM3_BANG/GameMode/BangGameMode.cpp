@@ -243,6 +243,7 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
+	SpawnPlayers();
 	SendGameLog(FString::Printf(TEXT("게임이 시작되었습니다.")));
 	Players.Players.Empty();
 

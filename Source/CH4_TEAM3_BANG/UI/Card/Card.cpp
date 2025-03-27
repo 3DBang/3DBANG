@@ -46,8 +46,6 @@ void UCard::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent&
 {
 	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
 
-	UE_LOG(LogTemp, Log, TEXT("[UCard::NativeOnMouseEnter] 마우스 진입: %s, Timer Start"), *GetName()); // 로그 추가 - 타이머 시작 알림
-
 	CardHoverHighlights->SetVisibility(ESlateVisibility::Visible);
 	// 1.3초 딜레이 타이머 시작, 타이머 만료 시 ShowDescriptionWidgetDelayed 함수 호출
 	FTimerDelegate TimerDelegate;
@@ -58,7 +56,6 @@ void UCard::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent&
 void UCard::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
 	Super::NativeOnMouseLeave(InMouseEvent);
-	UE_LOG(LogTemp, Log, TEXT("[UCard::NativeOnMouseLeave] 마우스 이탈: %s"), *GetName());
 	
 	CardHoverHighlights->SetVisibility(ESlateVisibility::Hidden);
 	if (DescriptionWidgetInstance)

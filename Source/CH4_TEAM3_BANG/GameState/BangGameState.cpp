@@ -98,8 +98,6 @@ void ABangGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ABangGameState, Message);
-	DOREPLIFETIME(ABangGameState, FromPlayerNickname);
-	DOREPLIFETIME(ABangGameState, ToPlayerNickname);
 	DOREPLIFETIME(ABangGameState, PlayerList);
 	DOREPLIFETIME(ABangGameState, CurrentGameLog);
 }
