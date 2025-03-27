@@ -120,6 +120,9 @@ public:
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
 
+	UFUNCTION()
+	void HandleGeneralStoreSelectionComplete(const FSingleCard& SelectedCard);
+
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget(const uint32 TargetPlayerID);
 
