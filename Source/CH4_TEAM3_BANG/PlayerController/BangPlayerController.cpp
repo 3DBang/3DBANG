@@ -1304,25 +1304,18 @@ void ABangPlayerController::Server_UseCard_Implementation(const FSingleCard& Sin
 void ABangPlayerController::Client_ShowDrawCard_Implementation(EShowTableCard ShowTableType)
 {
 	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
-	if (!BangPlayerHUD)
-	{
-		return;
-	}
-
 	ABangPlayerState* BangPlayerState =  GetPlayerState<ABangPlayerState>();
-
-	if (BangPlayerState)
+	if (!BangPlayerHUD || !BangPlayerState)
 	{
 		return;
 	}
 
 	//이걸 가지고 카드를 가지고 옴
-	BangPlayerState->PlayerInfo.SelectableCards;
+	FPlayerCardCollection PlayerCardCollection = BangPlayerState->PlayerInfo.SelectableCards;
 
 	//넣을 카드 
 	FCardCollection Cards;
-	//BangPlayerState->불러올 함수 
-
+	BangPlayerState->GetRealBySymbol(PlayerCardCollection , Cards);
 	
 	if (ShowTableType == EShowTableCard::ShowCard)
 	{
