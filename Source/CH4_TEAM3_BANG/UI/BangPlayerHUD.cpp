@@ -1,10 +1,11 @@
 #include "BangPlayerHUD.h"
 
 #include "Blueprint/UserWidget.h"
+#include "Card/RobberyChoiceWidget.h"
 #include "Card/CardList.h"
 #include "Card/TableCard.h"
 #include "Chat/BangInGameChattingWidget.h"
-#include "UI/Chat/PlayerListGameLog.h" 
+#include "UI/Chat/PlayerListGameLog.h"
 #include "PlayerController/BangPlayerController.h"
 #include "PlayerInfo/BangInfoWidget.h"
 
@@ -61,12 +62,11 @@ void ABangPlayerHUD::BeginPlay()
 	{
 		PlayerInfoWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
 	}
-	
+
 	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(PC))
 	{
 		BangPC->NotifyHUDLoaded();
 	}
-	
 }
 
 void ABangPlayerHUD::ShowDrawCardUI(const FCardCollection& Cards)
@@ -78,7 +78,7 @@ void ABangPlayerHUD::ShowDrawCardUI(const FCardCollection& Cards)
 		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::ShowDrawCardUI] TableCardWidgetClass is NULL"));
 		return;
 	}
-	
+
 	if (!TableCardWidgetInstance)
 	{
 		TableCardWidgetInstance = CreateWidget<UTableCard>(GetWorld(), TableCardWidgetClass);
@@ -96,6 +96,35 @@ void ABangPlayerHUD::ShowDrawCardUI(const FCardCollection& Cards)
 	}
 }
 
+void ABangPlayerHUD::ShowRobberyChoiceCardUI(const FCardCollection& FrontCards, const FCardCollection& BackCards,
+                                             const ECardSelectPurpose CardSelectPurpose)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerHUD::ShowRobberyChoiceCardUI] 앞면 카드 수, 뒷면 카드 수: %d, %d"),
+	       FrontCards.CardList.Num(), BackCards.CardList.Num());
+
+	if (!RobberyChoiceWidgetClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::ShowRobberyChoiceCardUI] RobberyChoiceWidgetClass is NULL"));
+		return;
+	}
+
+	if (!RobberyChoiceWidgetInstance)
+	{
+		RobberyChoiceWidgetInstance = CreateWidget<URobberyChoiceWidget>(GetWorld(), RobberyChoiceWidgetClass);
+		RobberyChoiceWidgetInstance->AddToViewport();
+	}
+
+	if (RobberyChoiceWidgetInstance)
+	{
+		RobberyChoiceWidgetInstance->InitializeCardList(FrontCards, BackCards, CardSelectPurpose);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::ShowRobberyChoiceCardUI] RobberyChoiceWidgetInstance is NULL"));
+		return;
+	}
+}
+
 void ABangPlayerHUD::HideDrawCardUI()
 {
 	if (!TableCardWidgetInstance)
@@ -104,6 +133,16 @@ void ABangPlayerHUD::HideDrawCardUI()
 		return;
 	}
 	TableCardWidgetInstance->RemoveFromParent();
+}
+
+void ABangPlayerHUD::HideRobberyChoiceCardUI()
+{
+	if (!RobberyChoiceWidgetInstance)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::HideRobberyChoiceCardUI] 없음"));
+		return;
+	}
+	RobberyChoiceWidgetInstance->RemoveFromParent();
 }
 
 void ABangPlayerHUD::SetupTurnCardSelection(ECardSelectPurpose Purpose, FText ButtonText, int32 NumCardsToSelect)
@@ -119,7 +158,7 @@ void ABangPlayerHUD::SetupTurnCardSelection(ECardSelectPurpose Purpose, FText Bu
 	//이넘과 선택할 카드 개수
 	CardListWidgetInstance->CurrentCardSelectPurpose = Purpose;
 	CardListWidgetInstance->CardsToSelectCount = NumCardsToSelect;
-	
+
 	CardListWidgetInstance->UseInputButton->SetVisibility(ESlateVisibility::Visible);
 	UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::SetupTurnCardSelection] : 카드 개수 설정 %d"), NumCardsToSelect);
 	if (Purpose == ECardSelectPurpose::UseCard)
@@ -130,8 +169,9 @@ void ABangPlayerHUD::SetupTurnCardSelection(ECardSelectPurpose Purpose, FText Bu
 	{
 		CardListWidgetInstance->TurnEndButton->SetVisibility(ESlateVisibility::Hidden);
 	}
-	
-	UE_LOG(LogTemp, Log, TEXT("SetupTurnCardSelection called for Purpose: %s, ButtonText: %s, CardsToSelectCount: %d"),	*UEnum::GetValueAsString(Purpose), *ButtonText.ToString(), NumCardsToSelect);
+
+	UE_LOG(LogTemp, Log, TEXT("SetupTurnCardSelection called for Purpose: %s, ButtonText: %s, CardsToSelectCount: %d"),
+	       *UEnum::GetValueAsString(Purpose), *ButtonText.ToString(), NumCardsToSelect);
 }
 
 void ABangPlayerHUD::ShowBangInfoWidget(uint32 TargetPlayerUniqueID, bool bShowButtonWidget)
@@ -175,11 +215,11 @@ void ABangPlayerHUD::ShowBangInfoWidget(uint32 TargetPlayerUniqueID, bool bShowB
 
 	FVector2D WidgetSize = PlayerInfoWidgetInstance->GetDesiredSize();
 
-	
+
 	// 위젯을 보이게 설정
 	PlayerInfoWidgetInstance->SetVisibility(ESlateVisibility::Visible);
 	// UBangInfoWidget의 ShowPlayerInfo 함수를 호출하여 정보 업데이트
-    PlayerInfoWidgetInstance->ShowPlayerInfo(TargetPlayerUniqueID);
+	PlayerInfoWidgetInstance->ShowPlayerInfo(TargetPlayerUniqueID);
 
 	FVector2D WidgetPosition = FVector2D(MouseX + WidgetOffset.X, MouseY + WidgetOffset.Y);
 
@@ -200,10 +240,10 @@ void ABangPlayerHUD::ShowBangInfoWidget(uint32 TargetPlayerUniqueID, bool bShowB
 		WidgetPosition.Y = ViewportSize.Y - WidgetSize.Y - WidgetOffset.Y;
 		if (WidgetPosition.Y < 0) WidgetPosition.Y = 0; // 위쪽 경계에 너무 가까워지는 경우 방지
 	}
-	
+
 	// 위젯 위치 설정 (조정된 위치)
 	PlayerInfoWidgetInstance->SetPositionInViewport(WidgetPosition, true);
-	
+
 	if (bShowButtonWidget) // bShowWidget가 true이면 위젯을 표시
 	{
 		PlayerInfoWidgetInstance->UseCardButton->SetVisibility(ESlateVisibility::Visible);

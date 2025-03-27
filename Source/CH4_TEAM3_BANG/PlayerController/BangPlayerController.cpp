@@ -20,6 +20,7 @@
 #include "UI/Chat/PlayerListGameLog.h"
 #include "Data/PlayerInformation.h"
 #include "UI/PlayerInfo/BangInfoWidget.h"
+#include "UI/Card/RobberyChoiceWidget.h"
 #include "Components/MeshComponent.h"
 
 ABangPlayerController::ABangPlayerController()
@@ -422,9 +423,14 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		{
 			auto BangPS = GetPlayerState<ABangPlayerState>();
 			// ㅈㅍㅈㅍ
-			TArray<FPlayerCardSymbol> TargetFieldCards = BangPS->PlayerInfo.SelectableCards.PlayerCards;
-			TArray<FPlayerCardSymbol> TargetHandCards = BangPS->PlayerInfo.HiddenSelectableCards.PlayerCards;
-			BangHUD->ShowDrawCardUI();
+			auto a = BangPS->PlayerInfo.SelectableCards;
+			FCardCollection TargetFieldCards;
+			FCardCollection TargetHandCards;
+			BangPS->GetRealBySymbol(BangPS->PlayerInfo.SelectableCards, TargetFieldCards);
+			BangPS->GetRealBySymbol(BangPS->PlayerInfo.HiddenSelectableCards, TargetHandCards);
+			
+			BangHUD->ShowRobberyChoiceCardUI(TargetFieldCards, TargetHandCards, Purpose);
+			BangHUD->RobberyChoiceWidgetInstance->TableCardClickedDelegate.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
 		}
 	}
 
@@ -464,9 +470,8 @@ void ABangPlayerController::OnCardSelectionComplete(
 		UE_LOG(LogTemp, Warning, TEXT("NoInfo"));
 		return;
 	}
-
+	
 	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
-
 	if (BangPlayerHUD)
 	{
 		return;
@@ -553,10 +558,14 @@ void ABangPlayerController::OnCardSelectionComplete(
 	}
 
 	case ECardSelectPurpose::StealFromOpponent:
-	{	
+	{
+		BangPlayerHUD->HideRobberyChoiceCardUI();
+
+		
 		// 상대의 보유 카드 중 1장을 선택 
 		// 상대 카드 중 1장 없애기
 		// 내 카드 덱에 1장 추가하기
+			
 		break;
 	}
 	case ECardSelectPurpose::RespondToDuel:

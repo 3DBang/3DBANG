@@ -31,8 +31,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card")
 	TSubclassOf<UCard> CardWidgetClass;
 
-private:
-	
+// private:
 	
 	ECardSelectPurpose CardSelectPurpose; // 카드 선택 목적 저장
 
