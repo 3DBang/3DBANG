@@ -1054,24 +1054,16 @@ void ABangGameMode::CloseCamera()
 	ControllerIDAtCameraMode = INDEX_NONE;
 }
 
-void ABangGameMode::DrawCardsAndNotifyClients()
+void ABangGameMode::ShowTableCardsToAll(EShowTableCard ShowTableType)
 {
-	if (!CardManager) return;;
-
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
-		{
+		{	
 			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::DrawCardsAndNotifyClients] : 카드 전달: %s"), *PC->GetName());
-			PC->Client_ShowDrawnCards();
+			PC->Client_ShowDrawCard(ShowTableType);
 		}
 	}
-}
-
-void ABangGameMode::ShowTableCardsToAll()
-{
-	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::ShowTableCardsToAll] 호출됨"));
-	DrawCardsAndNotifyClients();
 }
 
 /**
