@@ -447,6 +447,9 @@ void ABangGameMode::AdvanceGameTurn()
 		// 트랩카드 처리 (다이너마이트, 감옥)
 		CheckTrapCard();
 
+		// 액터 이동 가능 처리
+		ReSpawnPlayerAtTurn();
+
 		// 카드 뽑기
 		FCardCollection DrawCards;
 		switch (Players.Players[PlayerIndex].CharacterCardType)
