@@ -30,8 +30,7 @@ ABangCardActor::ABangCardActor()
     CardBackWidget->SetWidgetSpace(EWidgetSpace::World);
     CardBackWidget->SetDrawSize(FVector2D(512, 512));
     CardBackWidget->SetRelativeLocation(FVector(0.f, 0.f, -0.1f));
-    CardBackWidget->SetRelativeRotation(FRotator(180.f, 0.f, 0.f)); // 🔥 핵심: 뒤집기
-
+    CardBackWidget->SetRelativeRotation(FRotator(180.f, 0.f, 0.f)); // 
     bReplicates = true;
     SetReplicateMovement(true);
 }
@@ -90,4 +89,9 @@ void ABangCardActor::UpdateWidgetContent()
     {
         UE_LOG(LogTemp, Error, TEXT("CardData/CardIcon/CardFrontWidget 없음!"));
     }
+}
+
+void ABangCardActor::Multicast_SetCard_Implementation(const FSingleCard& InCard, bool bShowFront)
+{
+    SetCard(InCard, bShowFront);
 }

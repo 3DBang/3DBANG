@@ -47,7 +47,8 @@ void ABangGameMode::BeginPlay()
 		if (ABangCardTableSpawner* Table = *It)
 		{
 			Table->CardManager = CardManager;
-			Table->SpawnCardsOnTable(); // 여기도 호출해줘야 스폰됨!
+			Table->SpawnDeckCards();           // 중앙 덱 시각화
+			Table->SpawnHandCards();  // 여기도 호출해줘야 스폰됨!
 
 			break;
 		}

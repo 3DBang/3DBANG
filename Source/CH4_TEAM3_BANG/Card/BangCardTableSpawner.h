@@ -22,7 +22,8 @@ public:
 	class UBangCardManager* CardManager;
 
 	virtual void BeginPlay() override;
-	void SpawnCardsOnTable();
-
+	void SpawnDeckCards();
+	void SpawnHandCards();
 private:
+
 };

@@ -12,12 +12,38 @@ void ABangCardTableSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SpawnCardsOnTable(); 
+	SpawnDeckCards();
+	SpawnHandCards();
 }
 
-void ABangCardTableSpawner::SpawnCardsOnTable()
+void ABangCardTableSpawner::SpawnDeckCards()
 {
-	if (!CardActorClass || !CardManager) return;
+	if (!CardActorClass) return;
+
+	const FVector Center = GetActorLocation();
+	const FVector BaseDeckPos = Center + FVector(0, -100, 0);
+	const int32 CardsToVisualize = 20;
+
+	for (int i = 0; i < CardsToVisualize; ++i)
+	{
+		FCardCollection Cards;
+		CardManager->HandCards(1, Cards);
+		if (Cards.CardList.Num() > 0)
+		{
+			FSingleCard Card = Cards.CardList[0];
+			FVector DeckPos = BaseDeckPos + FVector(0, 0, i * 0.5f);
+
+			if (ABangCardActor* DeckCard = GetWorld()->SpawnActor<ABangCardActor>(CardActorClass, DeckPos, FRotator::ZeroRotator))
+			{
+				DeckCard->Multicast_SetCard(Card, false); // 뒷면
+			}
+		}
+	}
+}
+
+void ABangCardTableSpawner::SpawnHandCards()
+{
+	if (!CardActorClass) return;
 
 	const FVector Center = GetActorLocation();
 	const float Radius = 400.f;
@@ -27,36 +53,31 @@ void ABangCardTableSpawner::SpawnCardsOnTable()
 		float AngleDeg = (360.f / MaxPlayerCount) * i;
 		float AngleRad = FMath::DegreesToRadians(AngleDeg);
 
-		FVector Pos = Center + FVector(FMath::Cos(AngleRad), FMath::Sin(AngleRad), 0) * Radius;
-		FRotator Rot = UKismetMathLibrary::FindLookAtRotation(Pos, Center);
+		FVector PlayerCenter = Center + FVector(FMath::Cos(AngleRad), FMath::Sin(AngleRad), 0) * Radius;
+		FRotator Rot = UKismetMathLibrary::FindLookAtRotation(PlayerCenter, Center);
 
-		// 카드 1장 받기
 		FCardCollection Cards;
-		CardManager->HandCards(1, Cards);
-		if (Cards.CardList.Num() > 0)
-		{
-			FSingleCard Card = Cards.CardList[0];
+		CardManager->HandCards(4, Cards);
 
-			if (ABangCardActor* Spawned = GetWorld()->SpawnActor<ABangCardActor>(CardActorClass, Pos, Rot))
+		UE_LOG(LogTemp, Warning, TEXT(" Player %d에게 카드 %d장 지급"), i + 1, Cards.CardList.Num());
+
+		const float CardSpacing = 75;
+		const int32 CardCount = Cards.CardList.Num();
+		const float StartOffset = -((CardCount - 1) * CardSpacing) / 2.0f;
+
+		for (int32 j = 0; j < CardCount; ++j)
+		{
+			const float YOffset = StartOffset + j * CardSpacing;
+			const FVector CardPos = PlayerCenter + FVector(0.f, YOffset, 0.f);
+
+			if (ABangCardActor* Spawned = GetWorld()->SpawnActor<ABangCardActor>(CardActorClass, CardPos, Rot))
 			{
-				Spawned->Multicast_SetCard(Card, true); // 모든 클라이언트에서 카드 앞면 보이게 처리
+				UE_LOG(LogTemp, Log, TEXT("    → 카드 %d 스폰 완료!"), j + 1);
+				Spawned->Multicast_SetCard(Cards.CardList[j], true);
 			}
-		}
-	}
-
-	// 중앙 덱 (뒷면)
-	for (int i = 0; i < 10; ++i)
-	{
-		FCardCollection Cards;
-		CardManager->HandCards(1, Cards);
-		if (Cards.CardList.Num() > 0)
-		{
-			FSingleCard Card = Cards.CardList[0];
-			FVector DeckPos = Center + FVector(0, -100, i * 1.0f);
-
-			if (ABangCardActor* DeckCard = GetWorld()->SpawnActor<ABangCardActor>(CardActorClass, DeckPos, FRotator::ZeroRotator))
+			else
 			{
-				DeckCard->Multicast_SetCard(Card, false); // 뒷면 카드
+				UE_LOG(LogTemp, Error, TEXT("    → 카드 %d 스폰 실패!"), j + 1);
 			}
 		}
 	}
