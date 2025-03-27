@@ -471,7 +471,3 @@ void ABangCharacter::Multicast_SetOutline_Implementation(bool bEnable, int32 Ste
 		MeshComp->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
 	}
 }
-void ABangCharacter::SetCanMove(bool _bCanMove)
-{
-	bCanMove = _bCanMove;
-}
