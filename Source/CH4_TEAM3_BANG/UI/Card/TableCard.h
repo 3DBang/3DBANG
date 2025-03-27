@@ -17,7 +17,7 @@ class CH4_TEAM3_BANG_API UTableCard : public UUserWidget
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void InitializeCardList(const TArray<FSingleCard>& Cards);
+	void InitializeCardList(const FCardCollection& Cards);
 
 protected:
 	UPROPERTY(meta = (BindWidget))

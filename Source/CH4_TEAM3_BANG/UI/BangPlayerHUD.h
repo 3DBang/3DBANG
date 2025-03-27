@@ -36,7 +36,7 @@ public:
 	UPROPERTY()
 	TObjectPtr<UBangInfoWidget> PlayerInfoWidgetInstance;
 
-	void ShowDrawCardUI(const TArray<FSingleCard>& Cards);
+	void ShowDrawCardUI(const FCardCollection& Cards);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void SetupTurnCardSelection(ECardSelectPurpose Purpose = ECardSelectPurpose::UseCard, FText ButtonText = INVTEXT("사용하기"), int32 NumCardsToSelect = 1);
