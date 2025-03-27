@@ -190,6 +190,24 @@ public:
 	UFUNCTION()
 	void CloseCamera();
 
+	TMap<TObjectPtr<ABangPlayerController>, TPair<FVector, FRotator>> PlayersTransfrom;
+
+	UFUNCTION()
+	void ReSpawnPlayerAtTurn();
+
+	UFUNCTION(BlueprintCallable)
+	void ReSpawnPlayerAtRestart();
+	
+	UFUNCTION(BlueprintCallable)
+	void ReSpawnPlayerAtRestartBluePrint();
+
+	UFUNCTION()
+	void NewPossessCharacter(AController* PlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation);
+
+	UFUNCTION()
+	void AtPlayerDie(AController* DeadPlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation);
+
 private:
-	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum	
+	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum
+
 };
