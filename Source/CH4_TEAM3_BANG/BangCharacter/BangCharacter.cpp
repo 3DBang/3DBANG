@@ -111,16 +111,16 @@ void ABangCharacter::BeginPlay()
 	}
 	if (APlayerStart* TempPlayerStart = GetFlaggedActor())
 	{
-		FVector TargetLocation = TempPlayerStart->GetActorLocation();
-		FlagLocation = TargetLocation;
-		TargetLocation.Z += 600.f;
+		FVector TargetLocation = TempPlayerStart->GetActorLocation() + FVector(0, 0, 600.f);
 		BangCamera->SetWorldLocation(TargetLocation);
-		FVector DownVector = -TempPlayerStart->GetActorUpVector();
-		DownVector.X -= 0.0001f;
-		FRotator CameraRotation = DownVector.Rotation();
-		//CameraRotation.Yaw += 180.0001f;
+		FVector Forward = (TempPlayerStart->GetActorLocation() - TargetLocation).GetSafeNormal();
+		FQuat LookQuat = FRotationMatrix::MakeFromXZ(Forward, FVector::UpVector).ToQuat();
+		BangCamera->SetWorldRotation(LookQuat);
+		FRotator CameraRotation = BangCamera->GetComponentRotation();
+		CameraRotation.Yaw += 180.1f;
 		BangCamera->SetWorldRotation(CameraRotation);
-
+		FVector NewForward = BangCamera->GetForwardVector();
+		UE_LOG(LogTemp, Warning, TEXT("[Character] Forward Vector = %s"), *NewForward.ToString());
 	}
 	if (CameraBoom)
 	{

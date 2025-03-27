@@ -917,13 +917,14 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 					if (bIsFirstCameraMode)
 					{
 						//Re -> Test 주석 지우지 말아주세요    (PlayerUniqueId-1)-> FindIndex으로  값 변경해야합니다
-						//
 						float Radian = (2 * PI / PlayerCount) * (PlayerUniqueID - 1);
-						float Degree = FMath::RadiansToDegrees(Radian);
-						FRotator CurrentRotation = BangPlayer->BangCamera->GetComponentRotation();
-						CurrentRotation.Yaw += Degree;
-						BangPlayer->BangCamera->SetWorldRotation(CurrentRotation); //Local ->World 로 바꿔봤음 안될 시 이거 처리 
-						UE_LOG(LogTemp, Warning, TEXT("Rotation is %s"), *BangPlayer->BangCamera->GetComponentRotation().ToString());
+						FQuat CurrentQuat = BangPlayer->BangCamera->GetComponentQuat();
+						FQuat DeltaQuat = FQuat(FVector::UpVector, Radian); 
+						FQuat NewQuat = DeltaQuat * CurrentQuat;
+						BangPlayer->BangCamera->SetWorldRotation(NewQuat);
+						FVector Forward = BangPlayer->BangCamera->GetForwardVector();
+						
+						UE_LOG(LogTemp, Warning, TEXT("[PlayerController] Forward Vector = %s"), *Forward.ToString());
 					}
 					bIsFirstCameraMode = false;
 					BangPlayer->BangCamera->Activate();
