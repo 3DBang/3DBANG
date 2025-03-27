@@ -1,5 +1,4 @@
 #include "BangPlayerController.h"
-#include "Card/ActiveCard/BangActiveCard.h"
 #include "EnhancedInputSubsystems.h"
 #include "Data/CardEnums.h"
 #include "GameMode/BangGameMode.h"
@@ -18,9 +17,7 @@
 #include "Components/CapsuleComponent.h"
 #include "UI/Card/CardList.h"
 #include "UI/Chat/BangInGameChattingWidget.h"
-#include "UI/Card/TableCard.h" 
 #include "UI/Chat/PlayerListGameLog.h"
-#include "UI/Card/CardDescriptionWidget.h"
 #include "Data/PlayerInformation.h"
 #include "UI/PlayerInfo/BangInfoWidget.h"
 #include "Components/MeshComponent.h"
@@ -879,10 +876,6 @@ void ABangPlayerController::MouseClicked()
 	{
 		return;
 	}*/
-
-
-	
-
 	
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
@@ -1515,7 +1508,6 @@ void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArra
 		}
 	}
 }
-
 
 /**
  * 서버에서 카드를 뽑고 해당 내용을 로그에 기록하는 작업을 처리합니다.
