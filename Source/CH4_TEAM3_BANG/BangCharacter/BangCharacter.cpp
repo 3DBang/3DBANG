@@ -54,14 +54,6 @@ ABangCharacter::ABangCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
 
-	/*InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("InteractionWidget"));
-	InteractionWidgetComponent->SetupAttachment(RootComponent);
-	InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
-	InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200));
-	InteractionWidgetComponent->SetRelativeLocation(FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight()  + 50.f));
-	InteractionWidgetComponent->SetVisibility(false);
-	InteractionWidgetComponent->SetHiddenInGame(true);*/
-
 	if (UPrimitiveComponent* PrimComponent = Cast<UPrimitiveComponent>(GetRootComponent()))
 	{
 		PrimComponent->SetGenerateOverlapEvents(true);
@@ -69,15 +61,7 @@ ABangCharacter::ABangCharacter()
 		PrimComponent->OnBeginCursorOver.AddDynamic(this, &ABangCharacter::OnCursorBegin);
 		PrimComponent->OnEndCursorOver.AddDynamic(this, &ABangCharacter::OnCursorEnd);
 	}
-	/*if (UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(GetMesh()))
-	{
-		MeshComp->SetGenerateOverlapEvents(true);
-		MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		MeshComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-		MeshComp->OnBeginCursorOver.AddDynamic(this, &ABangCharacter::OnCursorBegin);
-		MeshComp->OnEndCursorOver.AddDynamic(this, &ABangCharacter::OnCursorEnd);
-	}*/
-
+	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 }
 
 // Called when the game starts or when spawned
@@ -195,6 +179,39 @@ void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 					ETriggerEvent::Completed,
 					this,
 					&ABangCharacter::Click
+				);
+			}
+			if (PlayerController->SprintAction)
+			{
+				// IA_Sprint 액션 키를 "누르고 있는 동안" StartSprint() 호출
+				EnhancedInput->BindAction(
+					PlayerController->SprintAction,
+					ETriggerEvent::Triggered,
+					this,
+					&ABangCharacter::StartSprint
+				);
+				// IA_Sprint 액션 키에서 "손을 뗀 순간" StopSprint() 호출
+				EnhancedInput->BindAction(
+					PlayerController->SprintAction,
+					ETriggerEvent::Completed,
+					this,
+					&ABangCharacter::StopSprint
+				);
+			}
+			if (PlayerController->JumpAction)
+			{
+				EnhancedInput->BindAction(
+					PlayerController->JumpAction,
+					ETriggerEvent::Triggered,
+					this,
+					&ABangCharacter::StartJump
+				);
+
+				EnhancedInput->BindAction(
+					PlayerController->JumpAction,
+					ETriggerEvent::Completed,
+					this,
+					&ABangCharacter::StopJump
 				);
 			}
 
@@ -469,5 +486,35 @@ void ABangCharacter::Multicast_SetOutline_Implementation(bool bEnable, int32 Ste
 	{
 		MeshComp->SetRenderCustomDepth(bEnable);
 		MeshComp->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+	}
+}
+void ABangCharacter::StartSprint(const FInputActionValue& value)
+{
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+	}
+}
+
+void ABangCharacter::StopSprint(const FInputActionValue& value)
+{
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+	}
+}
+void ABangCharacter::StartJump(const FInputActionValue& value)
+{
+	if (value.Get<bool>())
+	{
+		Jump();
+	}
+}
+
+void ABangCharacter::StopJump(const FInputActionValue& value)
+{
+	if (!value.Get<bool>())
+	{
+		StopJumping();
 	}
 }

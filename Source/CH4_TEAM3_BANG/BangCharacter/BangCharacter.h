@@ -53,6 +53,19 @@ public:
 	UFUNCTION()
 	void Click(const FInputActionValue& Value);
 
+	UFUNCTION()
+	void StartSprint(const FInputActionValue& value);
+
+	UFUNCTION()
+	void StopSprint(const FInputActionValue& value);
+
+	UFUNCTION()
+	void StartJump(const FInputActionValue& value);
+	
+	UFUNCTION()
+	void StopJump(const FInputActionValue& value);
+
+
 	/*UPROPERTY(BlueprintAssignable)
 	FOnMouseClicked OnMouseClicked;*/
 
@@ -127,4 +140,14 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SetOutline(bool bEnable, int32 StencilValue);
+
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float NormalSpeed = 600.f; 
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float SprintSpeedMultiplier = 1.5f; 
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	float SprintSpeed = 900.f;
 };

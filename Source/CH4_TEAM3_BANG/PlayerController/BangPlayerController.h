@@ -316,6 +316,13 @@ public:
 	bool bIsFirstCameraMode = true;
 	inline FString GetPlayerNickname(){return PlayerNickname;}
 
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> JumpAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> SprintAction = nullptr;
+
 };
 
 
