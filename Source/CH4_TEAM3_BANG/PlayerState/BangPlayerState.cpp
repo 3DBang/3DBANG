@@ -50,6 +50,15 @@ void ABangPlayerState::LoosePlayerHealth(const uint32& FromUniqueID, const uint3
 			Server_PlayerDead(TargetUniqueID);
 		}
 	}
+	else
+	{
+		ABangPlayerController* TargetPC;
+		FindTargetPlayerController(TargetUniqueID, TargetPC);
+		if (TargetPC)
+		{
+			TargetPC->UpdatePlayerHP(PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth -= Amount);
+		}
+	}
 }
 
 void ABangPlayerState::GainPlayerHealth(const uint32& TargetUniqueID, int32 Amount)
@@ -632,6 +641,27 @@ void ABangPlayerState::FindTargetPlayerState(const uint32 TargetUniqueID, FBangS
 				if (OtherPlayerState != this && OtherPlayerState->PlayerUniqueID == TargetUniqueID)
 				{
 					OutPlayerState.State = OtherPlayerState;
+					return;
+				}
+			}
+		}
+	}
+}
+
+void ABangPlayerState::FindTargetPlayerController(const uint32 TargetUniqueID, ABangPlayerController*& OutPlayerController) const
+{
+	const TObjectPtr<UWorld> World = GetWorld();
+	if (!World) return;
+
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PlayerController = Cast<ABangPlayerController>(It->Get()))
+		{
+			if (ABangPlayerState* OtherPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
+			{
+				if (OtherPlayerState->PlayerUniqueID == TargetUniqueID)
+				{
+					OutPlayerController = PlayerController;
 					return;
 				}
 			}
