@@ -380,6 +380,8 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	case ECardSelectPurpose::StealFromOpponent:
 		// 상대의 보유 카드 중 1장을 선택 (정보가 안 보일 수 있음)
 		//MyInfo.SelectableCards = Target.MyCard 를 화면에 뒷면으로 띄워야하고 뽑아야되는 카드 수는 1
+		ButtonText = FText::AsCultureInvariant(L"뺏어부리기");
+		
 		break;
 
 	case ECardSelectPurpose::RespondToDuel:
@@ -413,6 +415,18 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 			(Purpose == ECardSelectPurpose::RespondToDuel) ||
 			(Purpose == ECardSelectPurpose::RespondToIndians) ||
 			(Purpose == ECardSelectPurpose::RespondToAttack);
+
+	if (Purpose == ECardSelectPurpose::StealFromOpponent)
+	{
+		if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			auto BangPS = GetPlayerState<ABangPlayerState>();
+			// ㅈㅍㅈㅍ
+			TArray<FPlayerCardSymbol> TargetFieldCards = BangPS->PlayerInfo.SelectableCards.PlayerCards;
+			TArray<FPlayerCardSymbol> TargetHandCards = BangPS->PlayerInfo.HiddenSelectableCards.PlayerCards;
+			BangHUD->ShowDrawCardUI();
+		}
+	}
 
 	if (bMyCardCollection)
 	{

@@ -283,6 +283,8 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->TrapCards.PlayerCards);
 			HiddenCardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards);
 
+			auto a = PlayerInfo.SelectableCards.PlayerCards;
+
 			PlayerInfo.SelectableCards.PlayerCards.Append(CardList.PlayerCards);
 			PlayerInfo.HiddenSelectableCards.PlayerCards.Append(HiddenCardList.PlayerCards);
 			Server_SetPlayerInfo(PlayerInfo);

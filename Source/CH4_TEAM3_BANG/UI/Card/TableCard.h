@@ -22,6 +22,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void InitializeCardList(const FCardCollection& Cards);
 
+	FOnTableCardClickedDelegate TableCardClickedDelegate;
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UWrapBox* CardContainer;
@@ -30,7 +32,7 @@ protected:
 	TSubclassOf<UCard> CardWidgetClass;
 
 private:
-	FOnTableCardClickedDelegate TableCardClickedDelegate;
+	
 	
 	ECardSelectPurpose CardSelectPurpose; // 카드 선택 목적 저장
 
