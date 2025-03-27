@@ -111,15 +111,16 @@ void ABangCharacter::BeginPlay()
 	}
 	if (APlayerStart* TempPlayerStart = GetFlaggedActor())
 	{
-		FVector TargetLocation = TempPlayerStart->GetActorLocation();
-		FlagLocation = TargetLocation;
-		TargetLocation.Z += 600.f;
+		FVector TargetLocation = TempPlayerStart->GetActorLocation() + FVector(0, 0, 600.f);
 		BangCamera->SetWorldLocation(TargetLocation);
-		FVector DownVector = -TempPlayerStart->GetActorUpVector();
-		FRotator CameraRotation = DownVector.Rotation();
-		CameraRotation.Yaw += 180.f;
+		FVector Forward = (TempPlayerStart->GetActorLocation() - TargetLocation).GetSafeNormal();
+		FQuat LookQuat = FRotationMatrix::MakeFromXZ(Forward, FVector::UpVector).ToQuat();
+		BangCamera->SetWorldRotation(LookQuat);
+		FRotator CameraRotation = BangCamera->GetComponentRotation();
+		CameraRotation.Yaw += 180.1f;
 		BangCamera->SetWorldRotation(CameraRotation);
-
+		FVector NewForward = BangCamera->GetForwardVector();
+		UE_LOG(LogTemp, Warning, TEXT("[Character] Forward Vector = %s"), *NewForward.ToString());
 	}
 	if (CameraBoom)
 	{
@@ -204,7 +205,26 @@ void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ABangCharacter::Move(const FInputActionValue& Value)
 {
-	// PC접근 -> PS접근 -> PlayerInfo MyTurn 확인 후 PC에 유니크 아이디랑 다르면 리턴
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
+	if (!BPS)
+	{
+		return;
+	}
+	uint32 tmpID = BPS->PlayerUniqueID;
+	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
+	if (!PlayerInform)
+	{
+		return;
+	}
+	if (!PlayerInform->bIsMyTurn)
+	{
+		return;
+	}
+
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (!FMath::IsNearlyZero(MovementVector.X))
