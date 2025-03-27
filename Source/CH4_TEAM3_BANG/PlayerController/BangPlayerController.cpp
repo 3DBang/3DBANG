@@ -24,7 +24,7 @@
 #include "UI/Card/CardDescriptionWidget.h"
 #include "Data/PlayerInformation.h"
 #include "UI/PlayerInfo/BangInfoWidget.h"
-
+#include "Components/MeshComponent.h"
 ABangPlayerController::ABangPlayerController()
 {
 }
@@ -624,6 +624,12 @@ void ABangPlayerController::Server_HUDLoaded_Implementation()
 	GameMode->UpdatePlayerHUD();
 }
 
+/**
+ * 서버로 채팅 메시지를 전송합니다. 입력된 메시지가 귓속말일 경우 타겟 플레이어 닉네임을 추출하고,
+ * 일반 메시지일 경우 전체 채팅으로 전달됩니다.
+ *
+ * @param Message 전송하려는 채팅 메시지의 문자열입니다. 귓속말의 경우 "/{타겟 플레이어 아이디} {메시지}" 형식으로 전달됩니다.
+ */
 void ABangPlayerController::SendMessageToServer(FString Message)
 {
 	if (Message.IsEmpty()) return;
@@ -750,6 +756,13 @@ void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& 
 	}
 }
 
+/**
+ * 클라이언트로부터 메시지를 수신하고, 해당 메시지를 게임 상태를 통해 브로드캐스트합니다.
+ *
+ * @param Message 클라이언트가 전송한 메시지입니다.
+ * @param FromNickname 메시지를 보낸 플레이어의 닉네임입니다.
+ * @param ToPlayerNickname 메시지를 받을 플레이어의 닉네임입니다.
+ */
 void ABangPlayerController::Server_SendMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
 {
 	if (ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>())
@@ -788,6 +801,16 @@ void ABangPlayerController::Server_StartTest_Implementation()
 	GameMode->StartTest();
 }
 
+/**
+ * 테스트 버튼 클릭 시 호출되는 함수입니다.
+ * 서버 측에서 테스트를 위한 다양한 작업을 트리거합니다.
+ *
+ * 내부적으로 다음 동작을 수행합니다:
+ * 1. 서버 테스트 시작 (Server_StartTest)
+ * 2. 플레이어 리스트 브로드캐스트 요청 (Server_RequestPlayerListBroadcast)
+ * 3. 카드 드로우 테스트 (Server_TestDrawCards)
+ * 4. 게임 로그 송신 요청 (Server_RequestSendGameLog)
+ */
 void ABangPlayerController::TestButtonCLicked()
 {
 	UE_LOG(LogTemp, Error, TEXT("TestButtonCLicked"));
@@ -797,8 +820,14 @@ void ABangPlayerController::TestButtonCLicked()
 	Server_RequestPlayerListBroadcast();
 	Server_TestDrawCards();
 
-	Server_RequestSendGameLog();
-
+	// 테스트 버튼을 누르면 로그가 찍히는듯? 여기서 왜 로그를 찍는지를 변수로 보내줘야 할듯?
+	Server_RequestSendGameLog(FString::Printf(TEXT("게임 시작")));
+	// 플레이어 스테이트에서
+	// 카드 사용
+	// 턴 오는거
+	// 누가 죽고
+	// 피까이고
+	
 }
 
 ///////////////////////////
@@ -821,7 +850,18 @@ void ABangPlayerController::MouseClicked()
 	{
 		return;
 	}
+
+	//문제점1. 이러면 유저가 자기턴이 아닐경우에는 다른 유저를 클릭해 정보를 볼 수 없다.
+	//정보는 탑뷰에서만 막는다 
+
+	/*if (!Information->bIsMyTurn) 
+	{
+		return;
+	}*/
+
+
 	
+
 	
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
@@ -853,6 +893,15 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		return;
 	}
 
+	AGameStateBase* BGameState = GetWorld()->GetGameState<AGameStateBase>();
+	if (!BGameState)
+	{
+		return;
+	}
+	int32 PlayerCount = BGameState->PlayerArray.Num();
+	
+
+
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
 		if (BangPlayer->GetFirstPersonMode())
@@ -879,13 +928,13 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		SetViewTarget(TempCam);
 
 		const FVector StartLocation = StartTransform.GetLocation();
-		const FVector EndLocation = EndCam->GetComponentLocation() + 100.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
+		const FVector EndLocation = EndCam->GetComponentLocation() + 200.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
 
 		//BangCamera의 위치를 한번 봐야할듯
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
 
 		GetWorldTimerManager().SetTimer(CameraOpenBlendTimerHandle, FTimerDelegate::CreateLambda(
-			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation]() mutable
+			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, PlayerCount]() mutable
 			{
 				//좋아..상대시간 굳 
 				float Elapsed = FPlatformTime::Seconds() - CameraOpenBlendStartTime;
@@ -902,6 +951,13 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 						FColor::Red,
 						TEXT("Alpha")
 					);
+					//Re -> PlayerUniqueID -> FindIndex 
+					float Radian = (2 * PI / PlayerCount) * (PlayerUniqueID - 1);
+					float Degree = FMath::RadiansToDegrees(Radian);
+					FRotator CurrentRotation = BangPlayer->BangCamera->GetComponentRotation();
+					CurrentRotation.Yaw += Degree;
+					BangPlayer->BangCamera->SetRelativeRotation(CurrentRotation);
+
 					BangPlayer->BangCamera->Activate();
 					SetViewTarget(BangPlayer);
 					bIsCameraMode = true;
@@ -919,7 +975,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 					TempCam->Destroy();
 				}
 			}), 0.01f, true);
-		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 30.f, false);
+		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 300.f, false);
 	}
 
 }
@@ -998,7 +1054,6 @@ void ABangPlayerController::Server_CloseCamera_Implementation()
 			FColor::Red,
 			TEXT("Duration End")
 		);
-
 	}
 	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (GM)
@@ -1205,21 +1260,63 @@ UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const 
 
 void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue)
 {
-	//여기에서 컨트롤러 아이디랑 비교하면될듯 
 	if (!IsLocalController())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("==================================================="));
+		UE_LOG(LogTemp, Warning, TEXT("서버라 리턴합니다 !"));
+		UE_LOG(LogTemp, Warning, TEXT("[[Outline] Input is %d , Has %d"), OtherPlayerUniqueID, PlayerUniqueID);
+		UE_LOG(LogTemp, Warning, TEXT("==================================================="));
+		return;
+	}
+
+	//여기에서 컨트롤러 아이디랑 비교하면될듯 
+	UE_LOG(LogTemp, Warning, TEXT("==================================================="));
+	UE_LOG(LogTemp, Warning, TEXT("[[Outline] Input is %d , Has %d"), OtherPlayerUniqueID,PlayerUniqueID);
+	UE_LOG(LogTemp, Warning, TEXT("[Outline] NetMode=%d"), (int)GetNetMode());
+	APawn* MyPawn = GetPawn();
+	if (!MyPawn)
 	{
 		GEngine->AddOnScreenDebugMessage(
 			-1,
 			5.0f,
 			FColor::Yellow,
-			FString::Printf(TEXT("서버라서..리턴됩니다 "))
+			FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
 		);
-		UE_LOG(LogTemp, Error, TEXT("서버라서..리턴됩니다"));
-		return;
 	}
+	TArray<UMeshComponent*> Meshes;
+	MyPawn->GetComponents<UMeshComponent>(Meshes);
+
+	for (UMeshComponent* Mesh : Meshes)
+	{
+		Mesh->SetRenderCustomDepth(bEnable);
+		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			5.0f,
+			FColor::Yellow,
+			FString::Printf(TEXT("매쉬생성 완료 "))
+		);
+		UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
+			*Mesh->GetName(),
+			Mesh->bRenderCustomDepth,
+			Mesh->CustomDepthStencilValue
+		);
+	}
+
+	//if (!IsLocalController())
+	//{
+	//	GEngine->AddOnScreenDebugMessage(
+	//		-1,
+	//		5.0f,
+	//		FColor::Yellow,
+	//		FString::Printf(TEXT("서버라서..리턴됩니다 "))
+	//	);
+	//	UE_LOG(LogTemp, Error, TEXT("서버라서..리턴됩니다"));
+	//	return;
+	//}
+	//
 	
-	
-	ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>();
+	/*ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>();
 	if (!BangGameState) return;
 
 	for (int i = 0; i < BangGameState->PlayerArray.Num(); i++)
@@ -1236,7 +1333,7 @@ void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerU
 			{
 				continue;
 			}
-			UE_LOG(LogTemp, Error, TEXT("[SetOutline] find OtherPlayerUniqueID"));
+			UE_LOG(LogTemp, Warning, TEXT("[SetOutline] find OtherPlayerUniqueID"));
 
 			APawn* MyPawn = BangPS->GetPawn();
 			if (!MyPawn)
@@ -1256,10 +1353,21 @@ void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerU
 			{
 				Mesh->SetRenderCustomDepth(bEnable);
 				Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					5.0f,
+					FColor::Yellow,
+					FString::Printf(TEXT("매쉬생성 완료 "))
+				);
+				UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
+					*Mesh->GetName(),
+					Mesh->bRenderCustomDepth,
+					Mesh->CustomDepthStencilValue
+				);
 			}
-			UE_LOG(LogTemp, Warning, TEXT("[PlayerController OutLine] : OutLine생성"));
+
 		}
-	}
+	}*/
 	/*APawn* MyPawn = GetPawn();
 	if (!MyPawn) return;
 
@@ -1454,6 +1562,11 @@ void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArra
 	}
 }
 
+
+/**
+ * 서버에서 카드를 뽑고 해당 내용을 로그에 기록하는 작업을 처리합니다.
+ * 게임 모드 객체를 가져와 카드 뽑기 및 로그 작업을 수행합니다.
+ */
 void ABangPlayerController::Server_TestDrawCards_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT(" Server_TestDrawCards_Implementation() 실행"));
@@ -1463,6 +1576,12 @@ void ABangPlayerController::Server_TestDrawCards_Implementation()
 	}
 }
 
+/**
+ * 클라이언트에게 뽑은 카드들을 화면에 표시하는 작업을 수행합니다.
+ * HUD 클래스에서 뽑은 카드 UI를 출력하는 함수 호출을 포함합니다.
+ *
+ * @param DrawnCards 클라이언트가 뽑은 카드들의 정보를 포함한 배열입니다.
+ */
 void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FSingleCard>& DrawnCards)
 {
 	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
@@ -1470,11 +1589,49 @@ void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FS
 	
 }
 
-void ABangPlayerController::Server_RequestSendGameLog_Implementation()
+/**
+ * 서버에 게임 로그 전송 요청을 처리합니다.
+ * 서버의 게임 모드에서 해당 요청을 승인하고 로그를 전송하는 작업을 수행합니다.
+ */
+void ABangPlayerController::Server_RequestSendGameLog_Implementation(const FString& GameLogMessage)
 {
 	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
-		GM->SendGameLog(this); 
+		GM->SendGameLog(GameLogMessage); 
 	}
 }
-
+//void ABangPlayerController::LocalSetOutline(bool bEnable, int32 StencilValue)
+//{
+//	if ((int)GetNetMode() == 1)return;
+//	UE_LOG(LogTemp, Warning, TEXT("==================================================="));
+//	UE_LOG(LogTemp, Warning, TEXT("[Outline] NetMode=%d"), (int)GetNetMode());
+//	APawn* MyPawn = GetPawn();
+//	if (!MyPawn)
+//	{
+//		GEngine->AddOnScreenDebugMessage(
+//			-1,
+//			5.0f,
+//			FColor::Yellow,
+//			FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
+//		);
+//	}
+//	TArray<UMeshComponent*> Meshes;
+//	MyPawn->GetComponents<UMeshComponent>(Meshes);
+//
+//	for (UMeshComponent* Mesh : Meshes)
+//	{
+//		Mesh->SetRenderCustomDepth(bEnable);
+//		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+//		GEngine->AddOnScreenDebugMessage(
+//			-1,
+//			5.0f,
+//			FColor::Yellow,
+//			FString::Printf(TEXT("매쉬생성 완료 "))
+//		);
+//		UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
+//			*Mesh->GetName(),
+//			Mesh->bRenderCustomDepth,
+//			Mesh->CustomDepthStencilValue
+//		);
+//	}
+//}

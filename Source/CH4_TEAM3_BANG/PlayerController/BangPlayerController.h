@@ -254,7 +254,7 @@ public:
 	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 
 	UFUNCTION(Server, Reliable)
-	void Server_RequestSendGameLog();
+	void Server_RequestSendGameLog(const FString& GameLogMessage);
 
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
@@ -312,6 +312,11 @@ protected:
 
 public:
 	void UpdatePlayerInfo(uint32 BangUniqueID,int32 HP, int32 Range);
+
+	/*void LocalSetOutline(bool bEnable, int32 StencilValue);*/
+
+
+	inline FString GetPlayerNickname(){return PlayerNickname;}
 };
 
 

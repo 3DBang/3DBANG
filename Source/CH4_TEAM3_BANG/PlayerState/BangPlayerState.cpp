@@ -684,11 +684,7 @@ void ABangPlayerState::Client_StartTurn_Implementation(const int32& InPlayerUniq
 		ABangGameState* GameState = Cast<ABangGameState>(World->GetGameState());
 		if (!PlayerController || !OtherPlayerState || !GameState) return;
 
-		//전체에게 메세지 뿌리기
-		FString ChatMessage = FString::Printf(TEXT("플레이어 %s의 차례!"), *PlayerInformation->PlayerName);  
-		FString FromNickname = TEXT("Server"); 
-		FString ReciverNickname = TEXT("All"); 
-		GameState->ReceiveMessage(ChatMessage, FromNickname, ReciverNickname);
+		
 		
 		// 현재 플레이어 턴이면
 		if (PlayerController->PlayerUniqueID == InPlayerUniqueID)
@@ -769,6 +765,18 @@ void ABangPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& O
 	// PlayerStat을 모든 클라에 복제하겠다는 뜻
 	DOREPLIFETIME(ABangPlayerState, PlayerInfo);
 	DOREPLIFETIME(ABangPlayerState, PlayerUniqueID);
+}
+
+void ABangPlayerState::Server_StartTurnReturn_Implementation(const FString& LogMessage)
+{
+	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		return;
+	}
+
+	GameMode->SendGameLog(LogMessage);
 }
 
 // 카드매니저에서 카드정보 가져오기
