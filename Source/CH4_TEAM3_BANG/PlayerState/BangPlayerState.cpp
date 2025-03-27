@@ -765,7 +765,7 @@ void ABangPlayerState::Server_StartTurnReturn_Implementation(const FString& LogM
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (!GameMode)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_StartTurnReturn_Implementation] BeginPlay Controller GameMode is NULL!"));
 		return;
 	}
 

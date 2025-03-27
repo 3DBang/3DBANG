@@ -1030,6 +1030,7 @@ void ABangGameMode::ShowTableCardsToAll()
 	UE_LOG(LogTemp, Warning, TEXT("ShowTableCardsToAll 호출됨"));
 	DrawCardsAndNotifyClients(3);
 }
+
 void ABangGameMode::SendGameLog(AController* Controller)
 {
 	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(Controller))
