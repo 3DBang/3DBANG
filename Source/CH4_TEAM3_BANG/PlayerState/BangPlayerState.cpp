@@ -312,6 +312,7 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 		}
 	case EActiveType::GeneralStore:
 		{
+			//좌표2
 			MiniTurnUniqueID = FromUniqueID;
 			FPlayerCardSymbol SingleSymbolCard;
 			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
@@ -547,6 +548,7 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 		}
 	case EActiveType::GeneralStore:
 		{
+			// 좌표2
 			// PC에 카드 선택 요구 SelectableCards에서 하나 선택하고 MyCards로 갱신한뒤 SelectableCards 다 삭제해야함
 			// 남은 카드가 없다면 잡화점 종료 처리
 		if (PlayerInfo.SelectableCards.PlayerCards.Num() == 0)
@@ -741,6 +743,13 @@ void ABangPlayerState::Server_EndTurn_Implementation(const int32 InPlayerUniqueI
 	GameMode->EndTurn(InPlayerUniqueID);
 }
 
+/**
+ * 서버에서 플레이어가 카드를 뽑는 작업을 처리하는 함수입니다.
+ *
+ * @param FromUniqueID 카드를 보내는 대상의 고유 ID입니다.
+ * @param CardCount 뽑을 카드의 개수입니다.
+ * @param bIsForce 강제로 카드를 뽑아야 하는지 여부를 결정합니다.
+ */
 void ABangPlayerState::Server_DrawCard_Implementation(const uint32 FromUniqueID, const uint16 CardCount, const bool bIsForce)
 {
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
@@ -754,7 +763,7 @@ void ABangPlayerState::Server_DrawCard_Implementation(const uint32 FromUniqueID,
 	{
 		GameMode->ForceUpdate_DrawCard(FromUniqueID, CardCount);
 	}
-	else
+	else // 좌표 
 	{
 		GameMode->DrawCard(CardCount);
 	}
