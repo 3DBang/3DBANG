@@ -276,16 +276,27 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		//사용할 카드와 카드 타입 저장
 		UsingCard = SingleCard;
 		UsingActiveType = OutActiveType;
-		Server_OpenCamera();
+		//Server_OpenCamera();
 		//적 선택단계로 넘어가기(탑뷰)
-		// Server_UseCard(SingleCard, TargetPlayerID);
 	}
 	else
 	{
-		//사용후 초기화
-		//Server_UseCard(SingleCard, TargetPlayerID);
-		CardList->RemoveSelectedCard(SingleCard);
-		InitializUsingCard();
+		if (OutPassiveType == EPassiveType::None)
+		{
+			//사용후 초기화
+			//Server_UseCard(SingleCard, TargetPlayerID);
+			CardList->RemoveSelectedCard(SingleCard);
+			InitializUsingCard();
+		}
+		else
+		{
+			if (PS->CheckIsCardAble(PlayerUniqueID, SingleCard))
+			{
+				//Server_UseCard(SingleCard, TargetPlayerID);
+				CardList->RemoveSelectedCard(SingleCard);
+				InitializUsingCard();
+			}
+		}
 	}
 }
 
@@ -515,22 +526,29 @@ void ABangPlayerController::OnCardSelectionComplete(
 		break;
 	}
 	case ECardSelectPurpose::RespondToDuel:
-	{	// 결투 중 뱅 카드 선택
+	{
 		if (SelectedCards.CardList.Num() == 0)
 		{
-			//PS->LoosePlayerHealth(PlayerUniqueID, 1);
-		}
-		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
-		if(OutActiveType == EActiveType::Bang)
-		{
-			// 뱅 카드 사용(결투 반격 성공)
-			// 카드 지우기
-			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
+			PS->HandleDuelResponse(PlayerUniqueID, false);
 		}
 		else
-		{
-			Client_RequestCardSelection_Implementation(1, ECardSelectPurpose::RespondToDuel);
-			//잘못된 카드 사용 처리
+		{	
+			PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
+
+			// 결투 중 카드 선택
+			if (OutActiveType == EActiveType::Bang)
+			{
+				const FSingleCard& Card = SelectedCards.CardList[0];
+				// 뱅 카드 사용(결투 반격 성공)
+				PS->HandleDuelResponse(PlayerUniqueID, true);
+				MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
+				PS->RestoreCard(PlayerUniqueID, Card);
+				PS->Server_SetPlayerInfo(PS->PlayerInfo);
+			}
+			else
+			{
+				//잘못된 카드 사용 처리
+			}
 		}
 		break;
 	}
@@ -1573,7 +1591,7 @@ void ABangPlayerController::Server_TestDrawCards_Implementation()
 	UE_LOG(LogTemp, Warning, TEXT(" Server_TestDrawCards_Implementation() 실행"));
 	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
-		GM->Test_DrawAndLogCards(); // 여기서 카드 뽑고 로그 남기고 → 아래 클라이언트 함수 호출해야 함
+		// 여기서 카드 뽑고 로그 남기고 → 아래 클라이언트 함수 호출해야 함
 	}
 }
 
@@ -1583,11 +1601,17 @@ void ABangPlayerController::Server_TestDrawCards_Implementation()
  *
  * @param DrawnCards 클라이언트가 뽑은 카드들의 정보를 포함한 배열입니다.
  */
-void ABangPlayerController::Client_ShowDrawnCards_Implementation(const TArray<FSingleCard>& DrawnCards)
+void ABangPlayerController::Client_ShowDrawnCards_Implementation()
 {
-	if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
-		HUD->ShowDrawCardUI(DrawnCards);
-	
+	if (const TObjectPtr<ABangPlayerState> BangPlayerState = GetPlayerState<ABangPlayerState>())
+	{
+		FCardCollection OutCardCollection;
+		BangPlayerState->GetSelectableCard(PlayerUniqueID, OutCardCollection);
+		if (ABangPlayerHUD* HUD = Cast<ABangPlayerHUD>(GetHUD()))
+		{
+			HUD->ShowDrawCardUI(OutCardCollection);
+		}
+	}
 }
 
 /**

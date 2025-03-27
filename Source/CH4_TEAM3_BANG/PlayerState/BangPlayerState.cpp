@@ -167,6 +167,19 @@ void ABangPlayerState::GetTrapCard(const int32 InPlayerUniqueID, FCardCollection
 	}
 }
 
+void ABangPlayerState::GetSelectableCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection)
+{
+	if (InPlayerUniqueID == 0 || !CardManager) return;
+
+	for (auto [SymbolType, SymbolNumber] : PlayerInfo.SelectableCards.PlayerCards)
+	{
+		FSingleCard OutFoundCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(SymbolType, SymbolNumber, OutFoundCard);
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::GetSelectableCard] Player ID: %d %s"), InPlayerUniqueID, *OutFoundCard.Card->CardName.ToString());
+		OutCardCollection.CardList.Add(OutFoundCard);
+	}
+}
+
 void ABangPlayerState::GetCardByCharacter(const ECharacterType CharacterType, FSingleCard& OutCard)
 {
 	if (CharacterType == ECharacterType::None || !CardManager) return;
@@ -307,6 +320,11 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
 			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
 			
+			// Duel 초기화
+			CurrentDuel.AttackerID = FromUniqueID;
+			CurrentDuel.DefenderID = ToUniqueID;
+			CurrentDuel.bIsInProgress = true;
+
 			UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
 			break;
 		}
@@ -486,6 +504,7 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 	AController* MyController = Cast<AController>(GetOwner());
 	ABangPlayerController* PC = Cast<ABangPlayerController>(MyController);
 	if (!PC) return;
+
 	switch (ActiveType)
 	{
 	case EActiveType::None:
@@ -543,7 +562,6 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 		{
 			// PC에 뱅 사용여부 전달
 			PC->Client_RequestCardSelection(1, ECardSelectPurpose::RespondToDuel);
-
 			break;
 		}
 	case EActiveType::GeneralStore:
@@ -684,8 +702,6 @@ void ABangPlayerState::Client_StartTurn_Implementation(const int32& InPlayerUniq
 		//게임 스테이트
 		ABangGameState* GameState = Cast<ABangGameState>(World->GetGameState());
 		if (!PlayerController || !OtherPlayerState || !GameState) return;
-
-		
 		
 		// 현재 플레이어 턴이면
 		if (PlayerController->PlayerUniqueID == InPlayerUniqueID)
@@ -773,7 +789,7 @@ void ABangPlayerState::Server_StartTurnReturn_Implementation(const FString& LogM
 	const TObjectPtr<ABangGameMode> GameMode = GetWorld()->GetAuthGameMode<ABangGameMode>();
 	if (!GameMode)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_UseCard_Implementation] BeginPlay Controller GameMode is NULL!"));
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerState::Server_StartTurnReturn_Implementation] BeginPlay Controller GameMode is NULL!"));
 		return;
 	}
 
@@ -830,4 +846,50 @@ FString ABangPlayerState::FPlayerCollectionToString(const FPlayerCollection& Col
 void ABangPlayerState::OnRep_PlayerUniqueID()
 {
 	Client_SetUniqueId(PlayerUniqueID);
+}
+
+
+//듀얼용
+void ABangPlayerState::HandleDuelResponse(uint32 ResponderID, bool bUsedBang)
+{
+	if (!CurrentDuel.bIsInProgress) return;
+
+	if (!bUsedBang)
+	{
+		// 뱅을 못 냈다면 체력 감소
+		uint32 TargetID = (ResponderID == CurrentDuel.AttackerID) ? CurrentDuel.DefenderID : CurrentDuel.AttackerID;
+
+		// 체력 감소 및 게임 상태 처리
+		LoosePlayerHealth(ResponderID, TargetID, 1);
+		CurrentDuel = FDuelInfo(); // 종료
+		// 3. 결투 신청자에게 턴 넘기기 (UseCard로 복귀)
+		FBangSinglePlayerState AttackerState;
+		FindTargetPlayerState(CurrentDuel.AttackerID, AttackerState);
+
+		if (AttackerState.State)
+		{
+			AController* AttackerController = AttackerState.State->GetOwner<AController>();
+			if (ABangPlayerController* AttackerPC = Cast<ABangPlayerController>(AttackerController))
+			{
+				AttackerPC->Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
+			}
+		}
+		//Server_SetPlayerInfo(); // 갱신
+		return;
+	}
+
+	// 다음 턴으로 넘김
+	uint32 NextResponder = (ResponderID == CurrentDuel.AttackerID) ? CurrentDuel.DefenderID : CurrentDuel.AttackerID;
+
+	FBangSinglePlayerState OutPlayerState;
+	FindTargetPlayerState(NextResponder, OutPlayerState);
+
+	if (OutPlayerState.State)
+	{
+		AController* NextPlayerController = OutPlayerState.State->GetOwner<AController>();
+		if (ABangPlayerController* NextPC = Cast<ABangPlayerController>(NextPlayerController))
+		{
+			NextPC->Client_RequestCardSelection(1, ECardSelectPurpose::RespondToDuel);
+		}
+	}
 }

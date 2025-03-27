@@ -57,7 +57,7 @@ public:
 
 	//카드 초기화시 호출
 	UFUNCTION(BlueprintCallable, Category = "Card")
-	void InitializeWithCard(FSingleCard InCard);
+	void InitializeWithCard(const FSingleCard& InCard);
 
 	// 클릭 이벤트 처리 함수
 	UFUNCTION()

@@ -977,10 +977,8 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 					}
 				}
 			}
-			
 		}
 	}
-	
 }
 
 void ABangGameMode::CloseCamera()
@@ -1013,33 +1011,24 @@ void ABangGameMode::CloseCamera()
 	ControllerIDAtCameraMode = INDEX_NONE;
 }
 
-void ABangGameMode::DrawCardsAndNotifyClients(int32 CardCount)
+void ABangGameMode::DrawCardsAndNotifyClients()
 {
-	if (!CardManager) return;
-
-	FCardCollection Drawn;
-	CardManager->HandCards(CardCount, Drawn);
+	if (!CardManager) return;;
 
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::DrawCardsAndNotifyClients] : 카드 전달: %d장 → %s"), Drawn.CardList.Num(), *PC->GetName());
-			PC->Client_ShowDrawnCards(Drawn.CardList);
+			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::DrawCardsAndNotifyClients] : 카드 전달: %s"), *PC->GetName());
+			PC->Client_ShowDrawnCards();
 		}
 	}
-}
-
-void ABangGameMode::Test_DrawAndLogCards()
-{
-	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::Test_DrawAndLogCards] 호출됨"));
-	DrawCardsAndNotifyClients(3);
 }
 
 void ABangGameMode::ShowTableCardsToAll()
 {
 	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::ShowTableCardsToAll] 호출됨"));
-	DrawCardsAndNotifyClients(3);
+	DrawCardsAndNotifyClients();
 }
 
 /**

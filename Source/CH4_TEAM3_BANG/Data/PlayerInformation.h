@@ -331,3 +331,21 @@ struct FPlayerCollection
 		UE_LOG(LogTemp, Error, TEXT("[PlayerInformation::GetPlayerInformation] Player with ID: %u not found. Cannot remove."), InPlayerUniqueID);
 	}
 };
+
+//////////////////////////////
+/// 플레이어 듀얼
+//////////////////////////////
+USTRUCT(BlueprintType)
+struct FDuelInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	uint32 AttackerID = 0;
+
+	UPROPERTY()
+	uint32 DefenderID = 0;
+
+	UPROPERTY()
+	bool bIsInProgress = false;
+};
