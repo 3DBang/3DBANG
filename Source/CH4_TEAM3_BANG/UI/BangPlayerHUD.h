@@ -36,7 +36,12 @@ public:
 	UPROPERTY()
 	TObjectPtr<UBangInfoWidget> PlayerInfoWidgetInstance;
 
+
+	// 보여줄때
 	void ShowDrawCardUI(const FCardCollection& Cards);
+	
+	// 숨길때
+	void HideDrawCardUI();
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void SetupTurnCardSelection(ECardSelectPurpose Purpose = ECardSelectPurpose::UseCard, FText ButtonText = INVTEXT("사용하기"), int32 NumCardsToSelect = 1);

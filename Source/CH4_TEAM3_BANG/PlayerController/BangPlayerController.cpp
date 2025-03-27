@@ -1,5 +1,4 @@
 #include "BangPlayerController.h"
-#include "Card/ActiveCard/BangActiveCard.h"
 #include "EnhancedInputSubsystems.h"
 #include "Data/CardEnums.h"
 #include "GameMode/BangGameMode.h"
@@ -15,13 +14,10 @@
 #include "GameState/BangGameState.h"
 #include "UI/BangPlayerHUD.h"
 #include "Components/WidgetComponent.h"
-#include "EngineUtils.h"
 #include "Components/CapsuleComponent.h"
 #include "UI/Card/CardList.h"
 #include "UI/Chat/BangInGameChattingWidget.h"
-#include "UI/Card/TableCard.h" 
 #include "UI/Chat/PlayerListGameLog.h"
-#include "UI/Card/CardDescriptionWidget.h"
 #include "Data/PlayerInformation.h"
 #include "UI/PlayerInfo/BangInfoWidget.h"
 #include "Components/MeshComponent.h"
@@ -128,7 +124,7 @@ void ABangPlayerController::Client_OnTurnStart_Implementation(const FCardCollect
 	}
 	if (ABangPlayerHUD* BangHUD = Cast<ABangPlayerHUD>(GetHUD())) // HUD 캐스팅 및 유효성 검사
 	{
-		BangHUD->SetupTurnCardSelection();
+		/*BangHUD->SetupTurnCardSelection();*/
 		if (UCardList* CardListWidget = BangHUD->CardListWidgetInstance) // CardListWidgetInstance 유효성 검사
 		{
 			for (const FSingleCard& Card : DrawCards.CardList)
@@ -271,7 +267,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		OutActiveType == EActiveType::CatBalou ||
 		OutActiveType == EActiveType::Duel ||
 		OutActiveType == EActiveType::Jail);
-
+	
 	if (bNeedsTarget)
 	{
 		//사용할 카드와 카드 타입 저장
@@ -296,6 +292,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 				//Server_UseCard(SingleCard, TargetPlayerID);
 				CardList->RemoveSelectedCard(SingleCard);
 				InitializUsingCard();
+				Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s님이 %s 카드를 사용했습니다"), *Info->PlayerName, *SingleCard.Card->CardName.ToString()));
 			}
 		}
 	}
@@ -325,6 +322,7 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	}
 	else
 	{
+		Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s님의 턴이 종료되었습니다."), *MyInfo->PlayerName));
 		PS->Server_EndTurn(PlayerUniqueID);
 		Client_RequestCardSelection(1, ECardSelectPurpose::None);
 	}
@@ -338,8 +336,12 @@ void ABangPlayerController::JCH_Test()
 		UE_LOG(LogTemp, Warning, TEXT("PlayerUniqueID : %d,"), PS->PlayerUniqueID);
 	}
 	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
+	if (!BangPlayerHUD)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerController::JCH_Test] BangPlayerHUD가 없습니다"));
+	}
 	BangPlayerHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
-	Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
+	Client_RequestCardSelection(1, ECardSelectPurpose:: UseCard);
 }
 
 //유저 입력 상황 UI연동
@@ -350,8 +352,6 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	FText ButtonText = FText::FromString(TEXT("선택"));
 
 	UE_LOG(LogTemp, Warning, TEXT("[TEST] Client_RequestCardSelection_Implementation called"));
-	UE_LOG(LogTemp, Warning, TEXT("Purpose: %s"), *UEnum::GetValueAsString(Purpose));
-
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
@@ -365,8 +365,11 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		break;
 	}
 	case ECardSelectPurpose::GeneralStoreDraft:
+		// 좌표
+		// 이때 위젯을 띄워줌
+			// 위젯을 띄워줄때 플레이어 info에서 셀렉트 카드를 
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
-			// 남은 카드가 없다면 잡화점 종료 처리
+		// 남은 카드가 없다면 잡화점 종료 처리
 		break;
 
 	case ECardSelectPurpose::KitCarlsonDrawCard:
@@ -419,6 +422,7 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		}
 	}
 }
+
 void ABangPlayerController::InitializUsingCard()
 {
 	//UsingCard = nullptr;
@@ -447,10 +451,18 @@ void ABangPlayerController::OnCardSelectionComplete(
 		return;
 	}
 
+	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
+
+	if (BangPlayerHUD)
+	{
+		return;
+	}
+	
+	
 	EActiveType OutActiveType;
 	EPassiveType OutPassiveType;
 
-
+	// 좌표1
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
@@ -473,8 +485,13 @@ void ABangPlayerController::OnCardSelectionComplete(
 		break;
 	}
 
+		// 잡화점
 	case ECardSelectPurpose::GeneralStoreDraft:
 	{
+		// 좌표
+		// 잡화점 모드에서 카드를 선택했을때 여기를 호출되도록 바인딩을 해줘야함
+		// 선택을 했으니 위젯은 비활성화 해줘야함
+		BangPlayerHUD->TableCardWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
 		MyInfo->MyCards.AddCardCollectionToPlayerCards(SelectedCards);
 		HandleGeneralStoreSelectionComplete(SelectedCards.CardList[0]);
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
@@ -789,7 +806,7 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	JCH_Test();
+	//JCH_Test();
 	//Server_StartGame();
 }
 
@@ -822,10 +839,12 @@ void ABangPlayerController::TestButtonCLicked()
 	
 	Server_StartTest();
 	Server_RequestPlayerListBroadcast();
-	Server_TestDrawCards();
 
+	// 테스트 버튼 누르면 Draw 카드
+	Server_TestDrawCards();
+	
 	// 테스트 버튼을 누르면 로그가 찍히는듯? 여기서 왜 로그를 찍는지를 변수로 보내줘야 할듯?
-	Server_RequestSendGameLog(FString::Printf(TEXT("게임 시작")));
+	// Server_RequestSendGameLog(FString::Printf(TEXT("게임 시작")));
 	// 플레이어 스테이트에서
 	// 카드 사용
 	// 턴 오는거
@@ -862,10 +881,6 @@ void ABangPlayerController::MouseClicked()
 	{
 		return;
 	}*/
-
-
-	
-
 	
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
@@ -896,23 +911,30 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	{
 		return;
 	}
-
 	AGameStateBase* BGameState = GetWorld()->GetGameState<AGameStateBase>();
 	if (!BGameState)
 	{
 		return;
 	}
 	int32 PlayerCount = BGameState->PlayerArray.Num();
-	
 
-
+	ABangPlayerState* BPS = Cast<ABangPlayerState>(PlayerState);
+	if (!BPS)
+	{
+		return;
+	}
+	int32 FindIndex = BPS->PlayerInfo.FindPlayerSeatByUniquID(PlayerUniqueID);
+	//지금은 PlayerUniqueID가 없기때문에 실험환경에 적합하지 않기때문에
+	//따라서 PlayerUniqueID가 생길 때 실험 해볼 예정 이론상 정확함
+	int32 PlayerCount1 = BPS->PlayerInfo.Players.Num();
+	UE_LOG(LogTemp, Warning, TEXT("PlayerCount1 is %d"),PlayerCount1);
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
 		if (BangPlayer->GetFirstPersonMode())
 		{
 			BangPlayer->GetMesh()->SetVisibility(true);
 		}
-
+		UE_LOG(LogTemp, Warning, TEXT("Rotation is %s"), *BangPlayer->BangCamera->GetComponentRotation().ToString());
 		UCameraComponent* StartCam = BangPlayer->FollowCamera;
 		UCameraComponent* EndCam = BangPlayer->BangCamera;
 		if (!StartCam || !EndCam) return;
@@ -932,13 +954,13 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		SetViewTarget(TempCam);
 
 		const FVector StartLocation = StartTransform.GetLocation();
-		const FVector EndLocation = EndCam->GetComponentLocation() + 200.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
+		const FVector EndLocation = EndCam->GetComponentLocation() + FVector(-100.f,-100.f,100.f); // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
 
 		//BangCamera의 위치를 한번 봐야할듯
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
 
 		GetWorldTimerManager().SetTimer(CameraOpenBlendTimerHandle, FTimerDelegate::CreateLambda(
-			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, PlayerCount]() mutable
+			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, FindIndex, PlayerCount]() mutable
 			{
 				//좋아..상대시간 굳 
 				float Elapsed = FPlatformTime::Seconds() - CameraOpenBlendStartTime;
@@ -955,13 +977,19 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 						FColor::Red,
 						TEXT("Alpha")
 					);
-					//Re -> PlayerUniqueID -> FindIndex 
-					float Radian = (2 * PI / PlayerCount) * (PlayerUniqueID - 1);
-					float Degree = FMath::RadiansToDegrees(Radian);
-					FRotator CurrentRotation = BangPlayer->BangCamera->GetComponentRotation();
-					CurrentRotation.Yaw += Degree;
-					BangPlayer->BangCamera->SetRelativeRotation(CurrentRotation);
-
+					if (bIsFirstCameraMode)
+					{
+						//Re -> Test 주석 지우지 말아주세요    (PlayerUniqueId-1)-> FindIndex으로  값 변경해야합니다
+						float Radian = (2 * PI / PlayerCount) * (PlayerUniqueID - 1);
+						FQuat CurrentQuat = BangPlayer->BangCamera->GetComponentQuat();
+						FQuat DeltaQuat = FQuat(FVector::UpVector, Radian); 
+						FQuat NewQuat = DeltaQuat * CurrentQuat;
+						BangPlayer->BangCamera->SetWorldRotation(NewQuat);
+						FVector Forward = BangPlayer->BangCamera->GetForwardVector();
+						
+						UE_LOG(LogTemp, Warning, TEXT("[PlayerController] Forward Vector = %s"), *Forward.ToString());
+					}
+					bIsFirstCameraMode = false;
 					BangPlayer->BangCamera->Activate();
 					SetViewTarget(BangPlayer);
 					bIsCameraMode = true;
@@ -979,7 +1007,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 					TempCam->Destroy();
 				}
 			}), 0.01f, true);
-		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 300.f, false);
+		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 30.f, false);
 	}
 
 }
@@ -1201,6 +1229,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 			PS->RestoreCard(PlayerUniqueID, UsingCard);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select);
 
 			CardList->RemoveSelectedCard(UsingCard);
 			InitializUsingCard();
@@ -1220,6 +1249,12 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 	}
 }
 
+/**
+ * 잡화점에서 카드 선택이 완료된 후의 처리를 수행합니다. 선택된 카드를 플레이어의 정보에서 제거하고, 다음 플레이어의 MiniTurn을 설정합니다.
+ *
+ * @param SelectedCard 선택된 단일 카드의 정보를 포함하는 구조체입니다.
+ */
+//좌표 6
 void ABangPlayerController::HandleGeneralStoreSelectionComplete(const FSingleCard& SelectedCard)
 {
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
@@ -1306,84 +1341,6 @@ void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerU
 			Mesh->CustomDepthStencilValue
 		);
 	}
-
-	//if (!IsLocalController())
-	//{
-	//	GEngine->AddOnScreenDebugMessage(
-	//		-1,
-	//		5.0f,
-	//		FColor::Yellow,
-	//		FString::Printf(TEXT("서버라서..리턴됩니다 "))
-	//	);
-	//	UE_LOG(LogTemp, Error, TEXT("서버라서..리턴됩니다"));
-	//	return;
-	//}
-	//
-	
-	/*ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>();
-	if (!BangGameState) return;
-
-	for (int i = 0; i < BangGameState->PlayerArray.Num(); i++)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.0f,
-			FColor::Yellow,
-			FString::Printf(TEXT("배열 순회중"))
-		);
-		if (ABangPlayerState* BangPS = Cast<ABangPlayerState>(BangGameState->PlayerArray[i]))
-		{
-			if (PlayerUniqueID != OtherPlayerUniqueID)
-			{
-				continue;
-			}
-			UE_LOG(LogTemp, Warning, TEXT("[SetOutline] find OtherPlayerUniqueID"));
-
-			APawn* MyPawn = BangPS->GetPawn();
-			if (!MyPawn)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					5.0f,
-					FColor::Yellow,
-					FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
-				);
-				continue;
-			}
-			TArray<UMeshComponent*> Meshes;
-			MyPawn->GetComponents<UMeshComponent>(Meshes);
-
-			for (UMeshComponent* Mesh : Meshes)
-			{
-				Mesh->SetRenderCustomDepth(bEnable);
-				Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					5.0f,
-					FColor::Yellow,
-					FString::Printf(TEXT("매쉬생성 완료 "))
-				);
-				UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
-					*Mesh->GetName(),
-					Mesh->bRenderCustomDepth,
-					Mesh->CustomDepthStencilValue
-				);
-			}
-
-		}
-	}*/
-	/*APawn* MyPawn = GetPawn();
-	if (!MyPawn) return;
-
-	TArray<UMeshComponent*> Meshes;
-	MyPawn->GetComponents<UMeshComponent>(Meshes);
-
-	for (UMeshComponent* Mesh : Meshes)
-	{
-		Mesh->SetRenderCustomDepth(bEnable);
-		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
-	}*/
-
 }
 
 void ABangPlayerController::Client_ToggleMappingContext_Implementation()
@@ -1412,7 +1369,6 @@ void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 	}
 }
 
-//void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 {
 
@@ -1566,7 +1522,6 @@ void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArra
 	}
 }
 
-
 /**
  * 서버에서 카드를 뽑고 해당 내용을 로그에 기록하는 작업을 처리합니다.
  * 게임 모드 객체를 가져와 카드 뽑기 및 로그 작업을 수행합니다.
@@ -1610,38 +1565,3 @@ void ABangPlayerController::Server_RequestSendGameLog_Implementation(const FStri
 		GM->SendGameLog(GameLogMessage); 
 	}
 }
-//void ABangPlayerController::LocalSetOutline(bool bEnable, int32 StencilValue)
-//{
-//	if ((int)GetNetMode() == 1)return;
-//	UE_LOG(LogTemp, Warning, TEXT("==================================================="));
-//	UE_LOG(LogTemp, Warning, TEXT("[Outline] NetMode=%d"), (int)GetNetMode());
-//	APawn* MyPawn = GetPawn();
-//	if (!MyPawn)
-//	{
-//		GEngine->AddOnScreenDebugMessage(
-//			-1,
-//			5.0f,
-//			FColor::Yellow,
-//			FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
-//		);
-//	}
-//	TArray<UMeshComponent*> Meshes;
-//	MyPawn->GetComponents<UMeshComponent>(Meshes);
-//
-//	for (UMeshComponent* Mesh : Meshes)
-//	{
-//		Mesh->SetRenderCustomDepth(bEnable);
-//		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
-//		GEngine->AddOnScreenDebugMessage(
-//			-1,
-//			5.0f,
-//			FColor::Yellow,
-//			FString::Printf(TEXT("매쉬생성 완료 "))
-//		);
-//		UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
-//			*Mesh->GetName(),
-//			Mesh->bRenderCustomDepth,
-//			Mesh->CustomDepthStencilValue
-//		);
-//	}
-//}

@@ -404,6 +404,12 @@ void UBangCardManager::ShuffleDeck()
 	ShuffleCards(PassiveCards);
 	ShuffleCards(ActiveCards);
 	ShuffleCards(JobCards);
+
+	AvailCards.CardList.Empty();
+	AvailCards.CardList.Append(PassiveCards.CardList);
+	AvailCards.CardList.Append(ActiveCards.CardList);
+
+	ShuffleCards(AvailCards);
 }
 
 void UBangCardManager::ShuffleCards(FCardCollection& Cards)
@@ -417,3 +423,4 @@ void UBangCardManager::ShuffleCards(FCardCollection& Cards)
 		Cards.CardList.Swap(i, RandomIndex);
 	}
 }
+

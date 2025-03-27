@@ -147,9 +147,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UTableCard> TableCard;
-	///////////////////////////
-	//// 원명 추가 
-	//////////////////////////
+	
 	UFUNCTION(Client, Reliable)
 	void Client_OnTurnStart(const FCardCollection& DrawCards);
 	
@@ -253,6 +251,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 
+	/**
+	 * 서버에 게임 로그 메시지 전송을 요청하는 함수입니다.
+	 * 이 함수는 Reliable 특성을 가지며 서버에서 호출됩니다.
+	 *
+	 * @param GameLogMessage 전송할 게임 로그 메시지
+	 */
 	UFUNCTION(Server, Reliable)
 	void Server_RequestSendGameLog(const FString& GameLogMessage);
 
@@ -309,11 +313,9 @@ protected:
 
 public:
 	void UpdatePlayerInfo(uint32 BangUniqueID,int32 HP, int32 Range);
-
-	/*void LocalSetOutline(bool bEnable, int32 StencilValue);*/
-
-
+	bool bIsFirstCameraMode = true;
 	inline FString GetPlayerNickname(){return PlayerNickname;}
+
 };
 
 
