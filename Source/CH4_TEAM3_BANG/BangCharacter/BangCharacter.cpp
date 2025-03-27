@@ -204,6 +204,7 @@ void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ABangCharacter::Move(const FInputActionValue& Value)
 {
+	// PC접근 -> PS접근 -> PlayerInfo MyTurn 확인 후 PC에 유니크 아이디랑 다르면 리턴
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (!FMath::IsNearlyZero(MovementVector.X))
