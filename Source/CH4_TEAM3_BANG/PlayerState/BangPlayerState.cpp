@@ -39,15 +39,16 @@ void ABangPlayerState::LoosePlayerHealth(const uint32& FromUniqueID, const uint3
 	
 	if (PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth <= 0)
 	{
-		if (FromUniqueID != 0 && PlayerInfo.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::VultureSam)
+		if (!CheckAndUseBeerIfAvailable(TargetUniqueID))
 		{
-			FPlayerCardCollection CardList;
-			PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
-			PlayerInfo.GetPlayerInformation(TargetUniqueID)->MyCards.PlayerCards.Append(CardList.PlayerCards);
+			if (FromUniqueID != 0 && PlayerInfo.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::VultureSam)
+			{
+				FPlayerCardCollection CardList;
+				PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
+				PlayerInfo.GetPlayerInformation(TargetUniqueID)->MyCards.PlayerCards.Append(CardList.PlayerCards);
+			}
+			Server_PlayerDead(TargetUniqueID);
 		}
-		
-		// 사망처리
-		Server_PlayerDead(TargetUniqueID);
 	}
 }
 
@@ -331,6 +332,7 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 	case EActiveType::GeneralStore:
 		{
 			MiniTurnUniqueID = FromUniqueID;
+			//UI업데이트
 			FPlayerCardSymbol SingleSymbolCard;
 			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
 			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
@@ -571,7 +573,6 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 		{
 			// UseCard 상태로 돌입
 			PC->Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
-
 		}
 		else
 		{
@@ -891,4 +892,40 @@ void ABangPlayerState::HandleDuelResponse(uint32 ResponderID, bool bUsedBang)
 			NextPC->Client_RequestCardSelection(1, ECardSelectPurpose::RespondToDuel);
 		}
 	}
+}
+
+//맥주확인
+bool ABangPlayerState::CheckAndUseBeerIfAvailable(uint32 TargetUniqueID)
+{
+	FPlayerInformation* TargetInfo = PlayerInfo.GetPlayerInformation(TargetUniqueID);
+	if (!TargetInfo) return false;
+
+	// 보유 카드 하나씩 검사
+	for (int32 i = 0; i < TargetInfo->MyCards.PlayerCards.Num(); ++i)
+	{
+		const FPlayerCardSymbol& CardSymbol = TargetInfo->MyCards.PlayerCards[i];
+
+		// 카드 타입 판별을 위한 더미 카드 생성
+		FSingleCard TempCard;
+		TempCard.Card = NewObject<UBangCardBase>(); // 기본 카드 오브젝트 생성
+		TempCard.Card->SymbolType = CardSymbol.SymbolType;
+		TempCard.Card->SymbolNumber = CardSymbol.SymbolNumber;
+
+		EActiveType ActiveType;
+		EPassiveType PassiveType;
+		GetCardType(TargetUniqueID, TempCard, ActiveType, PassiveType);
+
+		if (ActiveType == EActiveType::Beer)
+		{
+			// 맥주 사용 처리
+			TargetInfo->CurrentHealth = 1;
+			TargetInfo->MyCards.RemoveCard(TempCard.Card->SymbolType, TempCard.Card->SymbolNumber);
+			RestoreCard(TargetUniqueID, TempCard);
+			Server_SetPlayerInfo(PlayerInfo);
+
+			UE_LOG(LogTemp, Warning, TEXT("플레이어 %d가 맥주를 사용하여 체력 1 회복"), TargetUniqueID);
+			return true;
+		}
+	}
+	return false; // 맥주 없음
 }

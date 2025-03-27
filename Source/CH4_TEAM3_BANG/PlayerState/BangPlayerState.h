@@ -122,6 +122,10 @@ public:
 	UFUNCTION()
 	void HandleDuelResponse(uint32 ResponderID, bool bUsedBang);
 
+	//맥주 가지고 있는지
+	UFUNCTION()
+	bool CheckAndUseBeerIfAvailable(uint32 TargetUniqueID);
+
 	/////////////////////
 	/// 서버통신
 	/////////////////////
