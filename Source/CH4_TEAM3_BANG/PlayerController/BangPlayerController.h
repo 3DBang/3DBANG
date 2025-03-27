@@ -263,10 +263,6 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
-
-	// 플레이어에게 카드 선택권 요구
-	UFUNCTION(Client, Reliable)
-	void Client_RequestSelectCard(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards);
 	
 	// 플레이어에게 카드 선택권 요구 응답
 	UFUNCTION(Server, Reliable)

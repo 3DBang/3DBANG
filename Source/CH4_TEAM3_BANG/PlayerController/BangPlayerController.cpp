@@ -352,8 +352,6 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	FText ButtonText = FText::FromString(TEXT("선택"));
 
 	UE_LOG(LogTemp, Warning, TEXT("[TEST] Client_RequestCardSelection_Implementation called"));
-	UE_LOG(LogTemp, Warning, TEXT("Purpose: %s"), *UEnum::GetValueAsString(Purpose));
-
 	switch (Purpose)
 	{
 	case ECardSelectPurpose::UseCard:
@@ -748,24 +746,6 @@ void ABangPlayerController::Server_RespondSelectCard_Implementation()
 	GameMode->RefundCards(PlayerCardCollection);
 }
 
-// 플레이어에게 카드 선택권 요구
-void ABangPlayerController::Client_RequestSelectCard_Implementation(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards)
-{
-	if (DrawCards.PlayerCards.Num() == 0) return;
-
-	if (IsLocalController() && GetUniqueID() == FromUniqueID)
-	{
-		ABangPlayerState* BangPlayerState = GetPlayerState<ABangPlayerState>();
-		BangPlayerState->GetCard(FromUniqueID, SelectCardCollection);
-		
-		// 플레이어에게 카드 선택권 요구
-		
-		
-		// 선택한 카드 배열에서 지우기
-		// SelectCardCollection
-	}
-}
-
 void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname)
 {
 	if (Message.IsEmpty()) return;
@@ -826,7 +806,7 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	JCH_Test();
+	//JCH_Test();
 	//Server_StartGame();
 }
 
@@ -1249,6 +1229,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 			PS->RestoreCard(PlayerUniqueID, UsingCard);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select);
 
 			CardList->RemoveSelectedCard(UsingCard);
 			InitializUsingCard();
@@ -1289,6 +1270,7 @@ void ABangPlayerController::HandleGeneralStoreSelectionComplete(const FSingleCar
 	PS->MiniTurnUniqueID = PS->PlayerInfo.FindNextPlayer(PlayerUniqueID);
 
 	PS->Server_SetPlayerInfo(PS->PlayerInfo);
+	//UI업데이트 해줘
 }
 
 

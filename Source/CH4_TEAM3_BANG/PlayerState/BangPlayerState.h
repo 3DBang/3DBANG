@@ -115,6 +115,10 @@ public:
 	UFUNCTION()
 	void FindTargetPlayerState(const uint32 TargetUniqueID, FBangSinglePlayerState& OutPlayerState) const;
 
+	// 대상의 PS를 찾는다
+	UFUNCTION()
+	void FindTargetPlayerController(const uint32 TargetUniqueID, ABangPlayerController*& OutPlayerController) const;
+
 	// 패시브 카드 중복 장착 방지용
 	UFUNCTION()
 	bool CheckIsCardAble(const int32 FromUniqueID, const FSingleCard& SingleCard);
@@ -126,6 +130,10 @@ public:
 	//듀얼 진행용
 	UFUNCTION()
 	void HandleDuelResponse(uint32 ResponderID, bool bUsedBang);
+
+	//맥주 가지고 있는지
+	UFUNCTION()
+	bool CheckAndUseBeerIfAvailable(uint32 TargetUniqueID);
 
 	/////////////////////
 	/// 서버통신

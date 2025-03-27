@@ -525,8 +525,6 @@ void ABangGameMode::AdvanceGameTurn()
 
 				FPlayerCardCollection PlayerCards;
 				PlayerCards.AddCardCollectionToPlayerCards(DrawCards);
-
-				PlayerController.Controller->Client_RequestSelectCard(CurrentTurnPlayerUniqeID, PlayerCards);
 				
 				return;
 			}
