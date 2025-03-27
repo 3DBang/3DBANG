@@ -256,22 +256,15 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 	if (!PS) return;
 
 	FPlayerInformation* Info = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
-	if (!Info)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection NONOinfo"));
-		return;
-	}
+	if (!Info)return;
 
 	PS->GetCardType(PlayerUniqueID, SingleCard, OutActiveType, OutPassiveType);
 	UE_LOG(LogTemp, Warning, TEXT("OutActiveType: %s, OutPassiveType: %s"),
 		*UEnum::GetValueAsString(OutActiveType),
 		*UEnum::GetValueAsString(OutPassiveType));
 
-	if (OutActiveType == EActiveType::Missed)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Missed card cannot be used on your own turn"));
-		return;
-	}
+	if (OutActiveType == EActiveType::Missed)return;
+
 	bool bNeedsTarget = (OutActiveType == EActiveType::Bang ||
 		OutActiveType == EActiveType::Robbery ||
 		OutActiveType == EActiveType::CatBalou ||
@@ -283,6 +276,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 		//사용할 카드와 카드 타입 저장
 		UsingCard = SingleCard;
 		UsingActiveType = OutActiveType;
+		Server_OpenCamera_Implementation();
 		//적 선택단계로 넘어가기(탑뷰)
 	}
 	else
@@ -319,6 +313,7 @@ void ABangPlayerController::Server_EndTurn_Implementation()
 	else
 	{
 		PS->Server_EndTurn(PlayerUniqueID);
+		Client_RequestCardSelection(1, ECardSelectPurpose::None);
 	}
 }
 
@@ -329,6 +324,9 @@ void ABangPlayerController::JCH_Test()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("PlayerUniqueID : %d,"), PS->PlayerUniqueID);
 	}
+	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
+	BangPlayerHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
+	Client_RequestCardSelection(1, ECardSelectPurpose::RespondToDuel);
 }
 
 //유저 입력 상황 UI연동
@@ -353,6 +351,7 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	}
 	case ECardSelectPurpose::GeneralStoreDraft:
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
+			// 남은 카드가 없다면 잡화점 종료 처리
 		break;
 
 	case ECardSelectPurpose::KitCarlsonDrawCard:
@@ -411,6 +410,8 @@ void ABangPlayerController::InitializUsingCard()
 	UsingActiveType = EActiveType::None;
 }
 
+
+//카드 선택 시 호출 함수
 void ABangPlayerController::OnCardSelectionComplete(
 	FCardCollection SelectedCards,       // 플레이어가 실제로 선택한 카드들  
 	ECardSelectPurpose Purpose)          // 선택 목적
@@ -458,10 +459,12 @@ void ABangPlayerController::OnCardSelectionComplete(
 	}
 
 	case ECardSelectPurpose::GeneralStoreDraft:
+	{
+		MyInfo->MyCards.AddCardCollectionToPlayerCards(SelectedCards);
+		HandleGeneralStoreSelectionComplete(SelectedCards.CardList[0]);
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
-		// MyInfo.SelectableCards 삭제 선택한 카드 보유카드에 추가.
 		break;
-
+	}
 	case ECardSelectPurpose::KitCarlsonDrawCard:
 	{
 		// 키트 칼슨 능력 – 카드 3장 중 2장 선택
@@ -504,7 +507,8 @@ void ABangPlayerController::OnCardSelectionComplete(
 	}
 
 	case ECardSelectPurpose::StealFromOpponent:
-	{	// 상대의 보유 카드 중 1장을 선택 
+	{	
+		// 상대의 보유 카드 중 1장을 선택 
 		// 상대 카드 중 1장 없애기
 		// 내 카드 덱에 1장 추가하기
 		break;
@@ -513,7 +517,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 	{	// 결투 중 뱅 카드 선택
 		if (SelectedCards.CardList.Num() == 0)
 		{
-			PS->LoosePlayerHealth(PlayerUniqueID, 1);
+			//PS->LoosePlayerHealth(PlayerUniqueID, 1);
 		}
 		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if(OutActiveType == EActiveType::Bang)
@@ -533,7 +537,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 	{// 인디언 카드 대응 – 뱅 카드 선택
 		if (SelectedCards.CardList.Num() == 0)
 		{
-			PS->LoosePlayerHealth(PlayerUniqueID, 1);
+			//PS->LoosePlayerHealth(PlayerUniqueID, 1);
 		}
 		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if (OutActiveType == EActiveType::Bang)
@@ -555,7 +559,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 	{	// Bang, Gatling 등의 공격에 대해 Missed 카드 선택
 		if (SelectedCards.CardList.Num() == 0)
 		{
-			PS->LoosePlayerHealth(PlayerUniqueID, 1);
+			//PS->LoosePlayerHealth(PlayerUniqueID, 1);
 		}
 		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if (OutActiveType == EActiveType::Missed)
@@ -563,6 +567,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 			// 회피 카드 사용(회피 성공)
 			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
 			MyInfo->MyCards.RemoveCard(SelectedCards.CardList[0].Card->SymbolType, SelectedCards.CardList[0].Card->SymbolNumber);
+			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		}
 		else
 		{
@@ -767,9 +772,6 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
-	BangPlayerHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
-	Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
 	//JCH_Test();
 	//Server_StartGame();
 }
@@ -1136,7 +1138,6 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 		FPlayerInformation* Targetinfo = PS->PlayerInfo.GetPlayerInformation(TargetPlayerID);
 		if (PS->PlayerInfo.IsDistanceAble(PlayerUniqueID, TargetPlayerID))
 		{
-
 			Server_UseCard(UsingCard, TargetPlayerID);
 			PS->RestoreCard(PlayerUniqueID, UsingCard);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
@@ -1153,20 +1154,39 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 	{
 		Server_UseCard(UsingCard, TargetPlayerID);
 		PS->RestoreCard(PlayerUniqueID, UsingCard);
-		PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+		PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		CardList->RemoveSelectedCard(UsingCard);
 		InitializUsingCard();
+		
 	}
 }
+
+void ABangPlayerController::HandleGeneralStoreSelectionComplete(const FSingleCard& SelectedCard)
+{
+	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
+	if (!PS) return;
+
+	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
+	if (!MyInfo) return;
+
+	// 선택한 카드 제거
+	PS->PlayerInfo.SelectableCards.RemoveCard(SelectedCard.Card->SymbolType, SelectedCard.Card->SymbolNumber);
+
+	// 다음 사람으로 MiniTurn 넘기기
+	PS->MiniTurnUniqueID = PS->PlayerInfo.FindNextPlayer(PlayerUniqueID);
+
+	PS->Server_SetPlayerInfo(PS->PlayerInfo);
+}
+
+
 
 void ABangPlayerController::Server_UseCard_Implementation(const FSingleCard& SingleCard, int32 TargetID)
 {
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS) return;
 
-	const int32 FromID = PS->GetUniqueID(); // 혹은 PlayerState에 저장된 내 ID
-	PS->UseCard(FromID, SingleCard, TargetID);
+	PS->UseCard(PlayerUniqueID, SingleCard, TargetID);
 }
 
 UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const FName& Tag)
