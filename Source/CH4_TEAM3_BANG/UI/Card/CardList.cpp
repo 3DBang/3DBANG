@@ -155,6 +155,7 @@ void UCardList::OnUseInputButtonClicked()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[UCardList::OnUseInputButtonClicked] 선택할 카드가 부족합니다"));
         		// 선택된 카드가 없을 때의 처리 (예: 경고 메시지 표시)
+		
 	}
 }
 

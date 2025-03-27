@@ -9,6 +9,13 @@ void ABangGameState::BeginPlay()
 
 }
 
+/**
+ * 새로운 채팅 메시지를 모든 대상 플레이어들에게 브로드캐스트하는 함수입니다.
+ *
+ * @param NewMessage 브로드캐스트할 채팅 메시지입니다.
+ * @param SenderNickname 메시지를 보낸 플레이어의 닉네임입니다.
+ * @param ReciverNickname 메시지의 수신 대상 플레이어 닉네임입니다.
+ */
 void ABangGameState::BroadcastChatMessage(const FString& NewMessage, const FString& SenderNickname, const FString& ReciverNickname)
 {
 	Message = NewMessage;
@@ -97,6 +104,11 @@ void ABangGameState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	DOREPLIFETIME(ABangGameState, CurrentGameLog);
 }
 
+/**
+ * 게임 로그 메시지를 모든 클라이언트에게 브로드캐스트하는 함수입니다.
+ *
+ * @param GameLogMessage 전달할 게임 로그 메시지입니다.
+ */
 void ABangGameState::BroadcastGameLogToClients(const FString& GameLogMessage)
 {
 	CurrentGameLog = GameLogMessage;
@@ -105,6 +117,11 @@ void ABangGameState::BroadcastGameLogToClients(const FString& GameLogMessage)
 	ReceiveGameLog(CurrentGameLog);
 }
 
+/**
+ * 게임 로그 메시지를 모든 플레이어 컨트롤러에게 전달하고 클라이언트 UI를 업데이트하는 함수입니다.
+ *
+ * @param GameLogMessage 전달할 게임 로그 메시지입니다.
+ */
 void ABangGameState::ReceiveGameLog(const FString& GameLogMessage) const
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)

@@ -38,7 +38,7 @@ void ABangGameMode::BeginPlay()
 		BangGameInstance->GetCardManager(OutCardManager);
 		CardManager = OutCardManager.CardManager;
 		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::BeginPlay] CardManager Loaded"));
-
+		
 		// 카드 매니저 초기 셋팅 (GameMode에서만 진행)
 		CardManager->PlayBeginByRole();
 	}
@@ -61,7 +61,7 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::PostLogin] Player Login"));
-
+	
 	if (const FString MapName = GetWorld()->GetMapName(); MapName.Contains("StageMap")
 		|| MapName.Contains("Hwang")
 		|| MapName.Contains("Bong_TestMap"))
@@ -70,7 +70,9 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 		{
 			BangPlayerControllers.Add(BangPlayerController);
 			BangPlayerController->Init();
+			
 			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, BangPlayerController);
+			SendGameLog(FString::Printf(TEXT("%s님이 입장했습니다."), *BangPlayerController->PlayerNickname));
 		}
 	}
 	//게임 시작버튼을 누르면 그때 Player위치 조정함수 사용
@@ -85,12 +87,12 @@ void ABangGameMode::Logout(AController* Exiting)
 	if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(Exiting))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::Logout] Player %s 로그아웃"), *BangPlayerController->PlayerNickname);
-
 		BangPlayerControllers.Remove(BangPlayerController);
 
 		const uint32 UniqueID = BangPlayerController->PlayerUniqueID;
 		LobbyPlayers.RemovePlayer(UniqueID);
 		ForceUpdate_RemovePlayer(UniqueID);
+		SendGameLog(FString::Printf(TEXT("%s님이 퇴장하였습니다."), *BangPlayerController->PlayerNickname));
 	}
 }
 
@@ -241,7 +243,7 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
-
+	SendGameLog(FString::Printf(TEXT("게임이 시작되었습니다.")));
 	Players.Players.Empty();
 
 	// 기존 코드 계속 진행
@@ -300,11 +302,10 @@ void ABangGameMode::StartTest()
 		FCardCollection Cards;
 		CardManager->HandCards(Health, Cards);
 		Players.Players[i].MyCards.AddCardCollectionToPlayerCards(Cards);
-
 		if (JobCards[i] == EJobType::Officer)
 		{
 			CurrentTurnPlayerUniqeID = Players.Players[i].PlayerUniqueID;
-			Players.Players[i].bIsMyTurn = true;
+			Players.Players[i].bIsMyTurn = true; 
 			PlayerIndex = i;
 		}
 	}
@@ -381,6 +382,7 @@ void ABangGameMode::StartTest()
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
 void ABangGameMode::ForceUpdate_StartGame_Real()
 {
+	SendGameLog(FString::Printf(TEXT("게임 시작! 참여인원 %d"), LobbyPlayers.Players.Num()));
 	UE_LOG(LogTemp, Warning, TEXT("StartGame [%d]"), LobbyPlayers.Players.Num());
 	if (!CardManager) return;
 	if (CurrentGameState == EGameState::GamePlaying || !CardManager) return;
@@ -486,8 +488,11 @@ void ABangGameMode::AdvanceGameTurn()
 
 	if (CurrentPlayerTurnState == EPlayerTurnState::DrawCard) // 현재 턴인 플레이어가 카드뽑기 단계 일때
 	{
-		// 트랩카드 처리 (다이너마이트, 감옥)
+		// 트랩카드 처리 (다이너마이트, 감옥)	✨
 		CheckTrapCard();
+
+		// 액터 이동 가능 처리
+		ReSpawnPlayerAtTurn();
 
 		// 카드 뽑기
 		FCardCollection DrawCards;
@@ -496,7 +501,6 @@ void ABangGameMode::AdvanceGameTurn()
 		case ECharacterType::PedroRamirez:
 			{
 				CardManager->HandCards(2, DrawCards);
-				
 				
 				break;
 			}
@@ -538,6 +542,8 @@ void ABangGameMode::AdvanceGameTurn()
 		
 		FPlayerCardCollection DrawSymbolCollections;
 		
+		SendGameLog(FString::Printf(TEXT("플레이어 %s 카드 드로우턴"), *Players.Players[PlayerIndex].PlayerName));
+				
 		for (FSingleCard CardList : DrawCards.CardList)
 		{
 			FPlayerCardSymbol DrawSymbol;
@@ -622,6 +628,10 @@ void ABangGameMode::CheckTrapCard()
 				FCardCollection OutCards;
 				CardManager->CheckCardSymbolFromAvailCards(1, OutCards);
 
+				FText OutCardsCardName = OutCards.CardList[0].Card->CardName;
+				FString OutCardsSymbolType = GetEnumToString<ESymbolType>(OutCards.CardList[0].Card->SymbolType);
+				SendGameLog(FString::Printf(TEXT("감옥 카드 뽑기 : 뽑은 카드 %s , 카드 심볼 : %s"), *OutCardsCardName.ToString(), *OutCardsSymbolType));
+				
 				if (OutCards.CardList[0].Card->SymbolType != ESymbolType::Heart)
 				{
 					ForceUpdate_AdvancePlayerTurn();
@@ -633,6 +643,10 @@ void ABangGameMode::CheckTrapCard()
 				FCardCollection OutCards;
 				CardManager->CheckCardSymbolFromAvailCards(1, OutCards);
 
+				FText OutCardsCardName = OutCards.CardList[0].Card->CardName;
+				FString OutCardsSymbolType = GetEnumToString<ESymbolType>(OutCards.CardList[0].Card->SymbolType);
+				SendGameLog(FString::Printf(TEXT("다이너마이트 카드 뽑기 : 뽑은 카드 %s , 카드 심볼 : %s"), *OutCardsCardName.ToString(), *OutCardsSymbolType));
+				
 				if (OutCards.CardList[0].Card->SymbolType == ESymbolType::Spade
 					&& (OutCards.CardList[1].Card->SymbolNumber >= 2 || OutCards.CardList[1].Card->SymbolNumber <= 9))
 				{
@@ -996,7 +1010,7 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 			PC->Client_SetOutline(PC->PlayerUniqueID, true, 252);
 			if (bIsTarget)
 			{
-			//PC->Client_ToggleMappingContext();
+			//PC->Client_ToggleMappingContext(); //
 				if (APawn* Pawn = PC->GetPawn())
 				{
 					if (ABangCharacter* Char = Cast<ABangCharacter>(Pawn))
@@ -1005,10 +1019,8 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 					}
 				}
 			}
-			
 		}
 	}
-	
 }
 
 void ABangGameMode::CloseCamera()
@@ -1036,54 +1048,44 @@ void ABangGameMode::CloseCamera()
 				PC->Client_ToggleMappingContext();
 			}
 			PC->Client_SetInputEnabled(true);
+			PC->Client_SetOutline(PC->PlayerUniqueID, false, 0);
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;
 }
 
-void ABangGameMode::DrawCardsAndNotifyClients(int32 CardCount)
+void ABangGameMode::DrawCardsAndNotifyClients()
 {
-	if (!CardManager) return;
-
-	FCardCollection Drawn;
-	CardManager->HandCards(CardCount, Drawn);
+	if (!CardManager) return;;
 
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("카드 전달: %d장 → %s"), Drawn.CardList.Num(), *PC->GetName());
-			PC->Client_ShowDrawnCards(Drawn.CardList);
+			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::DrawCardsAndNotifyClients] : 카드 전달: %s"), *PC->GetName());
+			PC->Client_ShowDrawnCards();
 		}
 	}
 }
 
-void ABangGameMode::Test_DrawAndLogCards()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Test_DrawAndLogCards 호출됨"));
-	DrawCardsAndNotifyClients(1);
-}
-
 void ABangGameMode::ShowTableCardsToAll()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ShowTableCardsToAll 호출됨"));
-	DrawCardsAndNotifyClients(1);
+	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::ShowTableCardsToAll] 호출됨"));
+	DrawCardsAndNotifyClients();
 }
 
-void ABangGameMode::SendGameLog(AController* Controller)
+/**
+ * 게임 로그를 클라이언트들에게 브로드캐스트하기 위해 생성된 메서드입니다.
+ *
+ * @param Controller 게임 로그를 전송하려는 대상 컨트롤러. 이 컨트롤러는 ABangPlayerController로 캐스팅되어 사용됩니다.
+ *
+ */
+
+void ABangGameMode::SendGameLog(const FString& GameLogMessage)
 {
-	if (ABangPlayerController* BangPC = Cast<ABangPlayerController>(Controller))
+	if (ABangGameState* GS = GetGameState<ABangGameState>())
 	{
-		uint32 UniqueID = BangPC->PlayerUniqueID;
-
-		FString RealPlayerName = FString::Printf(TEXT("Player[%d]"), UniqueID);
-		FString PassiveCardText = StaticEnum<EPassiveType>()->GetNameStringByValue((int64)EPassiveType::Barrel);
-		FString LogMessage = FString::Printf(TEXT("%s이(가) %s 카드를 사용했습니다."), *RealPlayerName, *PassiveCardText);
-
-		if (ABangGameState* GS = GetGameState<ABangGameState>())
-		{
-			GS->BroadcastGameLogToClients(LogMessage);
-		}
+		GS->BroadcastGameLogToClients(GameLogMessage);
 	}
 }
 
@@ -1097,13 +1099,16 @@ void ABangGameMode::ReSpawnPlayerAtTurn()
 			{
 				if (APawn* Pawn = PC->GetPawn())
 				{
-					//죽은사람은 빙의를 풀어서 소환을 못하게 한다.
+					//TODO : 죽은사람은 빙의를 풀어서 소환을 못하게 한다.
 					Pawn->SetActorLocationAndRotation(SpawnData->Key, SpawnData->Value);
 					PC->Client_SetControllerRotation(SpawnData->Value);
 				}
 			}
 		}
 	}
+	//여기에서 턴일 때 매핑처리 
+	//턴인사람 제외하고는 못움직이게 IA_Move만 제거
+
 }
 void ABangGameMode::ReSpawnPlayerAtRestart()
 {
@@ -1167,7 +1172,7 @@ void ABangGameMode::AtPlayerDie(AController* DeadPlayerController, const FVector
 			CurrentPawn->Destroy();
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = PC;
-			//여기에서 새로운 액터를 만들든 아니면 매시를바꾸든 하면될것 같습니다 
+			//여기에서 새로운 액터를 만들고 호출 
 			// 위에있는 PlayerDead에서 이 함수 호출하면 될것 같습니다
 			// Controller배열에서 빼주기 , 
 			// 만일 매시를 바꾸게된다면 IsDead라는 변수가 하나 필요합니다 
@@ -1179,4 +1184,21 @@ void ABangGameMode::AtPlayerDie(AController* DeadPlayerController, const FVector
 			}*/
 		}
 	}
+}
+void ABangGameMode::DontStopTestBong()
+{
+	for (auto PC : BangPlayerControllers)
+	{
+		ABangPlayerController* tmp = Cast<ABangPlayerController>(PC);
+		ABangPlayerState* tmpPS = Cast<ABangPlayerState>(tmp->PlayerState);
+		auto TmpInfo = tmpPS->PlayerInfo.GetPlayerInformation(tmp->PlayerUniqueID);
+		TmpInfo->bIsMyTurn = false;
+	}
+}
+void ABangGameMode::MoveTestBong(int index)
+{
+	ABangPlayerController* tmp = Cast<ABangPlayerController>(BangPlayerControllers[index]);
+	ABangPlayerState* tmpPS = Cast<ABangPlayerState>(tmp->PlayerState);
+	auto TmpInfo = tmpPS->PlayerInfo.GetPlayerInformation(tmp->PlayerUniqueID);
+	TmpInfo->bIsMyTurn = true;
 }

@@ -120,6 +120,9 @@ public:
 	UFUNCTION(Client,Reliable)
 	void Client_SetControllerRotation(FRotator NewRotation);
 
+	UFUNCTION()
+	void HandleGeneralStoreSelectionComplete(const FSingleCard& SelectedCard);
+
 	UFUNCTION(Client, Reliable)
 	void Client_SelectTarget(const uint32 TargetPlayerID);
 
@@ -140,7 +143,7 @@ public:
 	void Server_TestDrawCards();
 	// 정빈
 	UFUNCTION(Client, Reliable)
-	void Client_ShowDrawnCards(const TArray<FSingleCard>& DrawnCards);
+	void Client_ShowDrawnCards();
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UTableCard> TableCard;
@@ -251,7 +254,7 @@ public:
 	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 
 	UFUNCTION(Server, Reliable)
-	void Server_RequestSendGameLog();
+	void Server_RequestSendGameLog(const FString& GameLogMessage);
 
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
@@ -269,7 +272,8 @@ public:
 
 	UFUNCTION()
 	void TryBindPlayerInfoUpdated();
-	
+
+public:
 
 	///////////////////////////
 	//// 원명 추가 
@@ -309,8 +313,8 @@ protected:
 
 public:
 	void UpdatePlayerInfo(uint32 BangUniqueID,int32 HP, int32 Range);
-
-	/*void LocalSetOutline(bool bEnable, int32 StencilValue);*/
+	bool bIsFirstCameraMode = true;
+	inline FString GetPlayerNickname(){return PlayerNickname;}
 
 };
 

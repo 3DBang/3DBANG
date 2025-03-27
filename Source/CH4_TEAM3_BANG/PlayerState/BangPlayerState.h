@@ -35,6 +35,10 @@ public:
 	UPROPERTY(Replicated)
 	uint32 MiniTurnUniqueID = 0;
 
+	//듀얼 관리
+	UPROPERTY(Replicated)
+	FDuelInfo CurrentDuel;
+
 	UFUNCTION()
 	void OnRep_PlayerUniqueID();
 	
@@ -65,6 +69,10 @@ public:
 	// 컨트롤러가 플레이어 함정 카드 조회
 	UFUNCTION()
 	void GetTrapCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
+
+	// 컨트롤러가 선택 카드 조회
+	UFUNCTION()
+	void GetSelectableCard(const int32 InPlayerUniqueID,  FCardCollection& OutCardCollection);
 
 	// 캐릭터 카드 타입으로 싱글 카드 받아오기
 	UFUNCTION() 
@@ -110,6 +118,10 @@ public:
 	UFUNCTION()
 	bool CheckIsCardAbleByPassive(const int32 FromUniqueID, const EPassiveType PassiveType);
 	
+	//듀얼 진행용
+	UFUNCTION()
+	void HandleDuelResponse(uint32 ResponderID, bool bUsedBang);
+
 	/////////////////////
 	/// 서버통신
 	/////////////////////
@@ -143,9 +155,12 @@ public:
 	//
 	//
 	//
-	// PlayerInfo 동기화 PlayerState에서 값 변경 후 호출해야함
+	// PlayerInfo 동기화 PlayerState에서 PlayerInfo 값 변경 후 호출해야 동기화됨
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerInfo(const FPlayerCollection& NewInfo);
+
+	UFUNCTION(Server, Reliable)
+	void Server_StartTurnReturn(const FString& LogMessage);
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetUniqueId(const uint32& FromPlayerUniqueID);
