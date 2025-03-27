@@ -95,7 +95,7 @@ public:
 	//PlayerUniqueID 설정
 	UFUNCTION(BlueprintCallable)
 	void InitPlayerUniqueID();
-	
+
 	UFUNCTION(BlueprintCallable)
 	void JCH_Test();
 
@@ -147,9 +147,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UTableCard> TableCard;
-	///////////////////////////
-	//// 원명 추가 
-	//////////////////////////
+	
 	UFUNCTION(Client, Reliable)
 	void Client_OnTurnStart(const FCardCollection& DrawCards);
 	
@@ -192,6 +190,11 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SetOutline(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue);
 
+	UFUNCTION(Client, Reliable)
+	void Client_ShowDrawCard(EShowTableCard ShowTableType);
+
+
+	
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
 	
 private:
@@ -218,10 +221,6 @@ private:
 	//// 찬호 추가 
 	//////////////////////////
 public:
-	// 현재 들고있는 카드 배열
-	UPROPERTY()
-	FCardCollection CurrentCardCollection;
-
 	UPROPERTY() // 유저가 카드고를수있는 카드컬렉션,
 	//선택 후 뽑은 카드는 배열에서 지우고 남은 카드는 Server_RespondSelectCard 호출해서 서버에 알려줘야함
 	FCardCollection SelectCardCollection;
@@ -253,15 +252,17 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SendMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 
+	/**
+	 * 서버에 게임 로그 메시지 전송을 요청하는 함수입니다.
+	 * 이 함수는 Reliable 특성을 가지며 서버에서 호출됩니다.
+	 *
+	 * @param GameLogMessage 전송할 게임 로그 메시지
+	 */
 	UFUNCTION(Server, Reliable)
 	void Server_RequestSendGameLog(const FString& GameLogMessage);
 
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
-
-	// 플레이어에게 카드 선택권 요구
-	UFUNCTION(Client, Reliable)
-	void Client_RequestSelectCard(const uint32& FromUniqueID, const FPlayerCardCollection DrawCards);
 	
 	// 플레이어에게 카드 선택권 요구 응답
 	UFUNCTION(Server, Reliable)

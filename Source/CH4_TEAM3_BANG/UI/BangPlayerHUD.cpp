@@ -71,24 +71,39 @@ void ABangPlayerHUD::BeginPlay()
 
 void ABangPlayerHUD::ShowDrawCardUI(const FCardCollection& Cards)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ShowDrawCardUI 호출됨! 카드 수: %d"), Cards.CardList.Num());
+	UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerHUD::ShowDrawCardUI] 카드 수: %d"), Cards.CardList.Num());
 
 	if (!TableCardWidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("TableCardWidgetClass is NULL"));
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::ShowDrawCardUI] TableCardWidgetClass is NULL"));
 		return;
 	}
-
-	TableCardWidgetInstance = CreateWidget<UTableCard>(GetWorld(), TableCardWidgetClass);
+	
 	if (!TableCardWidgetInstance)
 	{
-		UE_LOG(LogTemp, Error, TEXT("TableCardWidgetInstance 생성 실패"));
-		return;
+		TableCardWidgetInstance = CreateWidget<UTableCard>(GetWorld(), TableCardWidgetClass);
+		TableCardWidgetInstance->AddToViewport();
 	}
 
-	TableCardWidgetInstance->AddToViewport();
-	TableCardWidgetInstance->InitializeCardList(Cards);
-	UE_LOG(LogTemp, Warning, TEXT("TableCardWidgetInstance 생성 및 초기화 완료"));
+	if (TableCardWidgetInstance)
+	{
+		TableCardWidgetInstance->InitializeCardList(Cards);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::ShowDrawCardUI] TableCardWidgetInstance is NULL"));
+		return;
+	}
+}
+
+void ABangPlayerHUD::HideDrawCardUI()
+{
+	if (!TableCardWidgetInstance)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ABangPlayerHUD::HideDrawCardUI] 없음"));
+		return;
+	}
+	TableCardWidgetInstance->RemoveFromParent();
 }
 
 void ABangPlayerHUD::SetupTurnCardSelection(ECardSelectPurpose Purpose, FText ButtonText, int32 NumCardsToSelect)

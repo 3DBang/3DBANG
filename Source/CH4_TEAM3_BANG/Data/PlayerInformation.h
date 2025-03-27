@@ -200,6 +200,10 @@ struct FPlayerCollection
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FPlayerCardCollection SelectableCards;
 
+	// 강탈 카드 사용시 뒷면 표시로 보여줄 카드용 배열
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	FPlayerCardCollection HiddenSelectableCards;
+
 	bool operator==(const FPlayerCollection& Other) const
 	{
 		return Players == Other.Players;

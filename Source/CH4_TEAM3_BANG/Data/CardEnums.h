@@ -104,6 +104,15 @@ enum class ECardSelectPurpose : uint8
 	RespondToDuel             UMETA(DisplayName = "Respond to Duel"),       // 결투 - 뱅으로 응답
 	RespondToIndians          UMETA(DisplayName = "Respond to Indians"),    // 인디언 - 뱅으로 응답
 	RespondToAttack           UMETA(DisplayName = "Respond to Attack"),     // 공격(Bang, Gatling) - 회피카드로 대응
+	RespondToDead           UMETA(DisplayName = "Respond to Attack"),		// 죽을 때 맥주 쓸껀지
+};
+
+UENUM(BlueprintType)
+enum class EShowTableCard : uint8
+{
+	None					 UMETA(DisplayName = "None"),
+	ShowCard				 UMETA(DisplayName = "ShowCard"),				   //카드 보여주기
+	HideCard				 UMETA(DisplayName = "HideCard"),				   // 카드 숨기기
 };
 
 template <typename EnumType>

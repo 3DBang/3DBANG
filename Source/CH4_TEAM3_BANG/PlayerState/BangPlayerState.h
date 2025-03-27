@@ -50,6 +50,10 @@ public:
 	UFUNCTION()
 	void HandlePlayerInfoUpdated();
 
+	// 카드 심볼로 카드 가져오기
+	UFUNCTION()
+	void GetRealBySymbol(const FPlayerCardCollection& InSymbolCardCollection, FCardCollection& OutCardCollection) const;
+	
 	// 플레이어 체력 감소
 	UFUNCTION()
 	void LoosePlayerHealth(const uint32& FromUniqueID, const uint32& TargetUniqueID, const int32 Amount);
@@ -81,7 +85,8 @@ public:
 	// 직업 카드 타입으로 싱글 카드 받아오기
 	UFUNCTION()
 	void GetCardByJobType(const EJobType JobType, FSingleCard& OutCard);
-	
+
+	// 인풋 카드 타입 조회
 	UFUNCTION()
 	void GetCardType(const int32 InPlayerUniqueID, const FSingleCard& Card, EActiveType& OutActiveType, EPassiveType& OutPassiveType);
 
@@ -110,6 +115,10 @@ public:
 	UFUNCTION()
 	void FindTargetPlayerState(const uint32 TargetUniqueID, FBangSinglePlayerState& OutPlayerState) const;
 
+	// 대상의 PS를 찾는다
+	UFUNCTION()
+	void FindTargetPlayerController(const uint32 TargetUniqueID, ABangPlayerController*& OutPlayerController) const;
+
 	// 패시브 카드 중복 장착 방지용
 	UFUNCTION()
 	bool CheckIsCardAble(const int32 FromUniqueID, const FSingleCard& SingleCard);
@@ -121,6 +130,10 @@ public:
 	//듀얼 진행용
 	UFUNCTION()
 	void HandleDuelResponse(uint32 ResponderID, bool bUsedBang);
+
+	//맥주 가지고 있는지
+	UFUNCTION()
+	bool CheckAndUseBeerIfAvailable(uint32 TargetUniqueID);
 
 	/////////////////////
 	/// 서버통신
@@ -159,8 +172,13 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerInfo(const FPlayerCollection& NewInfo);
 
+	/**
+	 * 서버에 로그 메시지를 전송합니다.
+	 *
+	 * @param LogMessage 전송할 로그 메시지입니다.
+	 */
 	UFUNCTION(Server, Reliable)
-	void Server_StartTurnReturn(const FString& LogMessage);
+	void Server_SendLog(const FString& LogMessage);
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetUniqueId(const uint32& FromPlayerUniqueID);
@@ -172,6 +190,7 @@ public:
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)
 	void Client_CheckCardSymbolReturn(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection);
+	
 private:
 	// 카드매니저
 	UPROPERTY()
