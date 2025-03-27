@@ -46,7 +46,11 @@ public:
 	UFUNCTION()
 	void ReceiveMessage(const FString& ChatMessage, const FString& FromNickname, const FString& ReciverNickname);
 
-
+	/**
+	 * 게임 로그 메시지를 클라이언트들에게 브로드캐스트합니다.
+	 *
+	 * @param GameLogMessage 브로드캐스트할 게임 로그 메시지
+	 */
 	UFUNCTION()
 	void BroadcastGameLogToClients(const FString& GameLogMessage);
 

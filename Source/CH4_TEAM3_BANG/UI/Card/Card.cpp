@@ -69,7 +69,7 @@ void UCard::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 	GetWorld()->GetTimerManager().ClearTimer(DescriptionDelayTimerHandle);
 }
 
-void UCard::InitializeWithCard(FSingleCard InCard)
+void UCard::InitializeWithCard(const FSingleCard& InCard)
 {
 	Card = InCard;
 	UpdateCardDisplay();

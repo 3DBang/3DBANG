@@ -105,3 +105,20 @@ enum class ECardSelectPurpose : uint8
 	RespondToIndians          UMETA(DisplayName = "Respond to Indians"),    // 인디언 - 뱅으로 응답
 	RespondToAttack           UMETA(DisplayName = "Respond to Attack"),     // 공격(Bang, Gatling) - 회피카드로 대응
 };
+
+template <typename EnumType>
+FString GetEnumToString(EnumType enumValue)
+{
+	// 1. ESymbolType의 UEnum 객체 가져오기 (리플렉션 정보 접근)
+	const UEnum* EnumPtr = StaticEnum<EnumType>();
+
+	// 2. UEnum 객체가 유효한지 확인 (만약 UENUM() 매크로로 선언되지 않았다면 nullptr)
+	if (!EnumPtr)
+	{
+		return FString();
+	}
+
+	// 3. GetNameStringByValue 함수로 이넘 값에 해당하는 문자열(DisplayName) 가져오기
+	//    - GetNameStringByValue 함수는 UMETA(DisplayName) 에 설정된 문자열을 반환합니다.
+	return EnumPtr->GetNameStringByValue((int64)enumValue); // Enum 값을 int64로 캐스팅
+}
