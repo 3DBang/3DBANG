@@ -1,4 +1,5 @@
 #include "BangGameMode.h"
+#include "EngineUtils.h"
 
 #include "Card/BangCardManager.h"
 #include "Card/JobCard/BangJobCard.h"
@@ -12,6 +13,9 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
 #include "Instance/BangGameInstance.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Card/BangCardActor.h"
+#include "Card/BangCardTableSpawner.h"
 
 ABangGameMode::ABangGameMode()
 {
@@ -37,6 +41,18 @@ void ABangGameMode::BeginPlay()
 		
 		// 카드 매니저 초기 셋팅 (GameMode에서만 진행)
 		CardManager->PlayBeginByRole();
+	}
+
+	for (TActorIterator<ABangCardTableSpawner> It(GetWorld()); It; ++It)
+	{
+		if (ABangCardTableSpawner* Table = *It)
+		{
+			Table->CardManager = CardManager;
+			Table->SpawnDeckCards();           // 중앙 덱 시각화
+			Table->SpawnHandCards();  // 여기도 호출해줘야 스폰됨!
+
+			break;
+		}
 	}
 }
 
@@ -289,7 +305,7 @@ void ABangGameMode::StartTest()
 		if (JobCards[i] == EJobType::Officer)
 		{
 			CurrentTurnPlayerUniqeID = Players.Players[i].PlayerUniqueID;
-			Players.Players[i].bIsMyTurn = true;
+			Players.Players[i].bIsMyTurn = true; 
 			PlayerIndex = i;
 		}
 	}
@@ -335,6 +351,32 @@ void ABangGameMode::StartTest()
 
 	//원명 테스트 
 	SpawnPlayers();
+
+	// 사용된 카드 테스트 코드 
+	for (int i = 0; i < 3; ++i)
+	{
+		FCardCollection Draw;
+		CardManager->HandCards(1, Draw);
+
+		if (Draw.CardList.Num() > 0)
+		{
+			FSingleCard Card = Draw.CardList[0];
+			CardManager->ReorderUsedCards(Card);
+		}
+	}
+
+	for (TActorIterator<ABangCardTableSpawner> It(GetWorld()); It; ++It)
+	{
+		if (ABangCardTableSpawner* Table = *It)
+		{
+			Table->SpawnUsedCards();
+			Table->SpawnHandCards(); 
+
+			break;
+		}
+	}
+
+
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
@@ -968,7 +1010,7 @@ void ABangGameMode::OpenCamera(uint32 BangPlayerControllerID)
 			PC->Client_SetOutline(PC->PlayerUniqueID, true, 252);
 			if (bIsTarget)
 			{
-			//PC->Client_ToggleMappingContext();
+			//PC->Client_ToggleMappingContext(); //
 				if (APawn* Pawn = PC->GetPawn())
 				{
 					if (ABangCharacter* Char = Cast<ABangCharacter>(Pawn))
@@ -1006,6 +1048,7 @@ void ABangGameMode::CloseCamera()
 				PC->Client_ToggleMappingContext();
 			}
 			PC->Client_SetInputEnabled(true);
+			PC->Client_SetOutline(PC->PlayerUniqueID, false, 0);
 		}
 	}
 	ControllerIDAtCameraMode = INDEX_NONE;
@@ -1056,13 +1099,16 @@ void ABangGameMode::ReSpawnPlayerAtTurn()
 			{
 				if (APawn* Pawn = PC->GetPawn())
 				{
-					//죽은사람은 빙의를 풀어서 소환을 못하게 한다.
+					//TODO : 죽은사람은 빙의를 풀어서 소환을 못하게 한다.
 					Pawn->SetActorLocationAndRotation(SpawnData->Key, SpawnData->Value);
 					PC->Client_SetControllerRotation(SpawnData->Value);
 				}
 			}
 		}
 	}
+	//여기에서 턴일 때 매핑처리 
+	//턴인사람 제외하고는 못움직이게 IA_Move만 제거
+
 }
 void ABangGameMode::ReSpawnPlayerAtRestart()
 {
@@ -1126,7 +1172,7 @@ void ABangGameMode::AtPlayerDie(AController* DeadPlayerController, const FVector
 			CurrentPawn->Destroy();
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = PC;
-			//여기에서 새로운 액터를 만들든 아니면 매시를바꾸든 하면될것 같습니다 
+			//여기에서 새로운 액터를 만들고 호출 
 			// 위에있는 PlayerDead에서 이 함수 호출하면 될것 같습니다
 			// Controller배열에서 빼주기 , 
 			// 만일 매시를 바꾸게된다면 IsDead라는 변수가 하나 필요합니다 
@@ -1138,4 +1184,21 @@ void ABangGameMode::AtPlayerDie(AController* DeadPlayerController, const FVector
 			}*/
 		}
 	}
+}
+void ABangGameMode::DontStopTestBong()
+{
+	for (auto PC : BangPlayerControllers)
+	{
+		ABangPlayerController* tmp = Cast<ABangPlayerController>(PC);
+		ABangPlayerState* tmpPS = Cast<ABangPlayerState>(tmp->PlayerState);
+		auto TmpInfo = tmpPS->PlayerInfo.GetPlayerInformation(tmp->PlayerUniqueID);
+		TmpInfo->bIsMyTurn = false;
+	}
+}
+void ABangGameMode::MoveTestBong(int index)
+{
+	ABangPlayerController* tmp = Cast<ABangPlayerController>(BangPlayerControllers[index]);
+	ABangPlayerState* tmpPS = Cast<ABangPlayerState>(tmp->PlayerState);
+	auto TmpInfo = tmpPS->PlayerInfo.GetPlayerInformation(tmp->PlayerUniqueID);
+	TmpInfo->bIsMyTurn = true;
 }

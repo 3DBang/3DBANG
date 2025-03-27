@@ -72,7 +72,7 @@ public:
 
 	// 컨트롤러가 선택 카드 조회
 	UFUNCTION()
-	void GetSelectableCard(const int32 InPlayerUniqueID, FCardCollection& OutCardCollection);
+	void GetSelectableCard(const int32 InPlayerUniqueID,  FCardCollection& OutCardCollection);
 
 	// 캐릭터 카드 타입으로 싱글 카드 받아오기
 	UFUNCTION() 
@@ -159,8 +159,13 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerInfo(const FPlayerCollection& NewInfo);
 
+	/**
+	 * 서버에 로그 메시지를 전송합니다.
+	 *
+	 * @param LogMessage 전송할 로그 메시지입니다.
+	 */
 	UFUNCTION(Server, Reliable)
-	void Server_StartTurnReturn(const FString& LogMessage);
+	void Server_SendLog(const FString& LogMessage);
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetUniqueId(const uint32& FromPlayerUniqueID);
