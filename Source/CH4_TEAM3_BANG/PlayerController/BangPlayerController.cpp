@@ -50,7 +50,6 @@ void ABangPlayerController::BeginPlay()
 		}
 	}
 
-
 	/*if (IsLocalController())
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
@@ -750,7 +749,9 @@ void ABangPlayerController::Client_ReceiveMessage_Implementation(const FString& 
 {
 	if (Message.IsEmpty()) return;
 
-	if (FromNickname.IsEmpty())
+	UE_LOG(LogTemp, Display, TEXT("[Client_ReceiveMessage] [%s] -> [%s]: [%s]"), *FromNickname, *ToPlayerNickname, *Message);
+
+	if (ToPlayerNickname == "")
 	{
 		// 전역
 		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
@@ -1009,7 +1010,6 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 			}), 0.01f, true);
 		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 30.f, false);
 	}
-
 }
 
 void ABangPlayerController::Client_SetInputEnabled_Implementation(bool IsAttacker)
