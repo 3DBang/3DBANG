@@ -8,6 +8,7 @@
 #include "BangGameMode.generated.h"
 
 class UBangCardManager;
+class ABangCardActor;
 
 UENUM(BlueprintType)
 enum class EGameState : uint8
@@ -108,6 +109,11 @@ public:
 	 * @param GameLogMessage 전송할 게임 로그 메시지를 나타냅니다.
 	 */
 	void SendGameLog(const FString& GameLogMessage);
+
+
+	// 정빈 
+	UPROPERTY(EditDefaultsOnly, Category = "Cards")
+	TSubclassOf<class ABangCardActor> CardActorClass;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")

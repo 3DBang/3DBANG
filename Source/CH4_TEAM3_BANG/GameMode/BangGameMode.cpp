@@ -1,4 +1,5 @@
 #include "BangGameMode.h"
+#include "EngineUtils.h"
 
 #include "Card/BangCardManager.h"
 #include "Card/JobCard/BangJobCard.h"
@@ -12,6 +13,9 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
 #include "Instance/BangGameInstance.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Card/BangCardActor.h"
+#include "Card/BangCardTableSpawner.h"
 
 ABangGameMode::ABangGameMode()
 {
@@ -37,6 +41,18 @@ void ABangGameMode::BeginPlay()
 		
 		// 카드 매니저 초기 셋팅 (GameMode에서만 진행)
 		CardManager->PlayBeginByRole();
+	}
+
+	for (TActorIterator<ABangCardTableSpawner> It(GetWorld()); It; ++It)
+	{
+		if (ABangCardTableSpawner* Table = *It)
+		{
+			Table->CardManager = CardManager;
+			Table->SpawnDeckCards();           // 중앙 덱 시각화
+			Table->SpawnHandCards();  // 여기도 호출해줘야 스폰됨!
+
+			break;
+		}
 	}
 }
 
@@ -335,6 +351,32 @@ void ABangGameMode::StartTest()
 
 	//원명 테스트 
 	SpawnPlayers();
+
+	// 사용된 카드 테스트 코드 
+	for (int i = 0; i < 3; ++i)
+	{
+		FCardCollection Draw;
+		CardManager->HandCards(1, Draw);
+
+		if (Draw.CardList.Num() > 0)
+		{
+			FSingleCard Card = Draw.CardList[0];
+			CardManager->ReorderUsedCards(Card);
+		}
+	}
+
+	for (TActorIterator<ABangCardTableSpawner> It(GetWorld()); It; ++It)
+	{
+		if (ABangCardTableSpawner* Table = *It)
+		{
+			Table->SpawnUsedCards();
+			Table->SpawnHandCards(); 
+
+			break;
+		}
+	}
+
+
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.

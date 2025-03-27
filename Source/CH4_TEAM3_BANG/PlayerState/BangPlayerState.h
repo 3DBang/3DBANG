@@ -160,8 +160,13 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerInfo(const FPlayerCollection& NewInfo);
 
+	/**
+	 * 서버에 로그 메시지를 전송합니다.
+	 *
+	 * @param LogMessage 전송할 로그 메시지입니다.
+	 */
 	UFUNCTION(Server, Reliable)
-	void Server_StartTurnReturn(const FString& LogMessage);
+	void Server_SendLog(const FString& LogMessage);
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetUniqueId(const uint32& FromPlayerUniqueID);
