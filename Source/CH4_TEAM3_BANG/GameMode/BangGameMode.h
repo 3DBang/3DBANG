@@ -8,6 +8,7 @@
 #include "BangGameMode.generated.h"
 
 class UBangCardManager;
+class ABangCardActor;
 
 UENUM(BlueprintType)
 enum class EGameState : uint8
@@ -109,6 +110,11 @@ public:
 	 */
 	void SendGameLog(const FString& GameLogMessage);
 
+
+	// 정빈 
+	UPROPERTY(EditDefaultsOnly, Category = "Cards")
+	TSubclassOf<class ABangCardActor> CardActorClass;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
 	float Radius = 500.f;
@@ -204,6 +210,12 @@ public:
 
 	UFUNCTION()
 	void AtPlayerDie(AController* DeadPlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation);
+
+	UFUNCTION(BlueprintCallable)
+	void DontStopTestBong();
+
+	UFUNCTION(BlueprintCallable)
+	void MoveTestBong(int index);
 
 private:
 	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum

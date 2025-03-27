@@ -280,6 +280,8 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 			FPlayerCardCollection CardList;
 			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->EquippedCards.PlayerCards);
 			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->TrapCards.PlayerCards);
+
+			// 히드처리필요
 			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards);
 
 			PlayerInfo.SelectableCards.PlayerCards.Append(CardList.PlayerCards);

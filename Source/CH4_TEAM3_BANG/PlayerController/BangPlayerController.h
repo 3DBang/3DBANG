@@ -317,11 +317,9 @@ protected:
 
 public:
 	void UpdatePlayerInfo(uint32 BangUniqueID,int32 HP, int32 Range);
-
-	/*void LocalSetOutline(bool bEnable, int32 StencilValue);*/
-
-
+	bool bIsFirstCameraMode = true;
 	inline FString GetPlayerNickname(){return PlayerNickname;}
+
 };
 
 

@@ -1,5 +1,4 @@
 #include "BangPlayerController.h"
-#include "Card/ActiveCard/BangActiveCard.h"
 #include "EnhancedInputSubsystems.h"
 #include "Data/CardEnums.h"
 #include "GameMode/BangGameMode.h"
@@ -15,16 +14,14 @@
 #include "GameState/BangGameState.h"
 #include "UI/BangPlayerHUD.h"
 #include "Components/WidgetComponent.h"
-#include "EngineUtils.h"
 #include "Components/CapsuleComponent.h"
 #include "UI/Card/CardList.h"
 #include "UI/Chat/BangInGameChattingWidget.h"
-#include "UI/Card/TableCard.h" 
 #include "UI/Chat/PlayerListGameLog.h"
-#include "UI/Card/CardDescriptionWidget.h"
 #include "Data/PlayerInformation.h"
 #include "UI/PlayerInfo/BangInfoWidget.h"
 #include "Components/MeshComponent.h"
+
 ABangPlayerController::ABangPlayerController()
 {
 }
@@ -904,10 +901,6 @@ void ABangPlayerController::MouseClicked()
 	{
 		return;
 	}*/
-
-
-	
-
 	
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
@@ -938,23 +931,30 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 	{
 		return;
 	}
-
 	AGameStateBase* BGameState = GetWorld()->GetGameState<AGameStateBase>();
 	if (!BGameState)
 	{
 		return;
 	}
 	int32 PlayerCount = BGameState->PlayerArray.Num();
-	
 
-
+	ABangPlayerState* BPS = Cast<ABangPlayerState>(PlayerState);
+	if (!BPS)
+	{
+		return;
+	}
+	int32 FindIndex = BPS->PlayerInfo.FindPlayerSeatByUniquID(PlayerUniqueID);
+	//지금은 PlayerUniqueID가 없기때문에 실험환경에 적합하지 않기때문에
+	//따라서 PlayerUniqueID가 생길 때 실험 해볼 예정 이론상 정확함
+	int32 PlayerCount1 = BPS->PlayerInfo.Players.Num();
+	UE_LOG(LogTemp, Warning, TEXT("PlayerCount1 is %d"),PlayerCount1);
 	if (ABangCharacter* BangPlayer = Cast<ABangCharacter>(GetPawn()))
 	{
 		if (BangPlayer->GetFirstPersonMode())
 		{
 			BangPlayer->GetMesh()->SetVisibility(true);
 		}
-
+		UE_LOG(LogTemp, Warning, TEXT("Rotation is %s"), *BangPlayer->BangCamera->GetComponentRotation().ToString());
 		UCameraComponent* StartCam = BangPlayer->FollowCamera;
 		UCameraComponent* EndCam = BangPlayer->BangCamera;
 		if (!StartCam || !EndCam) return;
@@ -974,13 +974,13 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		SetViewTarget(TempCam);
 
 		const FVector StartLocation = StartTransform.GetLocation();
-		const FVector EndLocation = EndCam->GetComponentLocation() + 200.f; // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
+		const FVector EndLocation = EndCam->GetComponentLocation() + FVector(-100.f,-100.f,100.f); // 마지막에 회전하는 효과를 주고 싶어서 벡터를 사용해서 300f만큼 이동 그러면 마지막에 꿀벌마냥 회전할것
 
 		//BangCamera의 위치를 한번 봐야할듯
 		const FVector FlagLocation = BangPlayer->GetFlagLocation();
 
 		GetWorldTimerManager().SetTimer(CameraOpenBlendTimerHandle, FTimerDelegate::CreateLambda(
-			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, PlayerCount]() mutable
+			[this, BangPlayer, TempCam, StartLocation, EndLocation, FlagLocation, FindIndex, PlayerCount]() mutable
 			{
 				//좋아..상대시간 굳 
 				float Elapsed = FPlatformTime::Seconds() - CameraOpenBlendStartTime;
@@ -997,13 +997,19 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 						FColor::Red,
 						TEXT("Alpha")
 					);
-					//Re -> PlayerUniqueID -> FindIndex 
-					float Radian = (2 * PI / PlayerCount) * (PlayerUniqueID - 1);
-					float Degree = FMath::RadiansToDegrees(Radian);
-					FRotator CurrentRotation = BangPlayer->BangCamera->GetComponentRotation();
-					CurrentRotation.Yaw += Degree;
-					BangPlayer->BangCamera->SetRelativeRotation(CurrentRotation);
-
+					if (bIsFirstCameraMode)
+					{
+						//Re -> Test 주석 지우지 말아주세요    (PlayerUniqueId-1)-> FindIndex으로  값 변경해야합니다
+						float Radian = (2 * PI / PlayerCount) * (PlayerUniqueID - 1);
+						FQuat CurrentQuat = BangPlayer->BangCamera->GetComponentQuat();
+						FQuat DeltaQuat = FQuat(FVector::UpVector, Radian); 
+						FQuat NewQuat = DeltaQuat * CurrentQuat;
+						BangPlayer->BangCamera->SetWorldRotation(NewQuat);
+						FVector Forward = BangPlayer->BangCamera->GetForwardVector();
+						
+						UE_LOG(LogTemp, Warning, TEXT("[PlayerController] Forward Vector = %s"), *Forward.ToString());
+					}
+					bIsFirstCameraMode = false;
 					BangPlayer->BangCamera->Activate();
 					SetViewTarget(BangPlayer);
 					bIsCameraMode = true;
@@ -1021,7 +1027,7 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 					TempCam->Destroy();
 				}
 			}), 0.01f, true);
-		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 300.f, false);
+		GetWorldTimerManager().SetTimer(BangModeTimerHandle, this, &ABangPlayerController::Server_CloseCamera, 30.f, false);
 	}
 
 }
@@ -1353,84 +1359,6 @@ void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerU
 			Mesh->CustomDepthStencilValue
 		);
 	}
-
-	//if (!IsLocalController())
-	//{
-	//	GEngine->AddOnScreenDebugMessage(
-	//		-1,
-	//		5.0f,
-	//		FColor::Yellow,
-	//		FString::Printf(TEXT("서버라서..리턴됩니다 "))
-	//	);
-	//	UE_LOG(LogTemp, Error, TEXT("서버라서..리턴됩니다"));
-	//	return;
-	//}
-	//
-	
-	/*ABangGameState* BangGameState = GetWorld()->GetGameState<ABangGameState>();
-	if (!BangGameState) return;
-
-	for (int i = 0; i < BangGameState->PlayerArray.Num(); i++)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.0f,
-			FColor::Yellow,
-			FString::Printf(TEXT("배열 순회중"))
-		);
-		if (ABangPlayerState* BangPS = Cast<ABangPlayerState>(BangGameState->PlayerArray[i]))
-		{
-			if (PlayerUniqueID != OtherPlayerUniqueID)
-			{
-				continue;
-			}
-			UE_LOG(LogTemp, Warning, TEXT("[SetOutline] find OtherPlayerUniqueID"));
-
-			APawn* MyPawn = BangPS->GetPawn();
-			if (!MyPawn)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					5.0f,
-					FColor::Yellow,
-					FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
-				);
-				continue;
-			}
-			TArray<UMeshComponent*> Meshes;
-			MyPawn->GetComponents<UMeshComponent>(Meshes);
-
-			for (UMeshComponent* Mesh : Meshes)
-			{
-				Mesh->SetRenderCustomDepth(bEnable);
-				Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					5.0f,
-					FColor::Yellow,
-					FString::Printf(TEXT("매쉬생성 완료 "))
-				);
-				UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
-					*Mesh->GetName(),
-					Mesh->bRenderCustomDepth,
-					Mesh->CustomDepthStencilValue
-				);
-			}
-
-		}
-	}*/
-	/*APawn* MyPawn = GetPawn();
-	if (!MyPawn) return;
-
-	TArray<UMeshComponent*> Meshes;
-	MyPawn->GetComponents<UMeshComponent>(Meshes);
-
-	for (UMeshComponent* Mesh : Meshes)
-	{
-		Mesh->SetRenderCustomDepth(bEnable);
-		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
-	}*/
-
 }
 
 void ABangPlayerController::Client_ToggleMappingContext_Implementation()
@@ -1459,7 +1387,6 @@ void ABangPlayerController::Client_ToggleMappingContext_Implementation()
 	}
 }
 
-//void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 void ABangPlayerController::SetWidgetVisibility(uint32 PlayerID, bool bVisible)
 {
 
@@ -1613,7 +1540,6 @@ void ABangPlayerController::Client_UpdatePlayerListUI_Implementation(const TArra
 	}
 }
 
-
 /**
  * 서버에서 카드를 뽑고 해당 내용을 로그에 기록하는 작업을 처리합니다.
  * 게임 모드 객체를 가져와 카드 뽑기 및 로그 작업을 수행합니다.
@@ -1657,38 +1583,3 @@ void ABangPlayerController::Server_RequestSendGameLog_Implementation(const FStri
 		GM->SendGameLog(GameLogMessage); 
 	}
 }
-//void ABangPlayerController::LocalSetOutline(bool bEnable, int32 StencilValue)
-//{
-//	if ((int)GetNetMode() == 1)return;
-//	UE_LOG(LogTemp, Warning, TEXT("==================================================="));
-//	UE_LOG(LogTemp, Warning, TEXT("[Outline] NetMode=%d"), (int)GetNetMode());
-//	APawn* MyPawn = GetPawn();
-//	if (!MyPawn)
-//	{
-//		GEngine->AddOnScreenDebugMessage(
-//			-1,
-//			5.0f,
-//			FColor::Yellow,
-//			FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
-//		);
-//	}
-//	TArray<UMeshComponent*> Meshes;
-//	MyPawn->GetComponents<UMeshComponent>(Meshes);
-//
-//	for (UMeshComponent* Mesh : Meshes)
-//	{
-//		Mesh->SetRenderCustomDepth(bEnable);
-//		Mesh->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
-//		GEngine->AddOnScreenDebugMessage(
-//			-1,
-//			5.0f,
-//			FColor::Yellow,
-//			FString::Printf(TEXT("매쉬생성 완료 "))
-//		);
-//		UE_LOG(LogTemp, Warning, TEXT("[Outline] Mesh=%s Enabled=%d Stencil=%d"),
-//			*Mesh->GetName(),
-//			Mesh->bRenderCustomDepth,
-//			Mesh->CustomDepthStencilValue
-//		);
-//	}
-//}
