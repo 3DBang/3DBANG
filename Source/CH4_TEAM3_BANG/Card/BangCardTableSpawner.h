@@ -26,10 +26,10 @@ public:
 	void SpawnDeckCards();
 	void SpawnHandCards();
 	void SpawnUsedCards();
-	void SpawnEquippedCards();
+	//void SpawnEquippedCards(); 패시브 카드 장착했을때의
 
-	UFUNCTION(BlueprintCallable)
-	void SpawnCardListOnTable(const FCardCollection& CardsToSpawn);
+	/*UFUNCTION(BlueprintCallable)
+	void SpawnCardListOnTable(const FCardCollection& CardsToSpawn);*/
 
 	UPROPERTY()
 	ABangCardActor* CurrentUsedCardActor = nullptr;

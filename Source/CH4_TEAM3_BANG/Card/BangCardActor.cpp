@@ -3,8 +3,9 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/Image.h"
 #include "Net/UnrealNetwork.h"
-
+#include "Kismet/GameplayStatics.h"
 #include "Card/BaseCard/BangCardBase.h"
+#include "PlayerState/BangPlayerState.h"
 
 ABangCardActor::ABangCardActor()
 {
@@ -16,7 +17,6 @@ ABangCardActor::ABangCardActor()
     CardMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CardMesh"));
     CardMesh->SetupAttachment(Root);
 
-    // 앞면 위젯
     CardFrontWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("CardFrontWidget"));
     CardFrontWidget->SetupAttachment(CardMesh);
     CardFrontWidget->SetWidgetSpace(EWidgetSpace::World);
@@ -24,42 +24,39 @@ ABangCardActor::ABangCardActor()
     CardFrontWidget->SetRelativeLocation(FVector(0.f, 0.f, 0.1f));
     CardFrontWidget->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
 
-    // 뒷면 위젯
     CardBackWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("CardBackWidget"));
     CardBackWidget->SetupAttachment(CardMesh);
     CardBackWidget->SetWidgetSpace(EWidgetSpace::World);
     CardBackWidget->SetDrawSize(FVector2D(512, 512));
     CardBackWidget->SetRelativeLocation(FVector(0.f, 0.f, -0.1f));
-    CardBackWidget->SetRelativeRotation(FRotator(180.f, 0.f, 0.f)); 
+    CardBackWidget->SetRelativeRotation(FRotator(180.f, 0.f, 0.f));
 
     bReplicates = true;
-    SetReplicateMovement(true); // 카드 위치 복사
+    SetReplicateMovement(true);
 }
 
 void ABangCardActor::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
-	// 기본적으로 앞면 표시
-	CardFrontWidget->SetVisibility(true);
-	CardBackWidget->SetVisibility(false);
-	bIsFrontVisible = true;
+    CardFrontWidget->SetVisibility(true);
+    CardBackWidget->SetVisibility(false);
+    bIsFrontVisible = true;
 
-	// 위젯 초기화 이후 호출
-	GetWorldTimerManager().SetTimerForNextTick(this, &ABangCardActor::UpdateWidgetContent);
+    GetWorldTimerManager().SetTimerForNextTick(this, &ABangCardActor::UpdateWidgetContent);
 }
 
-void ABangCardActor::SetCard(const FSingleCard& InCard, bool bShowFront)
+void ABangCardActor::SetCard(const FSingleCard& InCard, bool bForceFront)
 {
     CardData = InCard;
-    bIsFrontVisible = bShowFront;
+    bIsFrontVisible = bForceFront;
 
-    CardFrontWidget->SetVisibility(bShowFront);
-    CardBackWidget->SetVisibility(!bShowFront);
+    CardFrontWidget->SetVisibility(bIsFrontVisible);
+    CardBackWidget->SetVisibility(!bIsFrontVisible);
 
-    // 새 카드 정보 들어왔을 때 즉시 이미지 갱신 시도
     UpdateWidgetContent();
 }
+
 void ABangCardActor::UpdateWidgetContent()
 {
     if (CardData.Card && CardData.Card->CardIcon && CardFrontWidget)
@@ -92,7 +89,7 @@ void ABangCardActor::UpdateWidgetContent()
     }
 }
 
-void ABangCardActor::Multicast_SetCard_Implementation(const FSingleCard& InCard, bool bShowFront)
+void ABangCardActor::Multicast_SetCard_Implementation(const FSingleCard& InCard, bool bForceFront)
 {
-    SetCard(InCard, bShowFront);
+    SetCard(InCard, bForceFront);
 }

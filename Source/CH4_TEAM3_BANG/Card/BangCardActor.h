@@ -42,6 +42,10 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SetCard(const FSingleCard& InCard, bool bShowFront);
+
+	UPROPERTY()
+	uint32 OwnerUniqueID = -1;
+
 private:
 	bool bIsFrontVisible = true;
 };
