@@ -312,6 +312,7 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 		}
 	case EActiveType::GeneralStore:
 		{
+			MiniTurnUniqueID = FromUniqueID;
 			FPlayerCardSymbol SingleSymbolCard;
 			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
 			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
@@ -547,7 +548,17 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 	case EActiveType::GeneralStore:
 		{
 			// PC에 카드 선택 요구 SelectableCards에서 하나 선택하고 MyCards로 갱신한뒤 SelectableCards 다 삭제해야함
+			// 남은 카드가 없다면 잡화점 종료 처리
+		if (PlayerInfo.SelectableCards.PlayerCards.Num() == 0)
+		{
+			// UseCard 상태로 돌입
+			PC->Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
+
+		}
+		else
+		{
 			PC->Client_RequestCardSelection(1, ECardSelectPurpose::GeneralStoreDraft);
+		}
 			break;
 		}
 	case EActiveType::Indians:
