@@ -106,6 +106,14 @@ enum class ECardSelectPurpose : uint8
 	RespondToAttack           UMETA(DisplayName = "Respond to Attack"),     // 공격(Bang, Gatling) - 회피카드로 대응
 };
 
+UENUM(BlueprintType)
+enum class EShowTableCard : uint8
+{
+	None					 UMETA(DisplayName = "None"),
+	ShowCard				 UMETA(DisplayName = "ShowCard"),				   //카드 보여주기
+	HideCard				 UMETA(DisplayName = "HideCard"),				   // 카드 숨기기
+};
+
 template <typename EnumType>
 FString GetEnumToString(EnumType enumValue)
 {
