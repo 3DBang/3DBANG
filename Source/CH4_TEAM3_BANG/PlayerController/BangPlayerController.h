@@ -190,6 +190,11 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SetOutline(uint32 OtherPlayerUniqueID, bool bEnable, int32 StencilValue);
 
+	UFUNCTION(Client, Reliable)
+	void Client_ShowDrawCard(EShowTableCard ShowTableType);
+
+
+	
 	UCameraComponent* FindCameraByTag(APawn* Pawn, const FName& Tag);
 	
 private:

@@ -493,7 +493,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		// 좌표
 		// 잡화점 모드에서 카드를 선택했을때 여기를 호출되도록 바인딩을 해줘야함
 		// 선택을 했으니 위젯은 비활성화 해줘야함
-		BangPlayerHUD->TableCardWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
+		//BangPlayerHUD->TableCardWidgetInstance->SetVisibility(ESlateVisibility::Hidden);
 		MyInfo->MyCards.AddCardCollectionToPlayerCards(SelectedCards);
 		HandleGeneralStoreSelectionComplete(SelectedCards.CardList[0]);
 		// 잡화점 – 전체 플레이어가 순서대로 카드 중 1장 선택
@@ -1299,6 +1299,32 @@ void ABangPlayerController::Server_UseCard_Implementation(const FSingleCard& Sin
 	if (!PS) return;
 
 	PS->UseCard(PlayerUniqueID, SingleCard, TargetID);
+}
+
+void ABangPlayerController::Client_ShowDrawCard_Implementation(EShowTableCard ShowTableType)
+{
+	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
+	ABangPlayerState* BangPlayerState =  GetPlayerState<ABangPlayerState>();
+	if (!BangPlayerHUD || !BangPlayerState)
+	{
+		return;
+	}
+
+	//이걸 가지고 카드를 가지고 옴
+	FPlayerCardCollection PlayerCardCollection = BangPlayerState->PlayerInfo.SelectableCards;
+
+	//넣을 카드 
+	FCardCollection Cards;
+	BangPlayerState->GetRealBySymbol(PlayerCardCollection , Cards);
+	
+	if (ShowTableType == EShowTableCard::ShowCard)
+	{
+		BangPlayerHUD->ShowDrawCardUI(Cards);
+	}
+	else if (ShowTableType == EShowTableCard::HideCard)
+	{
+		BangPlayerHUD->HideDrawCardUI();
+	}
 }
 
 UCameraComponent* ABangPlayerController::FindCameraByTag(APawn* Player12, const FName& Tag)
