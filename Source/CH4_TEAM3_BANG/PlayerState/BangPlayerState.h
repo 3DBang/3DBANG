@@ -50,6 +50,10 @@ public:
 	UFUNCTION()
 	void HandlePlayerInfoUpdated();
 
+	// 카드 심볼로 카드 가져오기
+	UFUNCTION()
+	void GetRealBySymbol(const FPlayerCardCollection& InSymbolCardCollection, FCardCollection& OutCardCollection) const;
+	
 	// 플레이어 체력 감소
 	UFUNCTION()
 	void LoosePlayerHealth(const uint32& FromUniqueID, const uint32& TargetUniqueID, const int32 Amount);
@@ -178,6 +182,7 @@ public:
 	// 카드 심볼 확인 리턴
 	UFUNCTION(Client, Reliable)
 	void Client_CheckCardSymbolReturn(const uint32& FromUniqueID, const FPlayerCardCollection& PlayerCardCollection);
+	
 private:
 	// 카드매니저
 	UPROPERTY()

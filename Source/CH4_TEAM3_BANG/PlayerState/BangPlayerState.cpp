@@ -74,6 +74,18 @@ void ABangPlayerState::HandlePlayerInfoUpdated()
 	FOnPlayerInfoUpdated.Broadcast(PlayerInfo);
 }
 
+void ABangPlayerState::GetRealBySymbol(const FPlayerCardCollection& InSymbolCardCollection, FCardCollection& OutCardCollection) const
+{
+	if (!CardManager) return;
+
+	for (FPlayerCardSymbol PlayerCard : InSymbolCardCollection.PlayerCards)
+	{
+		FSingleCard SingleCard;
+		CardManager->GetCardBySymbolAndNumberFromDataAsset(PlayerCard.SymbolType, PlayerCard.SymbolNumber, SingleCard);
+		OutCardCollection.CardList.Add(SingleCard);
+	}
+}
+
 void ABangPlayerState::OnRep_PlayerInfo() // 클라만 반응
 {
 	UE_LOG(LogTemp, Display, TEXT("OnRep_PlayerInfo"));
