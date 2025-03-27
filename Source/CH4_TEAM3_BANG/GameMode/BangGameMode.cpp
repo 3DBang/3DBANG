@@ -288,7 +288,7 @@ void ABangGameMode::StartTest()
 		if (JobCards[i] == EJobType::Officer)
 		{
 			CurrentTurnPlayerUniqeID = Players.Players[i].PlayerUniqueID;
-			Players.Players[i].bIsMyTurn = true;
+			Players.Players[i].bIsMyTurn = true; 
 			PlayerIndex = i;
 		}
 	}
@@ -1063,7 +1063,8 @@ void ABangGameMode::ReSpawnPlayerAtTurn()
 		}
 	}
 	//여기에서 턴일 때 매핑처리 
-	//
+	//턴인사람 제외하고는 못움직이게 IA_Move만 제거
+
 }
 void ABangGameMode::ReSpawnPlayerAtRestart()
 {
@@ -1139,4 +1140,21 @@ void ABangGameMode::AtPlayerDie(AController* DeadPlayerController, const FVector
 			}*/
 		}
 	}
+}
+void ABangGameMode::DontStopTestBong()
+{
+	for (auto PC : BangPlayerControllers)
+	{
+		ABangPlayerController* tmp = Cast<ABangPlayerController>(PC);
+		ABangPlayerState* tmpPS = Cast<ABangPlayerState>(tmp->PlayerState);
+		auto TmpInfo = tmpPS->PlayerInfo.GetPlayerInformation(tmp->PlayerUniqueID);
+		TmpInfo->bIsMyTurn = false;
+	}
+}
+void ABangGameMode::MoveTestBong(int index)
+{
+	ABangPlayerController* tmp = Cast<ABangPlayerController>(BangPlayerControllers[index]);
+	ABangPlayerState* tmpPS = Cast<ABangPlayerState>(tmp->PlayerState);
+	auto TmpInfo = tmpPS->PlayerInfo.GetPlayerInformation(tmp->PlayerUniqueID);
+	TmpInfo->bIsMyTurn = true;
 }

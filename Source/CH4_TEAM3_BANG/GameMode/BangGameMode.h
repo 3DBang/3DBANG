@@ -197,6 +197,12 @@ public:
 	UFUNCTION()
 	void AtPlayerDie(AController* DeadPlayerController, const FVector& SpawnLocation, const FRotator& SpawnRotation);
 
+	UFUNCTION(BlueprintCallable)
+	void DontStopTestBong();
+
+	UFUNCTION(BlueprintCallable)
+	void MoveTestBong(int index);
+
 private:
 	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum
 

@@ -205,6 +205,26 @@ void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ABangCharacter::Move(const FInputActionValue& Value)
 {
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
+	if (!BPS)
+	{
+		return;
+	}
+	uint32 tmpID = BPS->PlayerUniqueID;
+	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
+	if (!PlayerInform)
+	{
+		return;
+	}
+	if (!PlayerInform->bIsMyTurn)
+	{
+		return;
+	}
+
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (!FMath::IsNearlyZero(MovementVector.X))
@@ -450,4 +470,8 @@ void ABangCharacter::Multicast_SetOutline_Implementation(bool bEnable, int32 Ste
 		MeshComp->SetRenderCustomDepth(bEnable);
 		MeshComp->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
 	}
+}
+void ABangCharacter::SetCanMove(bool _bCanMove)
+{
+	bCanMove = _bCanMove;
 }
