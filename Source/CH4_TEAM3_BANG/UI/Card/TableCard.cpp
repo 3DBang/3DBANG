@@ -4,7 +4,7 @@
 #include "Card.h"
 #include "Components/WrapBox.h"
 
-void UTableCard::InitializeCardList(const TArray<FSingleCard>& Cards)
+void UTableCard::InitializeCardList(const FCardCollection& Cards)
 {
 	if (!CardContainer || !CardWidgetClass)
 	{
@@ -15,10 +15,9 @@ void UTableCard::InitializeCardList(const TArray<FSingleCard>& Cards)
 	// 혹시 기존에 있던 카드 제거
 	CardContainer->ClearChildren();
 
-	for (const FSingleCard& CardData : Cards)
+	for (const auto& CardData : Cards.CardList)
 	{
-		UCard* CardWidget = CreateWidget<UCard>(GetWorld(), CardWidgetClass);
-		if (CardWidget)
+		if (UCard* CardWidget = CreateWidget<UCard>(GetWorld(), CardWidgetClass))
 		{
 			CardWidget->InitializeWithCard(CardData);
 			CardContainer->AddChildToWrapBox(CardWidget);

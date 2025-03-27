@@ -69,9 +69,9 @@ void ABangPlayerHUD::BeginPlay()
 	
 }
 
-void ABangPlayerHUD::ShowDrawCardUI(const TArray<FSingleCard>& Cards)
+void ABangPlayerHUD::ShowDrawCardUI(const FCardCollection& Cards)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ShowDrawCardUI 호출됨! 카드 수: %d"), Cards.Num());
+	UE_LOG(LogTemp, Warning, TEXT("ShowDrawCardUI 호출됨! 카드 수: %d"), Cards.CardList.Num());
 
 	if (!TableCardWidgetClass)
 	{

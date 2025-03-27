@@ -140,7 +140,7 @@ public:
 	void Server_TestDrawCards();
 	// 정빈
 	UFUNCTION(Client, Reliable)
-	void Client_ShowDrawnCards(const TArray<FSingleCard>& DrawnCards);
+	void Client_ShowDrawnCards();
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UTableCard> TableCard;
@@ -269,7 +269,8 @@ public:
 
 	UFUNCTION()
 	void TryBindPlayerInfoUpdated();
-	
+
+public:
 
 	///////////////////////////
 	//// 원명 추가 
