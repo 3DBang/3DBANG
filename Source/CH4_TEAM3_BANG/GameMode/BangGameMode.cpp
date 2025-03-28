@@ -31,7 +31,7 @@ void ABangGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 카드매니저 가져오기
+	// 카드매니저 가져오 기
 	if (const TObjectPtr<UBangGameInstance> BangGameInstance = Cast<UBangGameInstance>(GetGameInstance()))
 	{
 		FCardManagerInstance OutCardManager;
@@ -642,6 +642,8 @@ void ABangGameMode::CheckTrapCard()
 				{
 					if (Players.Players[PlayerIndex].CurrentHealth < 4)
 					{
+						// 여기서 바로 죽이기 보다는 체력을 깍는게 맞을거 같은데...
+						
 						FPlayerCardCollection CardList;
 						CardList.PlayerCards.Append(Players.Players[PlayerIndex].MyCards.PlayerCards);
 						CardList.PlayerCards.Append(Players.Players[PlayerIndex].EquippedCards.PlayerCards);
@@ -680,7 +682,8 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID,
                                FPlayerCardCollection CardList)
 {
 	if (!CardManager) return;
-
+	
+	
 	// 분기 처리시 return전에 모든작업 수행후 반환
 	// 플레이어중에 벌처셈 카드가 있으면 그상대에게 카드를 다 줘야한다.
 	for (FPlayerInformation Player : Players.Players)
@@ -693,7 +696,12 @@ void ABangGameMode::PlayerDead(const uint32 UniqueID,
 		else
 		{
 			// 카드 사용덱으로 이동
-		}	
+		}
+
+		if (Player.PlayerUniqueID == UniqueID)
+		{
+			SendGameLog(FString::Printf(TEXT("플레이어 %s(이)가 죽었습니다."), *Player.PlayerName));
+		}
 	}
 
 	// 플레이어 죽었을 경우 게임 종료조건 체크

@@ -35,17 +35,22 @@ void ABangPlayerState::Client_SetUniqueId_Implementation(const uint32& FromPlaye
 void ABangPlayerState::LoosePlayerHealth(const uint32& FromUniqueID, const uint32& TargetUniqueID, const int32 Amount)
 {
 	// Message::피 닳은거 알림
-	PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth -= Amount;
 	
-	if (PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth <= 0)
+	FPlayerInformation* FromPlayerInfo = PlayerInfo.GetPlayerInformation(FromUniqueID);
+	FPlayerInformation* TargetPlayerInfo = PlayerInfo.GetPlayerInformation(TargetUniqueID);
+	
+	TargetPlayerInfo->CurrentHealth -= Amount;
+	Server_SendLog(FString::Printf(TEXT("플레이어 %s의 체력이 1 감소했습니다."), *TargetPlayerInfo->PlayerName));
+	
+	if (TargetPlayerInfo->CurrentHealth <= 0)
 	{
 		if (!CheckAndUseBeerIfAvailable(TargetUniqueID))
 		{
-			if (FromUniqueID != 0 && PlayerInfo.GetPlayerInformation(FromUniqueID)->CharacterCardType == ECharacterType::VultureSam)
+			if (FromUniqueID != 0 && FromPlayerInfo->CharacterCardType == ECharacterType::VultureSam)
 			{
 				FPlayerCardCollection CardList;
-				PlayerInfo.GetPlayerInformation(FromUniqueID)->GetAllCardList(CardList);
-				PlayerInfo.GetPlayerInformation(TargetUniqueID)->MyCards.PlayerCards.Append(CardList.PlayerCards);
+				FromPlayerInfo->GetAllCardList(CardList);
+				TargetPlayerInfo->MyCards.PlayerCards.Append(CardList.PlayerCards);
 			}
 			Server_PlayerDead(TargetUniqueID);
 		}
@@ -56,18 +61,19 @@ void ABangPlayerState::LoosePlayerHealth(const uint32& FromUniqueID, const uint3
 		FindTargetPlayerController(TargetUniqueID, TargetPC);
 		if (TargetPC)
 		{
-			TargetPC->UpdatePlayerHP(PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth -= Amount);
+			TargetPC->UpdatePlayerHP(TargetPlayerInfo->CurrentHealth);
 		}
 	}
 }
 
 void ABangPlayerState::GainPlayerHealth(const uint32& TargetUniqueID, int32 Amount)
 {
-	PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth += Amount;
+	FPlayerInformation* TargetPlayerInfo = PlayerInfo.GetPlayerInformation(TargetUniqueID);
+	TargetPlayerInfo->CurrentHealth += Amount;
 	
-	if (PlayerInfo.GetPlayerInformation(TargetUniqueID)->MaxHealth < PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth)
+	if (TargetPlayerInfo->MaxHealth < TargetPlayerInfo->CurrentHealth)
 	{
-		PlayerInfo.GetPlayerInformation(TargetUniqueID)->CurrentHealth = PlayerInfo.GetPlayerInformation(TargetUniqueID)->MaxHealth;
+		TargetPlayerInfo->CurrentHealth = TargetPlayerInfo->MaxHealth;
 	}
 }
 
@@ -978,6 +984,7 @@ bool ABangPlayerState::CheckAndUseBeerIfAvailable(uint32 TargetUniqueID)
 			RestoreCard(TargetUniqueID, TempCard);
 			Server_SetPlayerInfo(PlayerInfo);
 
+			Server_SendLog(FString::Printf(TEXT("플레이어 %s가 맥주를 사용하여 체력 1 회복"), *TargetInfo->PlayerName));
 			UE_LOG(LogTemp, Warning, TEXT("플레이어 %d가 맥주를 사용하여 체력 1 회복"), TargetUniqueID);
 			return true;
 		}

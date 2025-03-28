@@ -261,7 +261,7 @@ public:
 	 */
 	UFUNCTION(Server, Reliable)
 	void Server_RequestSendGameLog(const FString& GameLogMessage);
-
+	
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 	
