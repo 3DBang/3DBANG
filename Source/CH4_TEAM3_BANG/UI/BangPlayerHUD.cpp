@@ -116,7 +116,7 @@ void ABangPlayerHUD::ShowRobberyChoiceCardUI(const FCardCollection& FrontCards, 
 
 	if (RobberyChoiceWidgetInstance)
 	{
-		RobberyChoiceWidgetInstance->InitializeCardList(FrontCards, BackCards, CardSelectPurpose);
+		RobberyChoiceWidgetInstance->InitializeRobberyCardList(FrontCards, BackCards, CardSelectPurpose);
 	}
 	else
 	{

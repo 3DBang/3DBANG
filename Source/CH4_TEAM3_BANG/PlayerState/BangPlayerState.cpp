@@ -290,31 +290,9 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 		}
 	case EActiveType::Robbery:
 		{
+			// ToUniqueID꺼 카드 하나 제거하고 FromUniqueID꺼 카드 하나 추가
 			if (ToUniqueID == 0) return;
-			// 거리 접근 가능한지 확인
-			if (!PlayerInfo.IsDistanceAble(FromUniqueID, ToUniqueID))
-			{
-				// 거리 안된다고 PC에 알려줘야함
-				return;
-			}
-
-			// PC에서 뺏을 카드 선택 ToUniqueID
-			FPlayerCardCollection CardList;
-			FPlayerCardCollection HiddenCardList;
-			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->EquippedCards.PlayerCards);
-			CardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->TrapCards.PlayerCards);
-
-			HiddenCardList.PlayerCards.Append(PlayerInfo.GetPlayerInformation(ToUniqueID)->MyCards.PlayerCards);
-
-			PlayerInfo.SelectableCards.PlayerCards.Append(CardList.PlayerCards);
-			PlayerInfo.HiddenSelectableCards.PlayerCards.Append(HiddenCardList.PlayerCards);
-			Server_SetPlayerInfo(PlayerInfo);
-
-			FPlayerCardSymbol SingleSymbolCard;
-			SingleSymbolCard.SymbolNumber = SingleCard.Card->SymbolNumber;
-			SingleSymbolCard.SymbolType = SingleCard.Card->SymbolType;
 			
-			UseCardReturn(FromUniqueID, SingleSymbolCard, ToUniqueID, OutActiveType, EPassiveType::None);
 			
 			break;
 		}

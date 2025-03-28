@@ -30,11 +30,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card")
 	TSubclassOf<UCard> CardWidgetClass;
-
-// private:
 	
 	ECardSelectPurpose CardSelectPurpose; // 카드 선택 목적 저장
 
+public: // 어째서?!
 	UFUNCTION()
 	void HandleCardClicked(UCard* ClickedCard); // 카드 클릭 이벤트 핸들러 함수
 };

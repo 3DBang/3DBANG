@@ -16,7 +16,7 @@ class CH4_TEAM3_BANG_API URobberyChoiceWidget : public UTableCard
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void InitializeCardList(
+	void InitializeRobberyCardList(
 		const FCardCollection& FrontCards,
 		const FCardCollection& BackCards,
 		const ECardSelectPurpose CardSelectPurpose

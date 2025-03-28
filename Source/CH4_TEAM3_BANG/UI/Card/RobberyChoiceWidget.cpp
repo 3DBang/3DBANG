@@ -5,8 +5,8 @@
 #include "Card.h"
 #include "Components/WrapBox.h"
 
-void URobberyChoiceWidget::InitializeCardList(const FCardCollection& FrontCards, const FCardCollection& BackCards,
-	const ECardSelectPurpose CardSelectPurpose)
+void URobberyChoiceWidget::InitializeRobberyCardList(const FCardCollection& FrontCards, const FCardCollection& BackCards,
+	const ECardSelectPurpose _CardSelectPurpose)
 {
 	if (!CardContainer || !CardWidgetClass)
 	{
@@ -14,7 +14,7 @@ void URobberyChoiceWidget::InitializeCardList(const FCardCollection& FrontCards,
 		return;
 	}
 
-	this->CardSelectPurpose = CardSelectPurpose;
+	CardSelectPurpose = _CardSelectPurpose;
 
 	// 혹시 기존에 있던 카드 제거
 	CardContainer->ClearChildren();

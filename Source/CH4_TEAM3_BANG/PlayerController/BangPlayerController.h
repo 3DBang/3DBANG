@@ -91,7 +91,7 @@ private:
 public:
 	UPROPERTY()
 	uint32 PlayerUniqueID = 0;
-
+	
 	//PlayerUniqueID 설정
 	UFUNCTION(BlueprintCallable)
 	void InitPlayerUniqueID();
