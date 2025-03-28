@@ -37,11 +37,17 @@ public:
 	/** 카드 설정 (데이터 + 앞면 표시 여부) */
 	void SetCard(const FSingleCard& InCard, bool bShowFront);
 
-	/** 카드 앞/뒷면 뒤집기 */
-	void FlipCard();
-
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SetCard(const FSingleCard& InCard, bool bShowFront);
+
+	UPROPERTY()
+	uint32 OwnerUniqueID = -1;
+
+	void RemoveCardActor(const FSingleCard& CardToRemove);
+
 private:
 	bool bIsFrontVisible = true;
+
+	UPROPERTY()
+	TArray<ABangCardActor*> SpawnedCardActors; // 생성한 카드 액터들 추적용
 };
