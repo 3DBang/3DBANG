@@ -22,6 +22,7 @@
 #include "UI/PlayerInfo/BangInfoWidget.h"
 #include "UI/Card/RobberyChoiceWidget.h"
 #include "Components/MeshComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -78,6 +79,12 @@ void ABangPlayerController::OnRep_PlayerState()
 	TryBindPlayerInfoUpdated();
 
 	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
+}
+
+void ABangPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ABangPlayerController, PlayerNickname);
 }
 
 void ABangPlayerController::TryBindPlayerInfoUpdated()
@@ -156,7 +163,7 @@ void ABangPlayerController::UpdateCardList(FPlayerCollection& PlayerInfo)
 	}
 
 	//플레이어 스테이트의 플레이어 인포를 써보기
-	FPlayerInformation* PlayerInformation = BangPlayerState->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
+	FPlayerInformation* PlayerInformation =  BangPlayerState->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
 	FCardCollection MyCardCollection;
 	BangPlayerState->GetCard(PlayerUniqueID, MyCardCollection); // PS에서 카드 정보 가져오기
 	FSingleCard JobCard;
@@ -256,8 +263,8 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 
 	PS->GetCardType(PlayerUniqueID, SingleCard, OutActiveType, OutPassiveType);
 	UE_LOG(LogTemp, Warning, TEXT("OutActiveType: %s, OutPassiveType: %s"),
-	       *UEnum::GetValueAsString(OutActiveType),
-	       *UEnum::GetValueAsString(OutPassiveType));
+		*UEnum::GetValueAsString(OutActiveType),
+		*UEnum::GetValueAsString(OutPassiveType));
 
 	if (OutActiveType == EActiveType::Missed)return;
 
@@ -644,10 +651,7 @@ void ABangPlayerController::Client_DisplayBangUI_Implementation()
 {
 	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
-		BangHUD->ChattingWidgetInstance->AddMessage(
-			FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
-			FSlateColor(FLinearColor::Green)
-		);
+	
 	}	
 }
 
@@ -826,7 +830,7 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	JCH_Test();
+	//JCH_Test();
 	//Server_StartGame();
 }
 
