@@ -68,10 +68,12 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{
+			FBangSinglePlayerController Controller;
+			Controller.Controller = BangPlayerController;
 			BangPlayerControllers.Add(BangPlayerController);
 			BangPlayerController->Init();
 			
-			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, BangPlayerController);
+			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, Controller);
 			SendGameLog(FString::Printf(TEXT("%s님이 입장했습니다."), *BangPlayerController->PlayerNickname));
 		}
 	}
