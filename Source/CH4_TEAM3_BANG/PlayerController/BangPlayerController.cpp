@@ -21,6 +21,7 @@
 #include "Data/PlayerInformation.h"
 #include "UI/PlayerInfo/BangInfoWidget.h"
 #include "Components/MeshComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -76,6 +77,12 @@ void ABangPlayerController::OnRep_PlayerState()
 	TryBindPlayerInfoUpdated();
 
 	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
+}
+
+void ABangPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ABangPlayerController, PlayerNickname);
 }
 
 void ABangPlayerController::TryBindPlayerInfoUpdated()
@@ -291,6 +298,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 				CardList->RemoveSelectedCard(SingleCard);
 				InitializUsingCard();
 				Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s님이 %s 카드를 사용했습니다"), *Info->PlayerName, *SingleCard.Card->CardName.ToString()));
+				UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection"));
 			}
 		}
 	}
@@ -453,6 +461,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 
 	if (!BangPlayerHUD)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Noreturn"));
 		return;
 	}
 	
@@ -562,6 +571,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 				MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
 				PS->RestoreCard(PlayerUniqueID, Card);
 				PS->Server_SetPlayerInfo(PS->PlayerInfo);
+				//EndminiTurn(); = Playerinfo.bMyturn = true Client_RequestCardSelection(UseCard)
 			}
 			else
 			{
@@ -629,23 +639,24 @@ void ABangPlayerController::Client_DisplayBangUI_Implementation()
 {
 	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
-		BangHUD->ChattingWidgetInstance->AddMessage(
-			FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
-			FSlateColor(FLinearColor::Green)
-		);
+	
 	}	
 }
 
 
 void ABangPlayerController::NotifyHUDLoaded()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Client] NotifyHUDLoaded"));
 	Server_HUDLoaded();
-	if (!HasAuthority())
+
+	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		BangHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
+		Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
+		UE_LOG(LogTemp, Warning, TEXT("[Client] OnCardSelectionComplete Binding"));
+		if (!HasAuthority())
 		{
 			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
-			BangHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
 		}
 	}
 }
@@ -807,7 +818,7 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	JCH_Test();
+	//JCH_Test();
 	//Server_StartGame();
 }
 
@@ -1231,6 +1242,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
 			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select);
 
+
 			CardList->RemoveSelectedCard(UsingCard);
 			InitializUsingCard();
 		}
@@ -1245,7 +1257,6 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 		PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		CardList->RemoveSelectedCard(UsingCard);
 		InitializUsingCard();
-		
 	}
 }
 
