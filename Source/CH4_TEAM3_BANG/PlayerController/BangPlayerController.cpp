@@ -22,6 +22,8 @@
 #include "UI/PlayerInfo/BangInfoWidget.h"
 #include "Components/MeshComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Card/BangCardTableSpawner.h"
+#include "EngineUtils.h" 
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -476,6 +478,28 @@ void ABangPlayerController::OnCardSelectionComplete(
 	{
 		//카드 사용하기
 		UE_LOG(LogTemp, Warning, TEXT("[TEST]OnCardSelectionComplete UseCard"));
+
+		for (const FSingleCard& Card : SelectedCards.CardList)
+		{
+			PS->GetCardType(PlayerUniqueID, Card, OutActiveType, OutPassiveType);
+
+			for (TActorIterator<ABangCardTableSpawner> It(GetWorld()); It; ++It)
+			{
+				if (ABangCardTableSpawner* Spawner = *It)
+				{
+					if (OutPassiveType != EPassiveType::None)
+					{
+						// 패시브 카드면 장착 → 위치 갱신
+						Spawner->RefreshEquippedCards();
+					}
+					else
+					{
+						// 일반 카드면 테이블에서 제거
+						Spawner->RemoveCardActor(Card);
+					}
+				}
+			}
+		}
 		Client_HandleCardSelection(SelectedCards.CardList[0]);
 		break;
 	}

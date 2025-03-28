@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Card/BaseCard/BangCardBase.h"
 #include "PlayerState/BangPlayerState.h"
+#include "PlayerController/BangPlayerController.h"
 
 ABangCardActor::ABangCardActor()
 {
@@ -59,10 +60,41 @@ void ABangCardActor::SetCard(const FSingleCard& InCard, bool bForceFront)
 
 }
 
-void ABangCardActor::Multicast_SetCard_Implementation(const FSingleCard& InCard, bool bForceFront)
+// 수정필요
+void ABangCardActor::Multicast_SetCard_Implementation(const FSingleCard& InCard, bool /*bForceFront*/)
 {
-    // 카드 정보만 세팅하고, 보이는 여부는 클라이언트가 직접 판단
-    SetCard(InCard, bForceFront);
+    CardData = InCard;
+
+    bool bIsMyCard = false;
+
+    if (const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController())
+    {
+        if (APlayerController* PC = LocalPlayer->GetPlayerController(GetWorld()))
+        {
+            if (const ABangPlayerController* BangPC = Cast<ABangPlayerController>(PC))
+            {
+                if (ABangPlayerState* PS = BangPC->GetPlayerState<ABangPlayerState>())
+                {
+                    FCardCollection MyCards;
+                    PS->GetCard(PS->PlayerUniqueID, MyCards);
+
+                    for (const FSingleCard& MyCard : MyCards.CardList)
+                    {
+                        if (MyCard.Card &&
+                            InCard.Card &&
+                            MyCard.Card->SymbolType == InCard.Card->SymbolType &&
+                            MyCard.Card->SymbolNumber == InCard.Card->SymbolNumber)
+                        {
+                            bIsMyCard = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    SetCard(InCard, bIsMyCard);
 }
 
 void ABangCardActor::UpdateWidgetContent()
@@ -95,3 +127,4 @@ void ABangCardActor::UpdateWidgetContent()
         UE_LOG(LogTemp, Error, TEXT("CardData/CardIcon/CardFrontWidget 없음!"));
     }
 }
+

@@ -5,7 +5,7 @@
 #include "Card/BangCardManager.h"
 #include "PlayerController/BangPlayerController.h"
 #include "PlayerState/BangPlayerState.h"
-
+#include "GameState/BangGameState.h"
 ABangCardTableSpawner::ABangCardTableSpawner()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -114,6 +114,7 @@ void ABangCardTableSpawner::SpawnHandCards()
 					if (ABangCardActor* Spawned = World->SpawnActor<ABangCardActor>(CardActorClass, CardPos + FVector(0, 0, 5), Rot))
 					{
 						Spawned->Multicast_SetCard(HandCards.CardList[CardIdx], bIsMyCard);
+						SpawnedCardActors.Add(Spawned); 
 					}
 				}
 
@@ -144,6 +145,7 @@ void ABangCardTableSpawner::SpawnHandCards()
 						if (ABangCardActor* Spawned = World->SpawnActor<ABangCardActor>(CardActorClass, CardPos, Rot))
 						{
 							Spawned->Multicast_SetCard(EquipCards[i], true);
+							SpawnedCardActors.Add(Spawned); //  직업/캐릭터 카드도 저장
 						}
 					}
 				}
@@ -177,5 +179,108 @@ void ABangCardTableSpawner::SpawnUsedCards()
 	{
 		Spawned->Multicast_SetCard(TopCard, true);
 		CurrentUsedCardActor = Spawned;
+	}
+}
+
+void ABangCardTableSpawner::RemoveCardActor(const FSingleCard& CardToRemove)
+{
+	for (int32 i = SpawnedCardActors.Num() - 1; i >= 0; --i)
+	{
+		ABangCardActor* CardActor = SpawnedCardActors[i];
+		if (CardActor && CardActor->CardData.Card &&
+			CardActor->CardData.Card->SymbolType == CardToRemove.Card->SymbolType &&
+			CardActor->CardData.Card->SymbolNumber == CardToRemove.Card->SymbolNumber)
+		{
+			CardActor->Destroy();
+			SpawnedCardActors.RemoveAt(i);
+			UE_LOG(LogTemp, Warning, TEXT("테이블에서 카드 제거됨: %s"), *CardToRemove.Card->GetName());
+			break;
+		}
+	}
+}
+
+FVector ABangCardTableSpawner::GetEquipSlotPositionForPlayer(uint32 PlayerUniqueID, int32 EquipCardIndex) const
+{
+	const FVector Center = GetActorLocation();
+	const float Radius = 400.f;
+	const float EquipYOffset = 400.f; 
+	const float EquipCardSpacing = 70.f; 
+
+	UWorld* World = GetWorld();
+	if (!World) return FVector::ZeroVector;
+
+	int32 PlayerIndex = -1;
+
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			if (ABangPlayerState* PS = Cast<ABangPlayerState>(PC->PlayerState))
+			{
+				for (int32 i = 0; i < PS->PlayerInfo.Players.Num(); ++i)
+				{
+					if (PS->PlayerInfo.Players[i].PlayerUniqueID == PlayerUniqueID)
+					{
+						PlayerIndex = i;
+						break;
+					}
+				}
+			}
+		}
+	}
+	if (PlayerIndex == -1) return FVector::ZeroVector;
+
+	const float PlayerAngleDeg = (360.f / MaxPlayerCount) * PlayerIndex;
+	const float PlayerAngleRad = FMath::DegreesToRadians(PlayerAngleDeg);
+	FVector PlayerCenter = Center + FVector(FMath::Cos(PlayerAngleRad), FMath::Sin(PlayerAngleRad), 0.f) * Radius;
+
+	FVector ForwardVector = (Center - PlayerCenter).GetSafeNormal();
+	FVector RightVector = FVector::CrossProduct(FVector::UpVector, ForwardVector);
+
+	FVector EquipBasePos = PlayerCenter + ForwardVector * EquipYOffset + FVector(0, 0, 5.f);
+
+	FVector Offset = RightVector * ((EquipCardIndex - 0.5f) * EquipCardSpacing);
+
+	return EquipBasePos + Offset;
+}
+
+
+
+void ABangCardTableSpawner::RefreshEquippedCards()
+{
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
+		{
+			if (ABangPlayerState* PS = Cast<ABangPlayerState>(PC->PlayerState))
+			{
+				uint32 UniqueID = PS->PlayerUniqueID;
+
+				FCardCollection EquippedCards;
+				PS->GetEquippedCard(UniqueID, EquippedCards);
+
+				for (int32 i = 0; i < EquippedCards.CardList.Num(); ++i)
+				{
+					const FSingleCard& EquipCard = EquippedCards.CardList[i];
+					FVector Pos = GetEquipSlotPositionForPlayer(UniqueID, i);
+					FRotator Rot = UKismetMathLibrary::FindLookAtRotation(Pos, GetActorLocation());
+
+					for (ABangCardActor* CardActor : SpawnedCardActors)
+					{
+						if (CardActor && CardActor->CardData.Card &&
+							CardActor->CardData.Card->SymbolType == EquipCard.Card->SymbolType &&
+							CardActor->CardData.Card->SymbolNumber == EquipCard.Card->SymbolNumber)
+						{
+							CardActor->SetActorLocation(Pos);
+							CardActor->SetActorRotation(Rot);
+							break;
+						}
+					}
+				}
+			}
+		}
 	}
 }

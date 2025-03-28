@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Card/BangCardManager.h"
 #include "BangCardTableSpawner.generated.h"
 
 UCLASS()
@@ -28,12 +29,19 @@ public:
 	void SpawnUsedCards();
 	//void SpawnEquippedCards(); 패시브 카드 장착했을때의
 
-	/*UFUNCTION(BlueprintCallable)
-	void SpawnCardListOnTable(const FCardCollection& CardsToSpawn);*/
+
 
 	UPROPERTY()
 	ABangCardActor* CurrentUsedCardActor = nullptr;
 
+	void RemoveCardActor(const FSingleCard& CardToRemove);
+	void RefreshEquippedCards();
+
 private:
+
+	UPROPERTY()
+	TArray<ABangCardActor*> SpawnedCardActors; 
+
+	FVector GetEquipSlotPositionForPlayer(uint32 PlayerUniqueID, int32 EquipCardIndex) const;
 
 };
