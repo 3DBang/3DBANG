@@ -21,6 +21,7 @@
 #include "Data/PlayerInformation.h"
 #include "UI/PlayerInfo/BangInfoWidget.h"
 #include "Components/MeshComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ABangPlayerController::ABangPlayerController()
 {
@@ -77,6 +78,12 @@ void ABangPlayerController::OnRep_PlayerState()
 
 	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
 }
+
+/*void ABangPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ABangPlayerController, PlayerNickname);
+}*/
 
 void ABangPlayerController::TryBindPlayerInfoUpdated()
 {
