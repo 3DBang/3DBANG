@@ -342,8 +342,8 @@ void ABangCharacter::SetHP(int32 NewHP)
 		for (int32 i = 0; i < NewHP; i++)
 		{
 			
-			FVector RelativeLocation(0.f, (i - (HP - 1) / 2.f) * 30.f, CapsuleHalfHeight + 10.f);
-			FRotator RelativeRotation = FRotator::ZeroRotator;
+			FVector RelativeLocation(Xoffset, (i - (HP - 1) / 2.f) * 30.f, CapsuleHalfHeight + Heightoffset);
+			FRotator RelativeRotation = CustomRotation;
 			FTransform RelativeTransform(RelativeRotation, RelativeLocation);
 
 			FVector Offset = FVector(0.f, i * 30.f, 100.f);

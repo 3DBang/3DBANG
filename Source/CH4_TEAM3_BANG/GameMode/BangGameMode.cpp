@@ -866,10 +866,10 @@ void ABangGameMode::ForceUpdate_AdvancePlayerTurn()
 }
 
 // 원명 추가
-void ABangGameMode::SetUserHP()
+void ABangGameMode::SetUserHP(int32 index)
 {
 	if (BangPlayerControllers.Num() == 0) return;
-	BangPlayerControllers[0]->SetInitializeHP(5);
+	BangPlayerControllers[index]->SetInitializeHP(5);
 }
 
 void ABangGameMode::SpawnPlayers()
@@ -1165,4 +1165,9 @@ void ABangGameMode::MoveTestBong(int index)
 	auto TmpInfo = tmpPS->PlayerInfo.GetPlayerInformation(tmp->PlayerUniqueID);
 	if (!ensure(TmpInfo))return;
 	TmpInfo->bIsMyTurn = true;
+}
+void ABangGameMode::UpdateUserHP(int32 index,int32 _HP)
+{
+	if (BangPlayerControllers.Num() == 0) return;
+	BangPlayerControllers[index]->UpdatePlayerHP(_HP);
 }

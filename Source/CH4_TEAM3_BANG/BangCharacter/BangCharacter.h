@@ -145,4 +145,13 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
 	float SprintSpeed = 900.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HP")
+	FRotator CustomRotation = FRotator::ZeroRotator;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HP")
+	float Heightoffset = 35.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HP")
+	float Xoffset = 0.f;
 };
