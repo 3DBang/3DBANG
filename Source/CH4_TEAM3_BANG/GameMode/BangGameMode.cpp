@@ -350,9 +350,6 @@ void ABangGameMode::StartTest()
 		UE_LOG(LogTemp, Error, TEXT("플레이어가 생성되지 않았습니다. AdvanceGameTurn을 건너뜁니다."));
 	}
 
-	//원명 테스트 
-	SpawnPlayers();
-
 	// 사용된 카드 테스트 코드 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -376,8 +373,6 @@ void ABangGameMode::StartTest()
 			break;
 		}
 	}
-
-
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.

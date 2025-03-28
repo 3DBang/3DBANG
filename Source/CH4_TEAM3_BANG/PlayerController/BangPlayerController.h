@@ -98,7 +98,7 @@ public:
 	//PlayerUniqueID 설정
 	UFUNCTION(BlueprintCallable)
 	void InitPlayerUniqueID();
-	
+
 	UFUNCTION(BlueprintCallable)
 	void JCH_Test();
 
