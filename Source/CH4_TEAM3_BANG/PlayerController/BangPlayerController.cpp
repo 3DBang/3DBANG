@@ -79,11 +79,11 @@ void ABangPlayerController::OnRep_PlayerState()
 	//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABangPlayerController::GetPlayerStateAtBegin);
 }
 
-/*void ABangPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void ABangPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ABangPlayerController, PlayerNickname);
-}*/
+}
 
 void ABangPlayerController::TryBindPlayerInfoUpdated()
 {
