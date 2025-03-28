@@ -292,6 +292,7 @@ void ABangPlayerController::Client_HandleCardSelection_Implementation(const FSin
 				CardList->RemoveSelectedCard(SingleCard);
 				InitializUsingCard();
 				Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s님이 %s 카드를 사용했습니다"), *Info->PlayerName, *SingleCard.Card->CardName.ToString()));
+				UE_LOG(LogTemp, Warning, TEXT("HandleCardSelection"));
 			}
 		}
 	}
@@ -452,8 +453,9 @@ void ABangPlayerController::OnCardSelectionComplete(
 
 	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
 
-	if (BangPlayerHUD)
+	if (!BangPlayerHUD)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Noreturn"));
 		return;
 	}
 	
@@ -563,6 +565,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 				MyInfo->MyCards.RemoveCard(Card.Card->SymbolType, Card.Card->SymbolNumber);
 				PS->RestoreCard(PlayerUniqueID, Card);
 				PS->Server_SetPlayerInfo(PS->PlayerInfo);
+				//EndminiTurn(); = Playerinfo.bMyturn = true Client_RequestCardSelection(UseCard)
 			}
 			else
 			{
@@ -640,13 +643,17 @@ void ABangPlayerController::Client_DisplayBangUI_Implementation()
 
 void ABangPlayerController::NotifyHUDLoaded()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Client] NotifyHUDLoaded"));
 	Server_HUDLoaded();
-	if (!HasAuthority())
+
+	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
+		BangHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
+		Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
+		UE_LOG(LogTemp, Warning, TEXT("[Client] OnCardSelectionComplete Binding"));
+		if (!HasAuthority())
 		{
 			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
-			BangHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
 		}
 	}
 }
@@ -1231,6 +1238,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
 			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select);
 
+
 			CardList->RemoveSelectedCard(UsingCard);
 			InitializUsingCard();
 		}
@@ -1244,8 +1252,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 		Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
 		PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		CardList->RemoveSelectedCard(UsingCard);
-		InitializUsingCard();
-		
+		InitializUsingCard();		
 	}
 }
 
