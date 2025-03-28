@@ -99,7 +99,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void JCH_Test();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	FString PlayerNickname;
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Init")

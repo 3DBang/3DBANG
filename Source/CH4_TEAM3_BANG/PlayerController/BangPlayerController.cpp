@@ -692,7 +692,7 @@ void ABangPlayerController::SendMessageToServer(FString Message)
 			ToPlayerNickname = TargetIDString;
 		}
 	}
-
+	
 	// 전체챗팅
 	Server_SendMessage(Message, PlayerNickname, ToPlayerNickname);
 }
