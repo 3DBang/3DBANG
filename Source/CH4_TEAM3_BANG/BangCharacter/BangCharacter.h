@@ -53,6 +53,19 @@ public:
 	UFUNCTION()
 	void Click(const FInputActionValue& Value);
 
+	UFUNCTION()
+	void StartSprint(const FInputActionValue& value);
+
+	UFUNCTION()
+	void StopSprint(const FInputActionValue& value);
+
+	UFUNCTION()
+	void StartJump(const FInputActionValue& value);
+	
+	UFUNCTION()
+	void StopJump(const FInputActionValue& value);
+
+
 	/*UPROPERTY(BlueprintAssignable)
 	FOnMouseClicked OnMouseClicked;*/
 
@@ -110,11 +123,6 @@ public:
 public:
 	bool GetFirstPersonMode();
 
-	UFUNCTION()
-	void OnCursorBegin(UPrimitiveComponent* MouseComp);
-
-	UFUNCTION()
-	void OnCursorEnd(UPrimitiveComponent* MouseComp);
 
 	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	UWidgetComponent* InteractionWidgetComponent;
@@ -127,4 +135,23 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SetOutline(bool bEnable, int32 StencilValue);
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float NormalSpeed = 600.f; 
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float SprintSpeedMultiplier = 1.5f; 
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	float SprintSpeed = 900.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HP")
+	FRotator CustomRotation = FRotator::ZeroRotator;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HP")
+	float Heightoffset = 35.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HP")
+	float Xoffset = 0.f;
 };

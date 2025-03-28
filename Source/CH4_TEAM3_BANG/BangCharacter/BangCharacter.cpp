@@ -28,7 +28,7 @@ ABangCharacter::ABangCharacter()
 	bReplicates = true;
 	SetReplicateMovement(true);
 
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+	//GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -54,30 +54,7 @@ ABangCharacter::ABangCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
 
-	/*InteractionWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("InteractionWidget"));
-	InteractionWidgetComponent->SetupAttachment(RootComponent);
-	InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
-	InteractionWidgetComponent->SetDrawSize(FVector2D(400, 200));
-	InteractionWidgetComponent->SetRelativeLocation(FVector(0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight()  + 50.f));
-	InteractionWidgetComponent->SetVisibility(false);
-	InteractionWidgetComponent->SetHiddenInGame(true);*/
-
-	if (UPrimitiveComponent* PrimComponent = Cast<UPrimitiveComponent>(GetRootComponent()))
-	{
-		PrimComponent->SetGenerateOverlapEvents(true);
-		PrimComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-		PrimComponent->OnBeginCursorOver.AddDynamic(this, &ABangCharacter::OnCursorBegin);
-		PrimComponent->OnEndCursorOver.AddDynamic(this, &ABangCharacter::OnCursorEnd);
-	}
-	/*if (UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(GetMesh()))
-	{
-		MeshComp->SetGenerateOverlapEvents(true);
-		MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		MeshComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-		MeshComp->OnBeginCursorOver.AddDynamic(this, &ABangCharacter::OnCursorBegin);
-		MeshComp->OnEndCursorOver.AddDynamic(this, &ABangCharacter::OnCursorEnd);
-	}*/
-
+	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 }
 
 // Called when the game starts or when spawned
@@ -197,6 +174,39 @@ void ABangCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 					&ABangCharacter::Click
 				);
 			}
+			if (PlayerController->SprintAction)
+			{
+				// IA_Sprint 액션 키를 "누르고 있는 동안" StartSprint() 호출
+				EnhancedInput->BindAction(
+					PlayerController->SprintAction,
+					ETriggerEvent::Triggered,
+					this,
+					&ABangCharacter::StartSprint
+				);
+				// IA_Sprint 액션 키에서 "손을 뗀 순간" StopSprint() 호출
+				EnhancedInput->BindAction(
+					PlayerController->SprintAction,
+					ETriggerEvent::Completed,
+					this,
+					&ABangCharacter::StopSprint
+				);
+			}
+			if (PlayerController->JumpAction)
+			{
+				EnhancedInput->BindAction(
+					PlayerController->JumpAction,
+					ETriggerEvent::Triggered,
+					this,
+					&ABangCharacter::StartJump
+				);
+
+				EnhancedInput->BindAction(
+					PlayerController->JumpAction,
+					ETriggerEvent::Completed,
+					this,
+					&ABangCharacter::StopJump
+				);
+			}
 
 		}
 	}
@@ -210,16 +220,12 @@ void ABangCharacter::Move(const FInputActionValue& Value)
 		return;
 	}
 	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
-	if (!BPS)
-	{
-		return;
-	}
+	if (!ensure(BPS)) return;
+
 	uint32 tmpID = BPS->PlayerUniqueID;
 	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
-	if (!PlayerInform)
-	{
-		return;
-	}
+	if (!ensure(PlayerInform)) return;
+
 	if (!PlayerInform->bIsMyTurn)
 	{
 		return;
@@ -336,8 +342,8 @@ void ABangCharacter::SetHP(int32 NewHP)
 		for (int32 i = 0; i < NewHP; i++)
 		{
 			
-			FVector RelativeLocation(0.f, (i - (HP - 1) / 2.f) * 30.f, CapsuleHalfHeight + 10.f);
-			FRotator RelativeRotation = FRotator::ZeroRotator;
+			FVector RelativeLocation(Xoffset, (i - (HP - 1) / 2.f) * 30.f, CapsuleHalfHeight + Heightoffset);
+			FRotator RelativeRotation = CustomRotation;
 			FTransform RelativeTransform(RelativeRotation, RelativeLocation);
 
 			FVector Offset = FVector(0.f, i * 30.f, 100.f);
@@ -424,37 +430,6 @@ bool ABangCharacter::GetFirstPersonMode()
 {
 	return bFirstPersonMode;
 }
-
-void ABangCharacter::OnCursorBegin(UPrimitiveComponent* MouseComp)
-{
-	
-	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
-	{
-		/*if (auto* PlayC = Cast<ABangPlayerController>(GetController()))
-			PC->SetWidgetVisibility(this, false);*/
-			/*if (PC->IsLocalController())
-			{
-				SetWidgetVisible(false);
-			}*/
-		//uint32 
-		UE_LOG(LogTemp, Error, TEXT("Player State Active"));
-		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), false);
-	}
-}
-
-void ABangCharacter::OnCursorEnd(UPrimitiveComponent* MouseComp)
-{
-	if (ABangPlayerController* PC = Cast<ABangPlayerController>(GetController()))
-	{
-		/*if (auto* PlayC = Cast<ABangPlayerController>(GetController()))
-			PC->SetWidgetVisibility(this, false);*/
-		/*if (PC->IsLocalController())
-		{
-			SetWidgetVisible(false);
-		}*/
-		PC->SetWidgetVisibility(GetPlayerState()->GetPlayerId(), false);
-	}
-}
 void ABangCharacter::SetWidgetVisible(bool bVisible)
 {
 	//InteractionWidgetComponent->SetVisibility(bVisible);
@@ -464,10 +439,69 @@ void ABangCharacter::Multicast_SetOutline_Implementation(bool bEnable, int32 Ste
 {
 	TArray<UMeshComponent*> Meshes;
 	GetComponents<UMeshComponent>(Meshes);
-
 	for (UMeshComponent* MeshComp : Meshes)
 	{
 		MeshComp->SetRenderCustomDepth(bEnable);
 		MeshComp->SetCustomDepthStencilValue(bEnable ? StencilValue : 0);
+	}
+}
+void ABangCharacter::StartSprint(const FInputActionValue& value)
+{
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+	}
+}
+
+void ABangCharacter::StopSprint(const FInputActionValue& value)
+{
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+	}
+}
+void ABangCharacter::StartJump(const FInputActionValue& value)
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
+	if (!ensure(BPS)) return;
+
+	uint32 tmpID = BPS->PlayerUniqueID;
+	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
+	if (!ensure(PlayerInform)) return;
+
+	if (!PlayerInform->bIsMyTurn)
+	{
+		return;
+	}
+	if (value.Get<bool>())
+	{
+		Jump();
+	}
+}
+
+void ABangCharacter::StopJump(const FInputActionValue& value)
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
+	if (!ensure(BPS)) return;
+
+	uint32 tmpID = BPS->PlayerUniqueID;
+	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
+	if (!ensure(PlayerInform)) return;
+
+	if (!PlayerInform->bIsMyTurn)
+	{
+		return;
+	}
+	if (!value.Get<bool>())
+	{
+		StopJumping();
 	}
 }

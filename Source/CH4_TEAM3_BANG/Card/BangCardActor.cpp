@@ -3,8 +3,10 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/Image.h"
 #include "Net/UnrealNetwork.h"
-
+#include "Kismet/GameplayStatics.h"
 #include "Card/BaseCard/BangCardBase.h"
+#include "PlayerState/BangPlayerState.h"
+#include "PlayerController/BangPlayerController.h"
 
 ABangCardActor::ABangCardActor()
 {
@@ -16,7 +18,6 @@ ABangCardActor::ABangCardActor()
     CardMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CardMesh"));
     CardMesh->SetupAttachment(Root);
 
-    // 앞면 위젯
     CardFrontWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("CardFrontWidget"));
     CardFrontWidget->SetupAttachment(CardMesh);
     CardFrontWidget->SetWidgetSpace(EWidgetSpace::World);
@@ -24,42 +25,78 @@ ABangCardActor::ABangCardActor()
     CardFrontWidget->SetRelativeLocation(FVector(0.f, 0.f, 0.1f));
     CardFrontWidget->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
 
-    // 뒷면 위젯
     CardBackWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("CardBackWidget"));
     CardBackWidget->SetupAttachment(CardMesh);
     CardBackWidget->SetWidgetSpace(EWidgetSpace::World);
     CardBackWidget->SetDrawSize(FVector2D(512, 512));
     CardBackWidget->SetRelativeLocation(FVector(0.f, 0.f, -0.1f));
-    CardBackWidget->SetRelativeRotation(FRotator(180.f, 0.f, 0.f)); 
+    CardBackWidget->SetRelativeRotation(FRotator(180.f, 0.f, 0.f));
 
     bReplicates = true;
-    SetReplicateMovement(true); // 카드 위치 복사
+    SetReplicateMovement(true);
 }
 
 void ABangCardActor::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
-	// 기본적으로 앞면 표시
-	CardFrontWidget->SetVisibility(true);
-	CardBackWidget->SetVisibility(false);
-	bIsFrontVisible = true;
+    CardFrontWidget->SetVisibility(true);
+    CardBackWidget->SetVisibility(false);
+    bIsFrontVisible = true;
 
-	// 위젯 초기화 이후 호출
-	GetWorldTimerManager().SetTimerForNextTick(this, &ABangCardActor::UpdateWidgetContent);
+    GetWorldTimerManager().SetTimerForNextTick(this, &ABangCardActor::UpdateWidgetContent);
 }
 
-void ABangCardActor::SetCard(const FSingleCard& InCard, bool bShowFront)
+void ABangCardActor::SetCard(const FSingleCard& InCard, bool bForceFront)
 {
     CardData = InCard;
-    bIsFrontVisible = bShowFront;
 
-    CardFrontWidget->SetVisibility(bShowFront);
-    CardBackWidget->SetVisibility(!bShowFront);
+    bIsFrontVisible = bForceFront;
 
-    // 새 카드 정보 들어왔을 때 즉시 이미지 갱신 시도
+    CardFrontWidget->SetVisibility(bIsFrontVisible);
+    CardBackWidget->SetVisibility(!bIsFrontVisible);
+
     UpdateWidgetContent();
+
 }
+
+// 수정필요
+void ABangCardActor::Multicast_SetCard_Implementation(const FSingleCard& InCard, bool /*bForceFront*/)
+{
+    CardData = InCard;
+
+    bool bIsMyCard = false;
+
+    if (const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController())
+    {
+        if (APlayerController* PC = LocalPlayer->GetPlayerController(GetWorld()))
+        {
+            if (const ABangPlayerController* BangPC = Cast<ABangPlayerController>(PC))
+            {
+                if (ABangPlayerState* PS = BangPC->GetPlayerState<ABangPlayerState>())
+                {
+                    FCardCollection MyCards;
+                    PS->GetCard(PS->PlayerUniqueID, MyCards);
+
+                    for (const FSingleCard& MyCard : MyCards.CardList)
+                    {
+                        if (MyCard.Card &&
+                            InCard.Card &&
+                            MyCard.Card->SymbolType == InCard.Card->SymbolType &&
+                            MyCard.Card->SymbolNumber == InCard.Card->SymbolNumber)
+                        {
+                            bIsMyCard = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    SetCard(InCard, bIsMyCard);
+}
+
 void ABangCardActor::UpdateWidgetContent()
 {
     if (CardData.Card && CardData.Card->CardIcon && CardFrontWidget)
@@ -74,7 +111,6 @@ void ABangCardActor::UpdateWidgetContent()
                 NewBrush.SetResourceObject(CardData.Card->CardIcon);
                 NewBrush.ImageSize = FVector2D(512, 512);
                 Image->SetBrush(NewBrush);
-                UE_LOG(LogTemp, Warning, TEXT("이미지 설정 완료됨!"));
             }
             else
             {
@@ -92,7 +128,3 @@ void ABangCardActor::UpdateWidgetContent()
     }
 }
 
-void ABangCardActor::Multicast_SetCard_Implementation(const FSingleCard& InCard, bool bShowFront)
-{
-    SetCard(InCard, bShowFront);
-}

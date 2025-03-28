@@ -93,6 +93,9 @@ public:
 	UPROPERTY()
 	uint32 PlayerUniqueID = 0;
 
+	UPROPERTY()
+	uint32 TargetUniqueID = 0;
+	
 	//PlayerUniqueID 설정
 	UFUNCTION(BlueprintCallable)
 	void InitPlayerUniqueID();
@@ -261,7 +264,7 @@ public:
 	 */
 	UFUNCTION(Server, Reliable)
 	void Server_RequestSendGameLog(const FString& GameLogMessage);
-
+	
 	UFUNCTION(Client, Reliable)
 	void Client_ReceiveMessage(const FString& Message, const FString& FromNickname, const FString& ToPlayerNickname);
 	
@@ -317,6 +320,13 @@ public:
 	void UpdatePlayerInfo(uint32 BangUniqueID,int32 HP, int32 Range);
 	bool bIsFirstCameraMode = true;
 	inline FString GetPlayerNickname(){return PlayerNickname;}
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> JumpAction = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	TObjectPtr<UInputAction> SprintAction = nullptr;
 
 };
 
