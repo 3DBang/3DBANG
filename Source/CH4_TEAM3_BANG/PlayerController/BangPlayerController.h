@@ -57,6 +57,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnRep_PlayerState() override; // PS가 다 생성되고 난 뒤에 호출
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 ///////////////////////////
 ////서버 관련 로직 작성란
