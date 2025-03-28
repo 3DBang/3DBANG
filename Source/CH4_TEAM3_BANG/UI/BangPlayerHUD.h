@@ -5,6 +5,7 @@
 #include "Card/BangCardManager.h"
 #include "BangPlayerHUD.generated.h"
 
+class URobberyChoiceWidget;
 class UBangInfoWidget;
 class UCardList;
 class UTableCard;
@@ -31,6 +32,9 @@ public:
 	TObjectPtr<UTableCard> TableCardWidgetInstance;
 
 	UPROPERTY()
+	TObjectPtr<URobberyChoiceWidget> RobberyChoiceWidgetInstance;
+
+	UPROPERTY()
 	TObjectPtr<UPlayerListGameLog> PlayerListGameLogInstance; //  새 위젯 인스턴스 추가
 
 	UPROPERTY()
@@ -39,9 +43,11 @@ public:
 
 	// 보여줄때
 	void ShowDrawCardUI(const FCardCollection& Cards);
+	void ShowRobberyChoiceCardUI(const FCardCollection& FrontCards, const FCardCollection& BackCards, const ECardSelectPurpose CardSelectPurpose);
 	
 	// 숨길때
 	void HideDrawCardUI();
+	void HideRobberyChoiceCardUI();
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void SetupTurnCardSelection(ECardSelectPurpose Purpose = ECardSelectPurpose::UseCard, FText ButtonText = INVTEXT("사용하기"), int32 NumCardsToSelect = 1);
@@ -58,6 +64,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UTableCard> TableCardWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<URobberyChoiceWidget> RobberyChoiceWidgetClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UPlayerListGameLog> PlayerListGameLog; //  새 위젯 클래스 추가
