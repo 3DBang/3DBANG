@@ -4,8 +4,6 @@
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "PlayerController/BangPlayerController.h"
-#include "PlayerState/BangPlayerState.h"
-#include "Components/Image.h"
 #include "UObject/ConstructorHelpers.h"
 
 void UBangInGameChattingWidget::NativeConstruct()
@@ -32,7 +30,7 @@ void UBangInGameChattingWidget::NativeConstruct()
 
 void UBangInGameChattingWidget::AddMessage(const FText& Message, const FSlateColor& Color)
 {
-	if (ChatScrollBox) return;
+	if (!ChatScrollBox) return;
 
 	if (const TObjectPtr<UTextBlock> NewMessage = NewObject<UTextBlock>(this))
 	{
@@ -59,7 +57,6 @@ void UBangInGameChattingWidget::OnTestButtonClicked()
 	{
 		OwningPlayerController->TestButtonCLicked();
 	}
-
 }
 
 void UBangInGameChattingWidget::OnTextCommittedFunction(const FText& Text, const ETextCommit::Type CommitMethod)
