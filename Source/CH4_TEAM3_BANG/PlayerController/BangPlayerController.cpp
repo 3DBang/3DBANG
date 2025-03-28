@@ -632,10 +632,7 @@ void ABangPlayerController::Client_DisplayBangUI_Implementation()
 {
 	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
-		BangHUD->ChattingWidgetInstance->AddMessage(
-			FText::FromString(FString::Printf(TEXT("Hello from %d"), GetUniqueID())),
-			FSlateColor(FLinearColor::Green)
-		);
+	
 	}	
 }
 
@@ -1252,7 +1249,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 		Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
 		PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		CardList->RemoveSelectedCard(UsingCard);
-		InitializUsingCard();		
+		InitializUsingCard();
 	}
 }
 

@@ -151,7 +151,7 @@ private:
 	uint32 PlayerUniqueIndex = 1;
 
 	// 로비 플레이어 등록
-	void AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const TObjectPtr<ABangPlayerController>& PlayerController);
+	void AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const FBangSinglePlayerController& PlayerController);
 	// 로비 플레이어 삭제
 	UFUNCTION()
 	void RemoveLobbyPlayer(const uint32& UniqueID);
