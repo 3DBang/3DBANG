@@ -33,6 +33,7 @@ public:
 
 	UPROPERTY()
 	ABangCardActor* CurrentUsedCardActor = nullptr;
+
 private:
 
 };

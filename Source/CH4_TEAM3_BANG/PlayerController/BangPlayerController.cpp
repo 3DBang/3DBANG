@@ -451,7 +451,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 
 	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
 
-	if (BangPlayerHUD)
+	if (!BangPlayerHUD)
 	{
 		return;
 	}

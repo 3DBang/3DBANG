@@ -17,6 +17,8 @@ void ABangCardTableSpawner::BeginPlay()
 
 }
 
+
+
 void ABangCardTableSpawner::SpawnDeckCards()
 {
 	if (!CardActorClass) return;
@@ -41,6 +43,7 @@ void ABangCardTableSpawner::SpawnDeckCards()
 		}
 	}
 }
+
 void ABangCardTableSpawner::SpawnHandCards()
 {
 	if (!CardActorClass) return;
@@ -72,7 +75,6 @@ void ABangCardTableSpawner::SpawnHandCards()
 			{
 				uint32 UniqueID = PS->PlayerUniqueID;
 
-				// PlayerIndex 찾기
 				int32 PlayerIndex = -1;
 				for (int32 i = 0; i < PS->PlayerInfo.Players.Num(); ++i)
 				{
@@ -84,12 +86,10 @@ void ABangCardTableSpawner::SpawnHandCards()
 				}
 				if (PlayerIndex == -1) continue;
 
-				// 위치 계산
 				const float PlayerAngleDeg = (360.f / MaxPlayerCount) * PlayerIndex;
 				const float PlayerAngleRad = FMath::DegreesToRadians(PlayerAngleDeg);
 				FVector PlayerCenter = Center + FVector(FMath::Cos(PlayerAngleRad), FMath::Sin(PlayerAngleRad), 0.f) * Radius;
 
-				// 💡 여기서 GetCard 호출
 				FCardCollection HandCards;
 				PS->GetCard(UniqueID, HandCards);
 
@@ -117,7 +117,7 @@ void ABangCardTableSpawner::SpawnHandCards()
 					}
 				}
 
-				// 캐릭터/직업 카드
+				// 캐릭터 / 직업 카드
 				{
 					FVector ForwardVector = (Center - PlayerCenter).GetSafeNormal();
 					FVector RightVector = FVector::CrossProduct(FVector::UpVector, ForwardVector);
@@ -129,17 +129,11 @@ void ABangCardTableSpawner::SpawnHandCards()
 
 					FSingleCard CharacterCard;
 					PS->GetCardByCharacter(PS->PlayerInfo.Players[PlayerIndex].CharacterCardType, CharacterCard);
-					if (CharacterCard.Card != nullptr)
-					{
-						EquipCards.Add(CharacterCard);
-					}
+					if (CharacterCard.Card != nullptr) EquipCards.Add(CharacterCard);
 
 					FSingleCard JobCard;
 					PS->GetCardByJobType(PS->PlayerInfo.Players[PlayerIndex].JobCardType, JobCard);
-					if (JobCard.Card != nullptr)
-					{
-						EquipCards.Add(JobCard);
-					}
+					if (JobCard.Card != nullptr) EquipCards.Add(JobCard);
 
 					for (int32 i = 0; i < EquipCards.Num(); ++i)
 					{
@@ -149,7 +143,7 @@ void ABangCardTableSpawner::SpawnHandCards()
 
 						if (ABangCardActor* Spawned = World->SpawnActor<ABangCardActor>(CardActorClass, CardPos, Rot))
 						{
-							Spawned->Multicast_SetCard(EquipCards[i], true); // 캐릭터/직업 카드는 항상 앞면
+							Spawned->Multicast_SetCard(EquipCards[i], true);
 						}
 					}
 				}
@@ -158,14 +152,10 @@ void ABangCardTableSpawner::SpawnHandCards()
 	}
 }
 
-
-
 void ABangCardTableSpawner::SpawnUsedCards()
 {
-
 	if (!CardActorClass || !CardManager) return;
 
-	// 이전 카드 삭제
 	if (CurrentUsedCardActor && CurrentUsedCardActor->IsValidLowLevel())
 	{
 		CurrentUsedCardActor->Destroy();
@@ -173,7 +163,7 @@ void ABangCardTableSpawner::SpawnUsedCards()
 	}
 
 	const FVector Center = GetActorLocation();
-	const FVector DeckPos = Center + FVector(-60, 0, 5); // 덱 왼쪽 
+	const FVector DeckPos = Center + FVector(-60, 0, 5);
 	const FVector DeckToCenter = (Center - DeckPos).GetSafeNormal();
 	const FVector RightVector = FVector::CrossProduct(DeckToCenter, FVector::UpVector);
 	const FVector UsedCardPos = DeckPos + RightVector * 100.f + FVector(0, 0, 5);

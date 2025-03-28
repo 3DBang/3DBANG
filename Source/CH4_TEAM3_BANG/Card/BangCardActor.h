@@ -46,6 +46,7 @@ public:
 	UPROPERTY()
 	uint32 OwnerUniqueID = -1;
 
+
 private:
 	bool bIsFrontVisible = true;
 };

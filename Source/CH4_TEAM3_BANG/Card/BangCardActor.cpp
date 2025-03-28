@@ -49,12 +49,20 @@ void ABangCardActor::BeginPlay()
 void ABangCardActor::SetCard(const FSingleCard& InCard, bool bForceFront)
 {
     CardData = InCard;
+
     bIsFrontVisible = bForceFront;
 
     CardFrontWidget->SetVisibility(bIsFrontVisible);
     CardBackWidget->SetVisibility(!bIsFrontVisible);
 
     UpdateWidgetContent();
+
+}
+
+void ABangCardActor::Multicast_SetCard_Implementation(const FSingleCard& InCard, bool bForceFront)
+{
+    // 카드 정보만 세팅하고, 보이는 여부는 클라이언트가 직접 판단
+    SetCard(InCard, bForceFront);
 }
 
 void ABangCardActor::UpdateWidgetContent()
@@ -71,7 +79,6 @@ void ABangCardActor::UpdateWidgetContent()
                 NewBrush.SetResourceObject(CardData.Card->CardIcon);
                 NewBrush.ImageSize = FVector2D(512, 512);
                 Image->SetBrush(NewBrush);
-                UE_LOG(LogTemp, Warning, TEXT("이미지 설정 완료됨!"));
             }
             else
             {
@@ -87,9 +94,4 @@ void ABangCardActor::UpdateWidgetContent()
     {
         UE_LOG(LogTemp, Error, TEXT("CardData/CardIcon/CardFrontWidget 없음!"));
     }
-}
-
-void ABangCardActor::Multicast_SetCard_Implementation(const FSingleCard& InCard, bool bForceFront)
-{
-    SetCard(InCard, bForceFront);
 }
