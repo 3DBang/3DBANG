@@ -293,7 +293,6 @@ void ABangPlayerState::UseCard(const int32 FromUniqueID, const FSingleCard& Sing
 			// ToUniqueID꺼 카드 하나 제거하고 FromUniqueID꺼 카드 하나 추가
 			if (ToUniqueID == 0) return;
 			
-			
 			break;
 		}
 	case EActiveType::CatBalou:

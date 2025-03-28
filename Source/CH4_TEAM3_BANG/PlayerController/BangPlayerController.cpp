@@ -551,13 +551,16 @@ void ABangPlayerController::OnCardSelectionComplete(
 	case ECardSelectPurpose::StealFromOpponent:
 		{
 			BangPlayerHUD->HideRobberyChoiceCardUI();
-
 			
+			FPlayerInformation* TargetInfo = PS->PlayerInfo.GetPlayerInformation(TargetUniqueID);
+			FSingleCard TargetCard = SelectedCards.CardList[0];
 
-			// 상대의 보유 카드 중 1장을 선택 
-			// 상대 카드 중 1장 없애기
-			// 내 카드 덱에 1장 추가하기
+			//ㅈㅍㅈㅍ
+			TargetInfo->MyCards.RemoveCard(TargetCard.Card->SymbolType, TargetCard.Card->SymbolNumber);
+			MyInfo->MyCards.AddCardCollectionToPlayerCards(SelectedCards);
+			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 
+			TargetUniqueID = 0;
 			break;
 		}
 	case ECardSelectPurpose::RespondToDuel:
@@ -1246,19 +1249,18 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 	}
 	else if (UsingActiveType == EActiveType::Robbery)
 	{
+		TargetUniqueID = TargetPlayerID;
 		FPlayerInformation* Targetinfo = PS->PlayerInfo.GetPlayerInformation(TargetPlayerID);
 		if (PS->PlayerInfo.IsDistanceAble(PlayerUniqueID, TargetPlayerID))
 		{
-			
+			// Server_UseCard(UsingCard, TargetUniqueID);
+			PS->RestoreCard(PlayerUniqueID, UsingCard);
+			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
+			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select);
 
-			// 상대 PlayerState에 접근 가능
-
-			// 거리 접근 가능한지 확인
-			if (!PS->PlayerInfo.IsDistanceAble(PlayerUniqueID, TargetPlayerID))
-			{
-				// 거리 안된다고 PC에 알려줘야함
-				return;
-			}
+			CardList->RemoveSelectedCard(UsingCard);
+			PS->Server_SetPlayerInfo(PS->PlayerInfo);
+			InitializUsingCard();
 
 			// PC에서 뺏을 카드 선택 TargetPlayerID
 			FPlayerCardCollection FrontCardList;
@@ -1267,13 +1269,7 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 				PS->PlayerInfo.GetPlayerInformation(TargetPlayerID)->EquippedCards.PlayerCards);
 			FrontCardList.PlayerCards.
 			              Append(PS->PlayerInfo.GetPlayerInformation(TargetPlayerID)->TrapCards.PlayerCards);
-
 			HiddenCardList.PlayerCards.Append(PS->PlayerInfo.GetPlayerInformation(TargetPlayerID)->MyCards.PlayerCards);
-
-			PS->PlayerInfo.SelectableCards.PlayerCards.Append(FrontCardList.PlayerCards);
-			PS->PlayerInfo.HiddenSelectableCards.PlayerCards.Append(HiddenCardList.PlayerCards);
-			PS->Server_SetPlayerInfo(PS->PlayerInfo);
-			//위젯 띄우자 이시점 PlayerInfo
 
 			// ㅈㅍㅈㅍ
 	
@@ -1284,16 +1280,6 @@ void ABangPlayerController::Client_SelectTarget_Implementation(const uint32 Targ
 	
 			BangHUD->ShowRobberyChoiceCardUI(TargetFieldCards, TargetHandCards, ECardSelectPurpose::StealFromOpponent);
 			BangHUD->RobberyChoiceWidgetInstance->TableCardClickedDelegate.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
-			
-			
-			Server_UseCard(UsingCard, TargetPlayerID);
-			PS->RestoreCard(PlayerUniqueID, UsingCard);
-			Myinfo->MyCards.RemoveCard(UsingCard.Card->SymbolType, UsingCard.Card->SymbolNumber);
-			//Targetinfo->MyCards.RemoveCard(SelectCard->SymbolType, Select);
-
-			CardList->RemoveSelectedCard(UsingCard);
-			PS->Server_SetPlayerInfo(PS->PlayerInfo);
-			InitializUsingCard();
 		}
 	}
 	else if (UsingActiveType == EActiveType::CatBalou ||
