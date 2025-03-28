@@ -492,6 +492,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 			PS->RestoreCard(PlayerUniqueID, Card);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
 		}
+		Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s가 카드 %d장을 버렸습니다."), *MyInfo->PlayerName, SelectedCards.CardList.Num()));
 		Server_EndTurn();
 		break;
 	}
@@ -584,6 +585,8 @@ void ABangPlayerController::OnCardSelectionComplete(
 				PS->RestoreCard(PlayerUniqueID, Card);
 				PS->Server_SetPlayerInfo(PS->PlayerInfo);
 				//EndminiTurn(); = Playerinfo.bMyturn = true Client_RequestCardSelection(UseCard)
+
+				Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s가 뱅카드를 사용했습니다"), *MyInfo->PlayerName));
 			}
 			else
 			{
@@ -603,6 +606,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 		{
 			// 뱅 카드 사용(인디언 쫓아내기 성공)
 			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
+			Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s가 뱅카드를 사용했습니다"), *MyInfo->PlayerName));
 		}
 		else
 		{
@@ -627,6 +631,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
 			MyInfo->MyCards.RemoveCard(SelectedCards.CardList[0].Card->SymbolType, SelectedCards.CardList[0].Card->SymbolNumber);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
+			Server_RequestSendGameLog(FString::Printf(TEXT("플레이어 %s가 회피카드를 사용했습니다"), *MyInfo->PlayerName));
 		}
 		else
 		{
@@ -1308,10 +1313,10 @@ void ABangPlayerController::HandleGeneralStoreSelectionComplete(const FSingleCar
 {
 	ABangPlayerState* PS = GetPlayerState<ABangPlayerState>();
 	if (!PS) return;
-
+	
 	FPlayerInformation* MyInfo = PS->PlayerInfo.GetPlayerInformation(PlayerUniqueID);
 	if (!MyInfo) return;
-
+	
 	// 선택한 카드 제거
 	PS->PlayerInfo.SelectableCards.RemoveCard(SelectedCard.Card->SymbolType, SelectedCard.Card->SymbolNumber);
 
