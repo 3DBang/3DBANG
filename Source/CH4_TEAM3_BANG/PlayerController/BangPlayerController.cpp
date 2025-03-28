@@ -452,7 +452,7 @@ void ABangPlayerController::OnCardSelectionComplete(
 
 	ABangPlayerHUD* BangPlayerHUD = Cast<ABangPlayerHUD>(GetHUD());
 
-	if (BangPlayerHUD)
+	if (!BangPlayerHUD)
 	{
 		return;
 	}
@@ -641,13 +641,20 @@ void ABangPlayerController::Client_DisplayBangUI_Implementation()
 void ABangPlayerController::NotifyHUDLoaded()
 {
 	Server_HUDLoaded();
+
+	TObjectPtr<ABangPlayerHUD> const BangHUD = Cast<ABangPlayerHUD>(GetHUD());
+
+	if (!BangHUD)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[ABangPlayerController::NotifyHUDLoaded] 바인딩 실패"));
+		return;
+	}
+	
+	BangHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
+	
 	if (!HasAuthority())
 	{
-		if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
-		{
-			BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
-			BangHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
-		}
+		BangHUD->ChattingWidgetInstance->StartButton->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -806,7 +813,7 @@ void ABangPlayerController::Server_StartGame_Implementation()
 
 void ABangPlayerController::StartButtonCLicked()
 {
-	JCH_Test();
+	//JCH_Test();
 	//Server_StartGame();
 }
 
