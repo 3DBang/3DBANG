@@ -70,7 +70,6 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 		{
 			FBangSinglePlayerController Controller;
 			Controller.Controller = BangPlayerController;
-			
 			BangPlayerControllers.Add(BangPlayerController);
 			BangPlayerController->Init();
 			
