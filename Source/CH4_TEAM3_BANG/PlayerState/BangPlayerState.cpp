@@ -599,10 +599,19 @@ void ABangPlayerState::UseCardReturn(const int32& FromUniqueID, const FPlayerCar
 		{
 			// UseCard 상태로 돌입
 			PC->Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
+			if (ABangGameMode* BangGameMode = Cast<ABangGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				BangGameMode->ShowTableCardsToAll(EShowTableCard::HideCard);
+			}
 		}
 		else
 		{
 			PC->Client_RequestCardSelection(1, ECardSelectPurpose::GeneralStoreDraft);
+			//UI업데이트 해줘 EShowTableCard::ShowCard
+			if (ABangGameMode* BangGameMode = Cast<ABangGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				BangGameMode->ShowTableCardsToAll(EShowTableCard::ShowCard);
+			}
 		}
 			break;
 		}

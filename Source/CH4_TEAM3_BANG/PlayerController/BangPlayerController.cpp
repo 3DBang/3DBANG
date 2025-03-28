@@ -353,6 +353,10 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 	UE_LOG(LogTemp, Warning, TEXT("[TEST] Client_RequestCardSelection_Implementation called"));
 	switch (Purpose)
 	{
+	case ECardSelectPurpose::None:
+	{
+		break;
+	}
 	case ECardSelectPurpose::UseCard:
 	{
 		ButtonText = FText::AsCultureInvariant(L"사용하기");
@@ -406,7 +410,8 @@ void ABangPlayerController::Client_RequestCardSelection_Implementation(
 		ButtonText = FText::AsCultureInvariant(TEXT("선택"));
 		break;
 	}
-	bool bMyCardCollection =
+	bool bMyCardCollection = 
+			(Purpose == ECardSelectPurpose::None)||
 			(Purpose == ECardSelectPurpose::UseCard) ||
 			(Purpose == ECardSelectPurpose::DiscardCard) ||
 			(Purpose == ECardSelectPurpose::RespondToDuel) ||
@@ -577,13 +582,14 @@ void ABangPlayerController::OnCardSelectionComplete(
 	{// 인디언 카드 대응 – 뱅 카드 선택
 		if (SelectedCards.CardList.Num() == 0)
 		{
-			//PS->LoosePlayerHealth(PlayerUniqueID, 1);
+			Client_RequestCardSelection_Implementation(1, ECardSelectPurpose::None);
 		}
 		PS->GetCardType(PlayerUniqueID, SelectedCards.CardList[0], OutActiveType, OutPassiveType);
 		if (OutActiveType == EActiveType::Bang)
 		{
 			// 뱅 카드 사용(인디언 쫓아내기 성공)
 			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
+			Client_RequestCardSelection_Implementation(1, ECardSelectPurpose::None);
 		}
 		else
 		{
@@ -608,11 +614,11 @@ void ABangPlayerController::OnCardSelectionComplete(
 			PS->RestoreCard(PlayerUniqueID, SelectedCards.CardList[0]);
 			MyInfo->MyCards.RemoveCard(SelectedCards.CardList[0].Card->SymbolType, SelectedCards.CardList[0].Card->SymbolNumber);
 			PS->Server_SetPlayerInfo(PS->PlayerInfo);
+			Client_RequestCardSelection_Implementation(1, ECardSelectPurpose::None);
 		}
 		else
 		{
 			//잘못된 카드 사용 처리
-			UE_LOG(LogTemp, Error, TEXT("Missed!"));
 			Client_RequestCardSelection_Implementation(1, ECardSelectPurpose::RespondToAttack);
 			return;
 		}
@@ -648,6 +654,7 @@ void ABangPlayerController::NotifyHUDLoaded()
 	if (const TObjectPtr<ABangPlayerHUD> BangHUD = Cast<ABangPlayerHUD>(GetHUD()))
 	{
 		BangHUD->CardListWidgetInstance->OnUseCard.AddDynamic(this, &ABangPlayerController::OnCardSelectionComplete);
+		BangHUD->CardListWidgetInstance->OnTurnEnd.AddDynamic(this, &ABangPlayerController::Server_EndTurn);
 		Client_RequestCardSelection(1, ECardSelectPurpose::UseCard);
 		UE_LOG(LogTemp, Warning, TEXT("[Client] OnCardSelectionComplete Binding"));
 		if (!HasAuthority())
@@ -1277,7 +1284,12 @@ void ABangPlayerController::HandleGeneralStoreSelectionComplete(const FSingleCar
 	PS->MiniTurnUniqueID = PS->PlayerInfo.FindNextPlayer(PlayerUniqueID);
 
 	PS->Server_SetPlayerInfo(PS->PlayerInfo);
-	//UI업데이트 해줘
+
+	//UI업데이트 해줘 EShowTableCard::ShowCard
+	if (ABangGameMode* BangGameMode = Cast<ABangGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		BangGameMode->ShowTableCardsToAll(EShowTableCard::ShowCard);
+	}
 }
 
 
