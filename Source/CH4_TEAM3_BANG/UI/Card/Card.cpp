@@ -124,6 +124,11 @@ void UCard::UpdateCardDisplay()
 	
 }
 
+void UCard::SetCardImage(UTexture2D* InImage)
+{
+	Border->SetBrushFromTexture(InImage);
+}
+
 void UCard::ShowDescriptionWidgetDelayed()
 {
 	 if (!DescriptionWidgetInstance) // DescriptionWidgetInstance 로 변경

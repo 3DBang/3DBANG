@@ -68,10 +68,12 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{
+			FBangSinglePlayerController Controller;
+			Controller.Controller = BangPlayerController;
 			BangPlayerControllers.Add(BangPlayerController);
 			BangPlayerController->Init();
 			
-			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, BangPlayerController);
+			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, Controller);
 			SendGameLog(FString::Printf(TEXT("%s님이 입장했습니다."), *BangPlayerController->PlayerNickname));
 		}
 	}
@@ -137,7 +139,7 @@ void ABangGameMode::GetPlayerCollection(FPlayerCollection& OutPlayerCollection) 
 	OutPlayerCollection = Players;
 }
 
-void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const TObjectPtr<ABangPlayerController>& PlayerController)
+void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const FBangSinglePlayerController& PlayerController)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
 
@@ -149,18 +151,12 @@ void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& Player
 
 	FPlayerInformation PlayerInfo;
 	PlayerInfo.PlayerUniqueID = UniqueID;
-	if (PlayerNickName == "")
-	{
-		PlayerInfo.PlayerName = FString::FromInt(UniqueID);
-	}
-	else
-	{
-		PlayerInfo.PlayerName = PlayerNickName;
-	}
+	PlayerInfo.PlayerName = PlayerController.Controller->PlayerNickname;
+	
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::AddLobbyPlayer] Player ID: %u nickname: %s"), UniqueID, *PlayerNickName);
 
 	// PS에 전달
-	if (TObjectPtr<ABangPlayerState> BangPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
+	if (TObjectPtr<ABangPlayerState> BangPlayerState = PlayerController.Controller->GetPlayerState<ABangPlayerState>())
 	{
 		//BangPlayerState->Client_SetUniqueId(UniqueID);
 		BangPlayerState->PlayerUniqueID = UniqueID;

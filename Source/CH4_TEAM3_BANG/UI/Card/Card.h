@@ -81,6 +81,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Card")
     void UpdateCardDisplay();
 
+	UFUNCTION(BlueprintCallable, Category = "Card")
+	void SetCardImage(UTexture2D* InImage);
+
 protected:
 	virtual void NativeConstruct() override;
 	virtual void BeginDestroy() override; // BeginDestroy 오버라이드 추가
