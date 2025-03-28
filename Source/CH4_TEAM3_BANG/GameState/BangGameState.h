@@ -19,10 +19,10 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_Message)
 	FString Message;
 
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	FString FromPlayerNickname;
 
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	FString ToPlayerNickname;
 
 	UFUNCTION()

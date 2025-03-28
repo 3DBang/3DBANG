@@ -1,4 +1,5 @@
 #include "BangGameMode.h"
+#include "EngineUtils.h"
 
 #include "Card/BangCardManager.h"
 #include "Card/JobCard/BangJobCard.h"
@@ -12,6 +13,9 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
 #include "Instance/BangGameInstance.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Card/BangCardActor.h"
+#include "Card/BangCardTableSpawner.h"
 
 ABangGameMode::ABangGameMode()
 {
@@ -38,6 +42,18 @@ void ABangGameMode::BeginPlay()
 		// 카드 매니저 초기 셋팅 (GameMode에서만 진행)
 		CardManager->PlayBeginByRole();
 	}
+
+	for (TActorIterator<ABangCardTableSpawner> It(GetWorld()); It; ++It)
+	{
+		if (ABangCardTableSpawner* Table = *It)
+		{
+			Table->CardManager = CardManager;
+			Table->SpawnDeckCards();           // 중앙 덱 시각화
+			Table->SpawnHandCards();  // 여기도 호출해줘야 스폰됨!
+
+			break;
+		}
+	}
 }
 
 void ABangGameMode::PostLogin(APlayerController* NewPlayer)
@@ -52,10 +68,12 @@ void ABangGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		if (TObjectPtr<ABangPlayerController> BangPlayerController = Cast<ABangPlayerController>(NewPlayer))
 		{
+			FBangSinglePlayerController Controller;
+			Controller.Controller = BangPlayerController;
 			BangPlayerControllers.Add(BangPlayerController);
 			BangPlayerController->Init();
 			
-			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, BangPlayerController);
+			AddLobbyPlayer(PlayerUniqueIndex++, BangPlayerController->PlayerNickname, Controller);
 			SendGameLog(FString::Printf(TEXT("%s님이 입장했습니다."), *BangPlayerController->PlayerNickname));
 		}
 	}
@@ -121,7 +139,7 @@ void ABangGameMode::GetPlayerCollection(FPlayerCollection& OutPlayerCollection) 
 	OutPlayerCollection = Players;
 }
 
-void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const TObjectPtr<ABangPlayerController>& PlayerController)
+void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const FBangSinglePlayerController& PlayerController)
 {
 	if (CurrentGameState == EGameState::GamePlaying) return;
 
@@ -133,18 +151,12 @@ void ABangGameMode::AddLobbyPlayer(const uint32& UniqueID, const FString& Player
 
 	FPlayerInformation PlayerInfo;
 	PlayerInfo.PlayerUniqueID = UniqueID;
-	if (PlayerNickName == "")
-	{
-		PlayerInfo.PlayerName = FString::FromInt(UniqueID);
-	}
-	else
-	{
-		PlayerInfo.PlayerName = PlayerNickName;
-	}
+	PlayerInfo.PlayerName = PlayerController.Controller->PlayerNickname;
+	
 	UE_LOG(LogTemp, Warning, TEXT("[BangGameMode::AddLobbyPlayer] Player ID: %u nickname: %s"), UniqueID, *PlayerNickName);
 
 	// PS에 전달
-	if (TObjectPtr<ABangPlayerState> BangPlayerState = PlayerController->GetPlayerState<ABangPlayerState>())
+	if (TObjectPtr<ABangPlayerState> BangPlayerState = PlayerController.Controller->GetPlayerState<ABangPlayerState>())
 	{
 		//BangPlayerState->Client_SetUniqueId(UniqueID);
 		BangPlayerState->PlayerUniqueID = UniqueID;
@@ -227,6 +239,7 @@ void ABangGameMode::ShuffleSeats(FPlayerCollection& ToShufflePlayers)
 void ABangGameMode::StartTest()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Start Test"));
+	SpawnPlayers();
 	SendGameLog(FString::Printf(TEXT("게임이 시작되었습니다.")));
 	Players.Players.Empty();
 
@@ -333,8 +346,29 @@ void ABangGameMode::StartTest()
 		UE_LOG(LogTemp, Error, TEXT("플레이어가 생성되지 않았습니다. AdvanceGameTurn을 건너뜁니다."));
 	}
 
-	//원명 테스트 
-	SpawnPlayers();
+	// 사용된 카드 테스트 코드 
+	for (int i = 0; i < 3; ++i)
+	{
+		FCardCollection Draw;
+		CardManager->HandCards(1, Draw);
+
+		if (Draw.CardList.Num() > 0)
+		{
+			FSingleCard Card = Draw.CardList[0];
+			CardManager->ReorderUsedCards(Card);
+		}
+	}
+
+	for (TActorIterator<ABangCardTableSpawner> It(GetWorld()); It; ++It)
+	{
+		if (ABangCardTableSpawner* Table = *It)
+		{
+			Table->SpawnUsedCards();
+			Table->SpawnHandCards(); 
+
+			break;
+		}
+	}
 }
 
 // 시작할때 컨트롤러에서 플레이어 아이디랑 플레이어를 PS에 갱신해준다.
@@ -483,8 +517,6 @@ void ABangGameMode::AdvanceGameTurn()
 
 				FPlayerCardCollection PlayerCards;
 				PlayerCards.AddCardCollectionToPlayerCards(DrawCards);
-
-				PlayerController.Controller->Client_RequestSelectCard(CurrentTurnPlayerUniqeID, PlayerCards);
 				
 				return;
 			}
@@ -1012,24 +1044,16 @@ void ABangGameMode::CloseCamera()
 	ControllerIDAtCameraMode = INDEX_NONE;
 }
 
-void ABangGameMode::DrawCardsAndNotifyClients()
+void ABangGameMode::ShowTableCardsToAll(EShowTableCard ShowTableType)
 {
-	if (!CardManager) return;;
-
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ABangPlayerController* PC = Cast<ABangPlayerController>(It->Get()))
-		{
+		{	
 			UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::DrawCardsAndNotifyClients] : 카드 전달: %s"), *PC->GetName());
-			PC->Client_ShowDrawnCards();
+			PC->Client_ShowDrawCard(ShowTableType);
 		}
 	}
-}
-
-void ABangGameMode::ShowTableCardsToAll()
-{
-	UE_LOG(LogTemp, Warning, TEXT("[ABangGameMode::ShowTableCardsToAll] 호출됨"));
-	DrawCardsAndNotifyClients();
 }
 
 /**

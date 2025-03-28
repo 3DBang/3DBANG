@@ -8,6 +8,7 @@
 #include "BangGameMode.generated.h"
 
 class UBangCardManager;
+class ABangCardActor;
 
 UENUM(BlueprintType)
 enum class EGameState : uint8
@@ -93,21 +94,19 @@ public:
 
 	// 카드 펼치기
 	UFUNCTION()
-	void ShowTableCardsToAll();
-
-	/**
-	 * 지정된 개수의 카드를 뽑고, 클라이언트들에게 알림을 전송합니다.
-	 *
-	 * @param CardCount 뽑을 카드의 개수를 나타냅니다.
-	 */
-	void DrawCardsAndNotifyClients();
-
+	void ShowTableCardsToAll(EShowTableCard ShowTableType);
+	
 	/**
 	 * 게임 로그 메시지를 클라이언트들에게 전송합니다.
 	 *
 	 * @param GameLogMessage 전송할 게임 로그 메시지를 나타냅니다.
 	 */
 	void SendGameLog(const FString& GameLogMessage);
+
+
+	// 정빈 
+	UPROPERTY(EditDefaultsOnly, Category = "Cards")
+	TSubclassOf<class ABangCardActor> CardActorClass;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawning")
@@ -152,7 +151,7 @@ private:
 	uint32 PlayerUniqueIndex = 1;
 
 	// 로비 플레이어 등록
-	void AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const TObjectPtr<ABangPlayerController>& PlayerController);
+	void AddLobbyPlayer(const uint32& UniqueID, const FString& PlayerNickName, const FBangSinglePlayerController& PlayerController);
 	// 로비 플레이어 삭제
 	UFUNCTION()
 	void RemoveLobbyPlayer(const uint32& UniqueID);
