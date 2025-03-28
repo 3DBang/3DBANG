@@ -727,7 +727,7 @@ void ABangPlayerController::PlayerInfoUpdatedEvent(FPlayerCollection FPlayerColl
 	}
 	for (FPlayerInformation PlayerInfo : FPlayerCollection.Players)
 	{
-		GetPlayerStateAtBeginTest(PlayerInfo.PlayerUniqueID);
+		//GetPlayerStateAtBeginTest(PlayerInfo.PlayerUniqueID);
 		UpdatePlayerInfo(PlayerInfo.PlayerUniqueID,
 			PlayerInfo.CurrentHealth,
 			PlayerInfo.CharacterRange
@@ -909,9 +909,23 @@ void ABangPlayerController::MouseClicked()
 	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, HitResult))
 	{
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.f, 8, FColor::Red, false, 1.5f);
+		AActor* HitActor = HitResult.GetActor();
+		UPrimitiveComponent* HitComp = HitResult.GetComponent();
+
+		UE_LOG(LogTemp, Warning, TEXT("===== HitResult ====="));
+		UE_LOG(LogTemp, Warning, TEXT("Actor   : %s"), HitActor ? *HitActor->GetName() : TEXT("None"));
+		UE_LOG(LogTemp, Warning, TEXT("Component: %s"), HitComp ? *HitComp->GetName() : TEXT("None"));
+		UE_LOG(LogTemp, Warning, TEXT("BoneName : %s"), *HitResult.BoneName.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Location : %s"), *HitResult.Location.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Normal   : %s"), *HitResult.ImpactNormal.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Distance : %.2f"), HitResult.Distance);
+		UE_LOG(LogTemp, Warning, TEXT("====================="));
+
 		ACharacter* HitChar = Cast<ACharacter>(HitResult.GetActor());
+		//무시하는그런게 
 		if (HitChar && HitChar != GetPawn())
 		{
+			
 			if (ABangCharacter* OtherPlayer = Cast<ABangCharacter>(HitChar))
 			{
 				ABangPlayerState* BangState = Cast<ABangPlayerState>(OtherPlayer->GetPlayerState());
@@ -935,17 +949,11 @@ void ABangPlayerController::Client_OpenCamera_Implementation()
 		return;
 	}
 	AGameStateBase* BGameState = GetWorld()->GetGameState<AGameStateBase>();
-	if (!BGameState)
-	{
-		return;
-	}
+	ensure(BGameState);
 	int32 PlayerCount = BGameState->PlayerArray.Num();
 
 	ABangPlayerState* BPS = Cast<ABangPlayerState>(PlayerState);
-	if (!BPS)
-	{
-		return;
-	}
+	ensure(BPS);
 	int32 FindIndex = BPS->PlayerInfo.FindPlayerSeatByUniquID(PlayerUniqueID);
 	//지금은 PlayerUniqueID가 없기때문에 실험환경에 적합하지 않기때문에
 	//따라서 PlayerUniqueID가 생길 때 실험 해볼 예정 이론상 정확함
@@ -1071,8 +1079,7 @@ void ABangPlayerController::Server_OpenCamera_Implementation()
 	{
 		return;
 	}
-	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (GM)
+	if (ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
 		GM->OpenCamera(PlayerUniqueID);
 		GEngine->AddOnScreenDebugMessage(
@@ -1110,8 +1117,7 @@ void ABangPlayerController::Server_CloseCamera_Implementation()
 			TEXT("Duration End")
 		);
 	}
-	ABangGameMode* GM = GetWorld()->GetAuthGameMode<ABangGameMode>();
-	if (GM)
+	if (ABangGameMode * GM = GetWorld()->GetAuthGameMode<ABangGameMode>())
 	{
 		GM->CloseCamera();
 	}
@@ -1381,15 +1387,11 @@ void ABangPlayerController::Client_SetOutline_Implementation(uint32 OtherPlayerU
 	UE_LOG(LogTemp, Warning, TEXT("[[Outline] Input is %d , Has %d"), OtherPlayerUniqueID,PlayerUniqueID);
 	UE_LOG(LogTemp, Warning, TEXT("[Outline] NetMode=%d"), (int)GetNetMode());
 	APawn* MyPawn = GetPawn();
-	if (!MyPawn)
+	if (!ensure(MyPawn))
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.0f,
-			FColor::Yellow,
-			FString::Printf(TEXT("폰이 없어서 리턴됩니다 "))
-		);
+		return;
 	}
+	
 	TArray<UMeshComponent*> Meshes;
 	MyPawn->GetComponents<UMeshComponent>(Meshes);
 

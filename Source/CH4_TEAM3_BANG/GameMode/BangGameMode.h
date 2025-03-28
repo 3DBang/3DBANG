@@ -178,7 +178,7 @@ private:
 	void CheckTrapCard();
 	
 	UFUNCTION(BlueprintCallable)
-	void SetUserHP();
+	void SetUserHP(int32 index);
 
 public:
 	UFUNCTION()
@@ -209,6 +209,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void MoveTestBong(int index);
+	
+	UFUNCTION(BlueprintCallable)
+	void UpdateUserHP(int32 index, int32 _HP);
 
 private:
 	uint32 ControllerIDAtCameraMode = INDEX_NONE; // Maximum
