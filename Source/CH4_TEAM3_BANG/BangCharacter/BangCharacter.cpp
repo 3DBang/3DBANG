@@ -28,7 +28,7 @@ ABangCharacter::ABangCharacter()
 	bReplicates = true;
 	SetReplicateMovement(true);
 
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+	//GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -54,13 +54,6 @@ ABangCharacter::ABangCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
 
-	if (UPrimitiveComponent* PrimComponent = Cast<UPrimitiveComponent>(GetRootComponent()))
-	{
-		PrimComponent->SetGenerateOverlapEvents(true);
-		PrimComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-		PrimComponent->OnBeginCursorOver.AddDynamic(this, &ABangCharacter::OnCursorBegin);
-		PrimComponent->OnEndCursorOver.AddDynamic(this, &ABangCharacter::OnCursorEnd);
-	}
 	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 }
 
@@ -227,10 +220,12 @@ void ABangCharacter::Move(const FInputActionValue& Value)
 		return;
 	}
 	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
-	ensure(BPS);
+	if (!ensure(BPS)) return;
+
 	uint32 tmpID = BPS->PlayerUniqueID;
 	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
-	ensure(PlayerInform);
+	if (!ensure(PlayerInform)) return;
+
 	if (!PlayerInform->bIsMyTurn)
 	{
 		return;
@@ -444,7 +439,6 @@ void ABangCharacter::Multicast_SetOutline_Implementation(bool bEnable, int32 Ste
 {
 	TArray<UMeshComponent*> Meshes;
 	GetComponents<UMeshComponent>(Meshes);
-
 	for (UMeshComponent* MeshComp : Meshes)
 	{
 		MeshComp->SetRenderCustomDepth(bEnable);
@@ -473,10 +467,12 @@ void ABangCharacter::StartJump(const FInputActionValue& value)
 		return;
 	}
 	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
-	ensure(BPS);
+	if (!ensure(BPS)) return;
+
 	uint32 tmpID = BPS->PlayerUniqueID;
 	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
-	ensure(PlayerInform);
+	if (!ensure(PlayerInform)) return;
+
 	if (!PlayerInform->bIsMyTurn)
 	{
 		return;
@@ -494,10 +490,12 @@ void ABangCharacter::StopJump(const FInputActionValue& value)
 		return;
 	}
 	ABangPlayerState* BPS = Cast<ABangPlayerState>(GetPlayerState());
-	ensure(BPS);
+	if (!ensure(BPS)) return;
+
 	uint32 tmpID = BPS->PlayerUniqueID;
 	auto PlayerInform = BPS->PlayerInfo.GetPlayerInformation(tmpID);
-	ensure(PlayerInform);
+	if (!ensure(PlayerInform)) return;
+
 	if (!PlayerInform->bIsMyTurn)
 	{
 		return;

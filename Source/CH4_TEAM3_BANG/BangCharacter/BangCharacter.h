@@ -136,11 +136,11 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SetOutline(bool bEnable, int32 StencilValue);
 
-private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float NormalSpeed = 600.f; 
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float SprintSpeedMultiplier = 1.5f; 
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")

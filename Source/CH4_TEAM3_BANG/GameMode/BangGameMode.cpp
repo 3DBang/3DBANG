@@ -1147,16 +1147,22 @@ void ABangGameMode::DontStopTestBong()
 {
 	for (auto PC : BangPlayerControllers)
 	{
-		ABangPlayerController* tmp = Cast<ABangPlayerController>(PC);
+		ABangPlayerController* tmp = Cast<ABangPlayerController>(PC);\
+		if (!ensure(tmp))return;
 		ABangPlayerState* tmpPS = Cast<ABangPlayerState>(tmp->PlayerState);
+		if (!ensure(tmpPS))return;
 		auto TmpInfo = tmpPS->PlayerInfo.GetPlayerInformation(tmp->PlayerUniqueID);
+		if (!ensure(TmpInfo))return;
 		TmpInfo->bIsMyTurn = false;
 	}
 }
 void ABangGameMode::MoveTestBong(int index)
 {
 	ABangPlayerController* tmp = Cast<ABangPlayerController>(BangPlayerControllers[index]);
+	if (!ensure(tmp))return;
 	ABangPlayerState* tmpPS = Cast<ABangPlayerState>(tmp->PlayerState);
+	if (!ensure(tmpPS))return;
 	auto TmpInfo = tmpPS->PlayerInfo.GetPlayerInformation(tmp->PlayerUniqueID);
+	if (!ensure(TmpInfo))return;
 	TmpInfo->bIsMyTurn = true;
 }
